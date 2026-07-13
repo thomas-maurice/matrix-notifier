@@ -5,6 +5,7 @@ import { api } from '../api.js'
 const tokens = ref([])
 const channels = ref([])
 const error = ref('')
+const info = ref('')
 const minted = ref(null)
 const newName = ref('')
 const newKind = ref('any')
@@ -41,7 +42,9 @@ async function editPrefix(tok) {
   const prefix = prompt(`Notification prefix for "${tok.name}" (emoji or short text, empty to clear):`, tok.prefix || '')
   if (prefix === null) return
   error.value = ''
+  info.value = ''
   try {
+    // Send the current channel so editing the prefix never reroutes the token.
     await api.updateToken(tok.name, prefix.trim(), tok.channel)
     await refresh()
   } catch (e) {
@@ -87,6 +90,7 @@ onMounted(refresh)
 
 <template>
   <div v-if="error" class="alert alert-danger">{{ error }}</div>
+  <div v-if="info" class="alert alert-success">{{ info }}</div>
 
   <div v-if="minted" class="alert alert-warning">
     <div class="fw-bold mb-1"><i class="fa-solid fa-triangle-exclamation me-1"></i>
