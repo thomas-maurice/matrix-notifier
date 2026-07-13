@@ -190,6 +190,18 @@ func (s *Store) ListChannels(ctx context.Context) ([]Channel, error) {
 	return chs, s.db.WithContext(ctx).Order("name").Find(&chs).Error
 }
 
+// GetToken returns a token by name with its channel preloaded.
+func (s *Store) GetToken(ctx context.Context, name string) (*IngestToken, error) {
+	var tok IngestToken
+	if err := s.db.WithContext(ctx).Preload("Channel").Where("name = ?", name).First(&tok).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, fmt.Errorf("token %q: %w", name, ErrNotFound)
+		}
+		return nil, err
+	}
+	return &tok, nil
+}
+
 func (s *Store) GetChannel(ctx context.Context, name string) (*Channel, error) {
 	var ch Channel
 	if err := s.db.WithContext(ctx).Where("name = ?", name).First(&ch).Error; err != nil {

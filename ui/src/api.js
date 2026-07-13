@@ -59,6 +59,7 @@ export const api = {
   createToken: (name, kind, channel, prefix) => call('CreateToken', { name, kind, channel, prefix }),
   updateToken: (name, prefix, channel) => call('UpdateToken', { name, prefix, channel }),
   deleteToken: (name) => call('DeleteToken', { name }),
+  testToken: (name) => call('TestToken', { name }),
   sendTest: (channel) => call('SendTestNotification', { channel }),
 }
 

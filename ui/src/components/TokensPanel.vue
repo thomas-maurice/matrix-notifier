@@ -77,6 +77,17 @@ async function remove(name) {
   }
 }
 
+async function test(tok) {
+  error.value = ''
+  info.value = ''
+  try {
+    await api.testToken(tok.name)
+    info.value = `Test notification sent via "${tok.name}" to ${tok.channel}`
+  } catch (e) {
+    error.value = e.message
+  }
+}
+
 function copyMinted() {
   navigator.clipboard?.writeText(minted.value.plaintext)
 }
@@ -154,7 +165,10 @@ onMounted(refresh)
             <td class="text-secondary">{{ fmtDate(tok.createdAt) }}</td>
             <td class="text-secondary">{{ fmtDate(tok.lastUsedAt) }}</td>
             <td class="text-end pe-3">
-              <button class="btn btn-sm btn-outline-danger" @click="remove(tok.name)">
+              <button class="btn btn-sm btn-outline-info me-2" title="Send a test notification through this token" @click="test(tok)">
+                <i class="fa-solid fa-paper-plane"></i>
+              </button>
+              <button class="btn btn-sm btn-outline-danger" title="Delete" @click="remove(tok.name)">
                 <i class="fa-solid fa-trash"></i>
               </button>
             </td>

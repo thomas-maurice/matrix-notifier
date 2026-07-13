@@ -65,6 +65,8 @@ const (
 	// AdminServiceSendTestNotificationProcedure is the fully-qualified name of the AdminService's
 	// SendTestNotification RPC.
 	AdminServiceSendTestNotificationProcedure = "/notifier.v1.AdminService/SendTestNotification"
+	// AdminServiceTestTokenProcedure is the fully-qualified name of the AdminService's TestToken RPC.
+	AdminServiceTestTokenProcedure = "/notifier.v1.AdminService/TestToken"
 )
 
 // AdminServiceClient is a client for the notifier.v1.AdminService service.
@@ -83,6 +85,9 @@ type AdminServiceClient interface {
 	UpdateToken(context.Context, *connect.Request[v1.UpdateTokenRequest]) (*connect.Response[v1.UpdateTokenResponse], error)
 	DeleteToken(context.Context, *connect.Request[v1.DeleteTokenRequest]) (*connect.Response[v1.DeleteTokenResponse], error)
 	SendTestNotification(context.Context, *connect.Request[v1.SendTestNotificationRequest]) (*connect.Response[v1.SendTestNotificationResponse], error)
+	// TestToken sends a test notification through a token, applying its prefix
+	// so the operator can see exactly what a producer's messages look like.
+	TestToken(context.Context, *connect.Request[v1.TestTokenRequest]) (*connect.Response[v1.TestTokenResponse], error)
 }
 
 // NewAdminServiceClient constructs a client for the notifier.v1.AdminService service. By default,
@@ -168,6 +173,12 @@ func NewAdminServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 			connect.WithSchema(adminServiceMethods.ByName("SendTestNotification")),
 			connect.WithClientOptions(opts...),
 		),
+		testToken: connect.NewClient[v1.TestTokenRequest, v1.TestTokenResponse](
+			httpClient,
+			baseURL+AdminServiceTestTokenProcedure,
+			connect.WithSchema(adminServiceMethods.ByName("TestToken")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -185,6 +196,7 @@ type adminServiceClient struct {
 	updateToken          *connect.Client[v1.UpdateTokenRequest, v1.UpdateTokenResponse]
 	deleteToken          *connect.Client[v1.DeleteTokenRequest, v1.DeleteTokenResponse]
 	sendTestNotification *connect.Client[v1.SendTestNotificationRequest, v1.SendTestNotificationResponse]
+	testToken            *connect.Client[v1.TestTokenRequest, v1.TestTokenResponse]
 }
 
 // GetStatus calls notifier.v1.AdminService.GetStatus.
@@ -247,6 +259,11 @@ func (c *adminServiceClient) SendTestNotification(ctx context.Context, req *conn
 	return c.sendTestNotification.CallUnary(ctx, req)
 }
 
+// TestToken calls notifier.v1.AdminService.TestToken.
+func (c *adminServiceClient) TestToken(ctx context.Context, req *connect.Request[v1.TestTokenRequest]) (*connect.Response[v1.TestTokenResponse], error) {
+	return c.testToken.CallUnary(ctx, req)
+}
+
 // AdminServiceHandler is an implementation of the notifier.v1.AdminService service.
 type AdminServiceHandler interface {
 	GetStatus(context.Context, *connect.Request[v1.GetStatusRequest]) (*connect.Response[v1.GetStatusResponse], error)
@@ -263,6 +280,9 @@ type AdminServiceHandler interface {
 	UpdateToken(context.Context, *connect.Request[v1.UpdateTokenRequest]) (*connect.Response[v1.UpdateTokenResponse], error)
 	DeleteToken(context.Context, *connect.Request[v1.DeleteTokenRequest]) (*connect.Response[v1.DeleteTokenResponse], error)
 	SendTestNotification(context.Context, *connect.Request[v1.SendTestNotificationRequest]) (*connect.Response[v1.SendTestNotificationResponse], error)
+	// TestToken sends a test notification through a token, applying its prefix
+	// so the operator can see exactly what a producer's messages look like.
+	TestToken(context.Context, *connect.Request[v1.TestTokenRequest]) (*connect.Response[v1.TestTokenResponse], error)
 }
 
 // NewAdminServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -344,6 +364,12 @@ func NewAdminServiceHandler(svc AdminServiceHandler, opts ...connect.HandlerOpti
 		connect.WithSchema(adminServiceMethods.ByName("SendTestNotification")),
 		connect.WithHandlerOptions(opts...),
 	)
+	adminServiceTestTokenHandler := connect.NewUnaryHandler(
+		AdminServiceTestTokenProcedure,
+		svc.TestToken,
+		connect.WithSchema(adminServiceMethods.ByName("TestToken")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/notifier.v1.AdminService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case AdminServiceGetStatusProcedure:
@@ -370,6 +396,8 @@ func NewAdminServiceHandler(svc AdminServiceHandler, opts ...connect.HandlerOpti
 			adminServiceDeleteTokenHandler.ServeHTTP(w, r)
 		case AdminServiceSendTestNotificationProcedure:
 			adminServiceSendTestNotificationHandler.ServeHTTP(w, r)
+		case AdminServiceTestTokenProcedure:
+			adminServiceTestTokenHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -425,4 +453,8 @@ func (UnimplementedAdminServiceHandler) DeleteToken(context.Context, *connect.Re
 
 func (UnimplementedAdminServiceHandler) SendTestNotification(context.Context, *connect.Request[v1.SendTestNotificationRequest]) (*connect.Response[v1.SendTestNotificationResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("notifier.v1.AdminService.SendTestNotification is not implemented"))
+}
+
+func (UnimplementedAdminServiceHandler) TestToken(context.Context, *connect.Request[v1.TestTokenRequest]) (*connect.Response[v1.TestTokenResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("notifier.v1.AdminService.TestToken is not implemented"))
 }

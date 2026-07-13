@@ -135,3 +135,22 @@ func TestUpdateTokenChannelReassign(t *testing.T) {
 	_, err = client.UpdateToken(ctx, connect.NewRequest(&notifierv1.UpdateTokenRequest{Name: "t", Channel: "ghost"}))
 	assert.Equal(t, connect.CodeNotFound, connect.CodeOf(err))
 }
+
+// A per-token test send applies the token's prefix so operators see exactly
+// what a producer's messages look like.
+func TestTestToken(t *testing.T) {
+	client, bot := newAuthedClient(t, "test-admin-token")
+	ctx := context.Background()
+	_, err := client.CreateChannel(ctx, connect.NewRequest(&notifierv1.CreateChannelRequest{Name: "c", RoomId: "!r:x"}))
+	require.NoError(t, err)
+	_, err = client.CreateToken(ctx, connect.NewRequest(&notifierv1.CreateTokenRequest{Name: "sonarr", Channel: "c", Prefix: "📺"}))
+	require.NoError(t, err)
+
+	_, err = client.TestToken(ctx, connect.NewRequest(&notifierv1.TestTokenRequest{Name: "sonarr"}))
+	require.NoError(t, err)
+	require.Len(t, bot.sent, 1)
+	assert.Equal(t, "!r:x", bot.sent[0])
+
+	_, err = client.TestToken(ctx, connect.NewRequest(&notifierv1.TestTokenRequest{Name: "ghost"}))
+	assert.Equal(t, connect.CodeNotFound, connect.CodeOf(err))
+}

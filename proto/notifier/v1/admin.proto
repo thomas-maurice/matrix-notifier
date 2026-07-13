@@ -26,6 +26,9 @@ service AdminService {
   rpc DeleteToken(DeleteTokenRequest) returns (DeleteTokenResponse) {}
 
   rpc SendTestNotification(SendTestNotificationRequest) returns (SendTestNotificationResponse) {}
+  // TestToken sends a test notification through a token, applying its prefix
+  // so the operator can see exactly what a producer's messages look like.
+  rpc TestToken(TestTokenRequest) returns (TestTokenResponse) {}
 }
 
 message Channel {
@@ -160,3 +163,9 @@ message SendTestNotificationRequest {
 }
 
 message SendTestNotificationResponse {}
+
+message TestTokenRequest {
+  string name = 1;
+}
+
+message TestTokenResponse {}

@@ -220,6 +220,29 @@ func (s *Server) SendTestNotification(ctx context.Context, req *connect.Request[
 	return connect.NewResponse(&notifierv1.SendTestNotificationResponse{}), nil
 }
 
+// TestToken sends a test notification through a token — to its channel's
+// room, with its prefix applied — so the operator sees exactly what that
+// producer's messages will look like (emoji and all).
+func (s *Server) TestToken(ctx context.Context, req *connect.Request[notifierv1.TestTokenRequest]) (*connect.Response[notifierv1.TestTokenResponse], error) {
+	tok, err := s.store.GetToken(ctx, req.Msg.Name)
+	if err != nil {
+		return nil, storeError(err)
+	}
+	title := "Test notification"
+	if tok.Prefix != "" {
+		title = tok.Prefix + " " + title
+	}
+	err = s.bot.Send(ctx, tok.Channel.RoomID, notify.Notification{
+		Title:    title,
+		Body:     fmt.Sprintf("Sent via token `%s` at %s.", tok.Name, time.Now().Format(time.RFC3339)),
+		Priority: 5,
+	})
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+	return connect.NewResponse(&notifierv1.TestTokenResponse{}), nil
+}
+
 func (s *Server) protoChannel(ctx context.Context, ch store.Channel) *notifierv1.Channel {
 	joined, encrypted := s.bot.RoomStatus(ctx, ch.RoomID)
 	return &notifierv1.Channel{
