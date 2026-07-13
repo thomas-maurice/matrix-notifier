@@ -131,7 +131,7 @@ onMounted(refresh)
           </select>
         </div>
         <div class="col-md-2">
-          <input v-model="newPrefix" class="form-control" placeholder="prefix 📺" title="Prepended to notification titles" />
+          <input v-model="newPrefix" class="form-control" placeholder="prefix (optional)" title="Prepended to notification titles" />
         </div>
         <div class="col-md-2">
           <button class="btn btn-primary w-100" type="submit" :disabled="!channels.length">Create</button>

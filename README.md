@@ -249,16 +249,35 @@ go run -tags goolm ./dev/cmdclient -room "$(cat dev/.room_id)" -message '!notify
 go run -tags goolm ./dev/cmdclient -room "$(cat dev/.room_id)" -verify   # asserts mutual cross-signing
 ```
 
+## Sending from the CLI
+
+The binary doubles as a client for scripts and cron jobs:
+
+```sh
+export MATRIX_NOTIFIER_URL=https://notifier.example.org
+export MATRIX_NOTIFIER_TOKEN=mn_your-ingest-token
+matrix-notifier send -t "Backup done" "**42 GB** copied"
+echo "or pipe the body in" | matrix-notifier send -t "From cron"
+```
+
+`--url`/`--token` flags override the env vars; `--priority` sets the Gotify
+priority.
+
 ## Alertmanager receiver config
+
+The notifier speaks the Alertmanager webhook format natively — point a
+receiver straight at it (token in the URL):
 
 ```yaml
 receivers:
-  - name: matrix
+  - name: matrix-notifier
     webhook_configs:
-      - url: http://your-host:8686/alertmanager
-        http_config:
-          authorization:
-            credentials: mn_your-ingest-token
+      - url: https://notifier.example.org/alertmanager?token=mn_your-token
+        send_resolved: true
+route:
+  routes:
+    - receiver: matrix-notifier
+      continue: true   # also fall through to your other receivers
 ```
 
 ## CI
