@@ -56,7 +56,8 @@ export const api = {
   updateChannel: (name, chart) => call('UpdateChannel', { name, chart }),
   deleteChannel: (name) => call('DeleteChannel', { name }),
   listTokens: () => call('ListTokens'),
-  createToken: (name, kind, channel) => call('CreateToken', { name, kind, channel }),
+  createToken: (name, kind, channel, prefix) => call('CreateToken', { name, kind, channel, prefix }),
+  updateToken: (name, prefix) => call('UpdateToken', { name, prefix }),
   deleteToken: (name) => call('DeleteToken', { name }),
   sendTest: (channel) => call('SendTestNotification', { channel }),
 }

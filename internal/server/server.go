@@ -61,17 +61,19 @@ func New(log *slog.Logger, sender Sender, st *store.Store, charts *chart.Client)
 // chart is best-effort: its failure must never fail the webhook.
 func handleAlertmanager(st *store.Store, sender Sender, charts *chart.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		channel, err := st.ResolveToken(c.Request.Context(), presentedToken(c), store.KindAlertmanager)
+		token, err := st.ResolveToken(c.Request.Context(), presentedToken(c), store.KindAlertmanager)
 		if err != nil {
 			writeTokenError(c, err)
 			return
 		}
+		channel := &token.Channel
 		payload, err := alertmanager.ParsePayload(c.Request)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Bad Request", "errorCode": 400, "errorDescription": err.Error()})
 			return
 		}
 		n := alertmanager.Format(payload)
+		applyPrefix(&n, token.Prefix)
 
 		if channel.Chart && charts != nil {
 			if target := alertmanager.ChartTarget(payload); target != nil {
@@ -90,6 +92,19 @@ func handleAlertmanager(st *store.Store, sender Sender, charts *chart.Client) gi
 			return
 		}
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
+	}
+}
+
+// applyPrefix prepends the token's prefix to the notification title, or to
+// the body when there is no title.
+func applyPrefix(n *notify.Notification, prefix string) {
+	if prefix == "" {
+		return
+	}
+	if n.Title != "" {
+		n.Title = prefix + " " + n.Title
+	} else {
+		n.Body = prefix + " " + n.Body
 	}
 }
 
@@ -131,7 +146,7 @@ type responseFunc func(*gin.Context, notify.Notification)
 
 func handleIngest(st *store.Store, kind store.TokenKind, parse parseFunc, sender notify.Sender, respond responseFunc) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		channel, err := st.ResolveToken(c.Request.Context(), presentedToken(c), kind)
+		token, err := st.ResolveToken(c.Request.Context(), presentedToken(c), kind)
 		if err != nil {
 			writeTokenError(c, err)
 			return
@@ -141,8 +156,9 @@ func handleIngest(st *store.Store, kind store.TokenKind, parse parseFunc, sender
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Bad Request", "errorCode": 400, "errorDescription": err.Error()})
 			return
 		}
-		if err := sender.Send(c.Request.Context(), channel.RoomID, n); err != nil {
-			logging.From(c.Request.Context()).Error("failed to deliver notification", "channel", channel.Name, "error", err)
+		applyPrefix(&n, token.Prefix)
+		if err := sender.Send(c.Request.Context(), token.Channel.RoomID, n); err != nil {
+			logging.From(c.Request.Context()).Error("failed to deliver notification", "channel", token.Channel.Name, "error", err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error", "errorCode": 500, "errorDescription": err.Error()})
 			return
 		}

@@ -67,7 +67,7 @@ func TestAlertmanagerChartPath(t *testing.T) {
 	require.NoError(t, err)
 	_, err = st.CreateChannel(context.Background(), "charty", "!chart:x", true)
 	require.NoError(t, err)
-	tok, _, err := st.CreateToken(context.Background(), "t", store.KindAlertmanager, "charty")
+	tok, _, err := st.CreateToken(context.Background(), "t", store.KindAlertmanager, "charty", "")
 	require.NoError(t, err)
 	sender := &recordingSender{}
 	h := New(slog.New(slog.DiscardHandler), sender, st, chart.New(prom.URL))
@@ -95,7 +95,7 @@ func TestAlertmanagerChartRequiresAnnotation(t *testing.T) {
 	require.NoError(t, err)
 	_, err = st.CreateChannel(context.Background(), "charty", "!chart:x", true)
 	require.NoError(t, err)
-	tok, _, err := st.CreateToken(context.Background(), "t", store.KindAlertmanager, "charty")
+	tok, _, err := st.CreateToken(context.Background(), "t", store.KindAlertmanager, "charty", "")
 	require.NoError(t, err)
 	sender := &recordingSender{}
 	h := New(slog.New(slog.DiscardHandler), sender, st, chart.New("http://unreachable.invalid"))
@@ -117,7 +117,7 @@ func TestAlertmanagerChartFailureDegradesToText(t *testing.T) {
 	require.NoError(t, err)
 	_, err = st.CreateChannel(context.Background(), "charty", "!chart:x", true)
 	require.NoError(t, err)
-	tok, _, err := st.CreateToken(context.Background(), "t", store.KindAlertmanager, "charty")
+	tok, _, err := st.CreateToken(context.Background(), "t", store.KindAlertmanager, "charty", "")
 	require.NoError(t, err)
 	sender := &recordingSender{}
 	h := New(slog.New(slog.DiscardHandler), sender, st, chart.New("http://127.0.0.1:1"))
@@ -133,4 +133,35 @@ func TestAlertmanagerChartFailureDegradesToText(t *testing.T) {
 	require.Eventually(t, func() bool { return len(sender.Sent()) == 1 }, 5*time.Second, 20*time.Millisecond)
 	assert.Empty(t, sender.Images())
 	assert.Contains(t, sender.Sent()[0].n.Title, "FIRING:1")
+}
+
+// The token's prefix must show up on delivered notifications — on the title
+// when there is one, on the body otherwise.
+func TestTokenPrefixApplied(t *testing.T) {
+	st, err := store.Open(config.Database{Type: "sqlite", URI: ":memory:"})
+	require.NoError(t, err)
+	_, err = st.CreateChannel(context.Background(), "c", "!r:x", false)
+	require.NoError(t, err)
+	tok, _, err := st.CreateToken(context.Background(), "sonarr", store.KindGotify, "c", "📺")
+	require.NoError(t, err)
+	sender := &recordingSender{}
+	h := New(slog.New(slog.DiscardHandler), sender, st, nil)
+
+	req := httptest.NewRequest("POST", "/message", strings.NewReader(`{"title":"Episode grabbed","message":"body"}`))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Gotify-Key", tok)
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, req)
+	require.Equal(t, http.StatusOK, w.Code)
+	require.Len(t, sender.Sent(), 1)
+	assert.Equal(t, "📺 Episode grabbed", sender.Sent()[0].n.Title)
+
+	// Title-less message: prefix lands on the body instead of vanishing.
+	req = httptest.NewRequest("POST", "/message", strings.NewReader(`{"message":"no title"}`))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Gotify-Key", tok)
+	w = httptest.NewRecorder()
+	h.ServeHTTP(w, req)
+	require.Equal(t, http.StatusOK, w.Code)
+	assert.Equal(t, "📺 no title", sender.Sent()[1].n.Body)
 }

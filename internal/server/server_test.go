@@ -65,9 +65,9 @@ func newTestServer(t *testing.T) (*recordingSender, *store.Store, http.Handler, 
 	require.NoError(t, err)
 	_, err = st.CreateChannel(context.Background(), "alerts", "!room:example.org", false)
 	require.NoError(t, err)
-	gotifyToken, _, err := st.CreateToken(context.Background(), "gotify-only", store.KindGotify, "alerts")
+	gotifyToken, _, err := st.CreateToken(context.Background(), "gotify-only", store.KindGotify, "alerts", "")
 	require.NoError(t, err)
-	anyToken, _, err := st.CreateToken(context.Background(), "any-kind", store.KindAny, "alerts")
+	anyToken, _, err := st.CreateToken(context.Background(), "any-kind", store.KindAny, "alerts", "")
 	require.NoError(t, err)
 	sender := &recordingSender{}
 	return sender, st, New(slog.New(slog.DiscardHandler), sender, st, nil), gotifyToken, anyToken

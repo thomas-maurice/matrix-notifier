@@ -23,13 +23,13 @@ func TestAnyKindTokenWorksOnBothEndpoints(t *testing.T) {
 	ctx := context.Background()
 	_, err := st.CreateChannel(ctx, "c", "!r:x", false)
 	require.NoError(t, err)
-	tok, _, err := st.CreateToken(ctx, "t", KindAny, "c")
+	tok, _, err := st.CreateToken(ctx, "t", KindAny, "c", "")
 	require.NoError(t, err)
 
 	for _, kind := range []TokenKind{KindGotify, KindAlertmanager} {
-		ch, err := st.ResolveToken(ctx, tok, kind)
+		tok2, err := st.ResolveToken(ctx, tok, kind)
 		require.NoError(t, err, kind)
-		assert.Equal(t, "!r:x", ch.RoomID)
+		assert.Equal(t, "!r:x", tok2.Channel.RoomID)
 	}
 }
 
@@ -58,9 +58,9 @@ func TestDeleteChannelsForRoom(t *testing.T) {
 	require.NoError(t, err)
 	_, err = st.CreateChannel(ctx, "survivor", "!alive:x", false)
 	require.NoError(t, err)
-	_, _, err = st.CreateToken(ctx, "doomed-tok", KindAny, "doomed-a")
+	_, _, err = st.CreateToken(ctx, "doomed-tok", KindAny, "doomed-a", "")
 	require.NoError(t, err)
-	surviving, _, err := st.CreateToken(ctx, "survivor-tok", KindAny, "survivor")
+	surviving, _, err := st.CreateToken(ctx, "survivor-tok", KindAny, "survivor", "")
 	require.NoError(t, err)
 
 	deleted, err := st.DeleteChannelsForRoom(ctx, "!dead:x")
@@ -115,5 +115,27 @@ func TestUpdateChannelChart(t *testing.T) {
 	assert.False(t, ch.Chart)
 
 	_, err = st.UpdateChannelChart(ctx, "ghost", true)
+	assert.ErrorIs(t, err, ErrNotFound)
+}
+
+// A prefix must survive the round trip and be editable in place: producers
+// keep their credential while the operator restyles notifications.
+func TestTokenPrefix(t *testing.T) {
+	st := newTestStore(t)
+	ctx := context.Background()
+	_, err := st.CreateChannel(ctx, "c", "!r:x", false)
+	require.NoError(t, err)
+	plaintext, tok, err := st.CreateToken(ctx, "sonarr", KindGotify, "c", "📺")
+	require.NoError(t, err)
+	assert.Equal(t, "📺", tok.Prefix)
+
+	resolved, err := st.ResolveToken(ctx, plaintext, KindGotify)
+	require.NoError(t, err)
+	assert.Equal(t, "📺", resolved.Prefix)
+
+	updated, err := st.UpdateTokenPrefix(ctx, "sonarr", "🎬")
+	require.NoError(t, err)
+	assert.Equal(t, "🎬", updated.Prefix)
+	_, err = st.UpdateTokenPrefix(ctx, "ghost", "x")
 	assert.ErrorIs(t, err, ErrNotFound)
 }

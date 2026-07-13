@@ -18,6 +18,7 @@ import (
 	"connectrpc.com/connect"
 	"github.com/alexedwards/argon2id"
 	"github.com/spf13/cobra"
+	"golang.org/x/term"
 
 	"github.com/thomas-maurice/matrix-notifier/gen/notifier/v1/notifierv1connect"
 	"github.com/thomas-maurice/matrix-notifier/internal/api"
@@ -65,14 +66,25 @@ func main() {
 
 func hashToken(out io.Writer, in io.Reader, args []string) error {
 	var token string
-	if len(args) == 1 {
+	switch {
+	case len(args) == 1:
 		token = args[0]
-	} else {
-		raw, err := io.ReadAll(bufio.NewReader(in))
+	case term.IsTerminal(int(os.Stdin.Fd())):
+		// Interactive: prompt without echoing the token, return on Enter.
+		fmt.Fprint(os.Stderr, "Token: ")
+		raw, err := term.ReadPassword(int(os.Stdin.Fd()))
+		fmt.Fprintln(os.Stderr)
 		if err != nil {
-			return fmt.Errorf("reading token from stdin: %w", err)
+			return fmt.Errorf("reading token: %w", err)
 		}
 		token = strings.TrimSpace(string(raw))
+	default:
+		// Piped: first line is the token, no Ctrl-D required.
+		raw, err := bufio.NewReader(in).ReadString('\n')
+		if err != nil && err != io.EOF {
+			return fmt.Errorf("reading token from stdin: %w", err)
+		}
+		token = strings.TrimSpace(raw)
 	}
 	if token == "" {
 		return errors.New("empty token")

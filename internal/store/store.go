@@ -54,13 +54,15 @@ type Channel struct {
 // IngestToken authenticates notification producers and routes them to a
 // channel. Only the SHA-256 of the token is stored.
 type IngestToken struct {
-	ID         uint      `gorm:"primarykey"`
-	CreatedAt  time.Time `gorm:"not null"`
-	Name       string    `gorm:"uniqueIndex;not null"`
-	Kind       TokenKind `gorm:"not null;default:any"`
-	TokenHash  string    `gorm:"uniqueIndex;not null"`
-	ChannelID  uint      `gorm:"not null"`
-	Channel    Channel   `gorm:"constraint:OnDelete:RESTRICT"`
+	ID        uint      `gorm:"primarykey"`
+	CreatedAt time.Time `gorm:"not null"`
+	Name      string    `gorm:"uniqueIndex;not null"`
+	Kind      TokenKind `gorm:"not null;default:any"`
+	TokenHash string    `gorm:"uniqueIndex;not null"`
+	// Prefix is prepended to notification titles (e.g. an emoji per producer).
+	Prefix     string
+	ChannelID  uint    `gorm:"not null"`
+	Channel    Channel `gorm:"constraint:OnDelete:RESTRICT"`
 	LastUsedAt *time.Time
 }
 
@@ -200,7 +202,7 @@ func (s *Store) GetChannel(ctx context.Context, name string) (*Channel, error) {
 
 // CreateToken mints a new random ingest token for a channel and returns the
 // plaintext exactly once; only its hash is stored.
-func (s *Store) CreateToken(ctx context.Context, name string, kind TokenKind, channelName string) (string, *IngestToken, error) {
+func (s *Store) CreateToken(ctx context.Context, name string, kind TokenKind, channelName, prefix string) (string, *IngestToken, error) {
 	ch, err := s.GetChannel(ctx, channelName)
 	if err != nil {
 		return "", nil, err
@@ -214,6 +216,7 @@ func (s *Store) CreateToken(ctx context.Context, name string, kind TokenKind, ch
 		Name:      name,
 		Kind:      kind,
 		TokenHash: HashToken(plaintext),
+		Prefix:    prefix,
 		ChannelID: ch.ID,
 		Channel:   *ch,
 	}
@@ -244,9 +247,9 @@ func (s *Store) ListTokens(ctx context.Context) ([]IngestToken, error) {
 }
 
 // ResolveToken authenticates a presented ingest token for the given endpoint
-// kind and returns the channel it routes to. LastUsedAt is updated
-// best-effort.
-func (s *Store) ResolveToken(ctx context.Context, plaintext string, endpoint TokenKind) (*Channel, error) {
+// kind and returns the token with its channel preloaded. LastUsedAt is
+// updated best-effort.
+func (s *Store) ResolveToken(ctx context.Context, plaintext string, endpoint TokenKind) (*IngestToken, error) {
 	var tok IngestToken
 	err := s.db.WithContext(ctx).Preload("Channel").
 		Where("token_hash = ?", HashToken(plaintext)).First(&tok).Error
@@ -261,7 +264,24 @@ func (s *Store) ResolveToken(ctx context.Context, plaintext string, endpoint Tok
 	}
 	now := time.Now()
 	s.db.WithContext(ctx).Model(&IngestToken{}).Where("id = ?", tok.ID).Update("last_used_at", now)
-	return &tok.Channel, nil
+	return &tok, nil
+}
+
+// UpdateTokenPrefix changes a token's notification prefix in place, so
+// producers keep their credentials.
+func (s *Store) UpdateTokenPrefix(ctx context.Context, name, prefix string) (*IngestToken, error) {
+	res := s.db.WithContext(ctx).Model(&IngestToken{}).Where("name = ?", name).Update("prefix", prefix)
+	if res.Error != nil {
+		return nil, res.Error
+	}
+	if res.RowsAffected == 0 {
+		return nil, fmt.Errorf("token %q: %w", name, ErrNotFound)
+	}
+	var tok IngestToken
+	if err := s.db.WithContext(ctx).Preload("Channel").Where("name = ?", name).First(&tok).Error; err != nil {
+		return nil, err
+	}
+	return &tok, nil
 }
 
 // HashToken is the storage form of ingest tokens: they are high-entropy

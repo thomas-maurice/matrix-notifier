@@ -113,10 +113,12 @@ type Token struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Name  string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// any | gotify | alertmanager
-	Kind          string                 `protobuf:"bytes,2,opt,name=kind,proto3" json:"kind,omitempty"`
-	Channel       string                 `protobuf:"bytes,3,opt,name=channel,proto3" json:"channel,omitempty"`
-	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	LastUsedAt    *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=last_used_at,json=lastUsedAt,proto3" json:"last_used_at,omitempty"`
+	Kind       string                 `protobuf:"bytes,2,opt,name=kind,proto3" json:"kind,omitempty"`
+	Channel    string                 `protobuf:"bytes,3,opt,name=channel,proto3" json:"channel,omitempty"`
+	CreatedAt  *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	LastUsedAt *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=last_used_at,json=lastUsedAt,proto3" json:"last_used_at,omitempty"`
+	// Prepended to notification titles (e.g. an emoji per producer).
+	Prefix        string `protobuf:"bytes,6,opt,name=prefix,proto3" json:"prefix,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -184,6 +186,13 @@ func (x *Token) GetLastUsedAt() *timestamppb.Timestamp {
 		return x.LastUsedAt
 	}
 	return nil
+}
+
+func (x *Token) GetPrefix() string {
+	if x != nil {
+		return x.Prefix
+	}
+	return ""
 }
 
 // Room is a room the bot has joined, whether or not a channel maps to it.
@@ -999,6 +1008,7 @@ type CreateTokenRequest struct {
 	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	Kind          string                 `protobuf:"bytes,2,opt,name=kind,proto3" json:"kind,omitempty"`
 	Channel       string                 `protobuf:"bytes,3,opt,name=channel,proto3" json:"channel,omitempty"`
+	Prefix        string                 `protobuf:"bytes,4,opt,name=prefix,proto3" json:"prefix,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1050,6 +1060,13 @@ func (x *CreateTokenRequest) GetKind() string {
 func (x *CreateTokenRequest) GetChannel() string {
 	if x != nil {
 		return x.Channel
+	}
+	return ""
+}
+
+func (x *CreateTokenRequest) GetPrefix() string {
+	if x != nil {
+		return x.Prefix
 	}
 	return ""
 }
@@ -1107,6 +1124,102 @@ func (x *CreateTokenResponse) GetPlaintext() string {
 	return ""
 }
 
+type UpdateTokenRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Prefix        string                 `protobuf:"bytes,2,opt,name=prefix,proto3" json:"prefix,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpdateTokenRequest) Reset() {
+	*x = UpdateTokenRequest{}
+	mi := &file_notifier_v1_admin_proto_msgTypes[21]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateTokenRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateTokenRequest) ProtoMessage() {}
+
+func (x *UpdateTokenRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_notifier_v1_admin_proto_msgTypes[21]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateTokenRequest.ProtoReflect.Descriptor instead.
+func (*UpdateTokenRequest) Descriptor() ([]byte, []int) {
+	return file_notifier_v1_admin_proto_rawDescGZIP(), []int{21}
+}
+
+func (x *UpdateTokenRequest) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *UpdateTokenRequest) GetPrefix() string {
+	if x != nil {
+		return x.Prefix
+	}
+	return ""
+}
+
+type UpdateTokenResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Token         *Token                 `protobuf:"bytes,1,opt,name=token,proto3" json:"token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpdateTokenResponse) Reset() {
+	*x = UpdateTokenResponse{}
+	mi := &file_notifier_v1_admin_proto_msgTypes[22]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateTokenResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateTokenResponse) ProtoMessage() {}
+
+func (x *UpdateTokenResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_notifier_v1_admin_proto_msgTypes[22]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateTokenResponse.ProtoReflect.Descriptor instead.
+func (*UpdateTokenResponse) Descriptor() ([]byte, []int) {
+	return file_notifier_v1_admin_proto_rawDescGZIP(), []int{22}
+}
+
+func (x *UpdateTokenResponse) GetToken() *Token {
+	if x != nil {
+		return x.Token
+	}
+	return nil
+}
+
 type DeleteTokenRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
@@ -1116,7 +1229,7 @@ type DeleteTokenRequest struct {
 
 func (x *DeleteTokenRequest) Reset() {
 	*x = DeleteTokenRequest{}
-	mi := &file_notifier_v1_admin_proto_msgTypes[21]
+	mi := &file_notifier_v1_admin_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1128,7 +1241,7 @@ func (x *DeleteTokenRequest) String() string {
 func (*DeleteTokenRequest) ProtoMessage() {}
 
 func (x *DeleteTokenRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_notifier_v1_admin_proto_msgTypes[21]
+	mi := &file_notifier_v1_admin_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1141,7 +1254,7 @@ func (x *DeleteTokenRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteTokenRequest.ProtoReflect.Descriptor instead.
 func (*DeleteTokenRequest) Descriptor() ([]byte, []int) {
-	return file_notifier_v1_admin_proto_rawDescGZIP(), []int{21}
+	return file_notifier_v1_admin_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *DeleteTokenRequest) GetName() string {
@@ -1159,7 +1272,7 @@ type DeleteTokenResponse struct {
 
 func (x *DeleteTokenResponse) Reset() {
 	*x = DeleteTokenResponse{}
-	mi := &file_notifier_v1_admin_proto_msgTypes[22]
+	mi := &file_notifier_v1_admin_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1171,7 +1284,7 @@ func (x *DeleteTokenResponse) String() string {
 func (*DeleteTokenResponse) ProtoMessage() {}
 
 func (x *DeleteTokenResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_notifier_v1_admin_proto_msgTypes[22]
+	mi := &file_notifier_v1_admin_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1184,7 +1297,7 @@ func (x *DeleteTokenResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteTokenResponse.ProtoReflect.Descriptor instead.
 func (*DeleteTokenResponse) Descriptor() ([]byte, []int) {
-	return file_notifier_v1_admin_proto_rawDescGZIP(), []int{22}
+	return file_notifier_v1_admin_proto_rawDescGZIP(), []int{24}
 }
 
 type SendTestNotificationRequest struct {
@@ -1196,7 +1309,7 @@ type SendTestNotificationRequest struct {
 
 func (x *SendTestNotificationRequest) Reset() {
 	*x = SendTestNotificationRequest{}
-	mi := &file_notifier_v1_admin_proto_msgTypes[23]
+	mi := &file_notifier_v1_admin_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1208,7 +1321,7 @@ func (x *SendTestNotificationRequest) String() string {
 func (*SendTestNotificationRequest) ProtoMessage() {}
 
 func (x *SendTestNotificationRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_notifier_v1_admin_proto_msgTypes[23]
+	mi := &file_notifier_v1_admin_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1221,7 +1334,7 @@ func (x *SendTestNotificationRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SendTestNotificationRequest.ProtoReflect.Descriptor instead.
 func (*SendTestNotificationRequest) Descriptor() ([]byte, []int) {
-	return file_notifier_v1_admin_proto_rawDescGZIP(), []int{23}
+	return file_notifier_v1_admin_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *SendTestNotificationRequest) GetChannel() string {
@@ -1239,7 +1352,7 @@ type SendTestNotificationResponse struct {
 
 func (x *SendTestNotificationResponse) Reset() {
 	*x = SendTestNotificationResponse{}
-	mi := &file_notifier_v1_admin_proto_msgTypes[24]
+	mi := &file_notifier_v1_admin_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1251,7 +1364,7 @@ func (x *SendTestNotificationResponse) String() string {
 func (*SendTestNotificationResponse) ProtoMessage() {}
 
 func (x *SendTestNotificationResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_notifier_v1_admin_proto_msgTypes[24]
+	mi := &file_notifier_v1_admin_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1264,7 +1377,7 @@ func (x *SendTestNotificationResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SendTestNotificationResponse.ProtoReflect.Descriptor instead.
 func (*SendTestNotificationResponse) Descriptor() ([]byte, []int) {
-	return file_notifier_v1_admin_proto_rawDescGZIP(), []int{24}
+	return file_notifier_v1_admin_proto_rawDescGZIP(), []int{26}
 }
 
 var File_notifier_v1_admin_proto protoreflect.FileDescriptor
@@ -1279,7 +1392,7 @@ const file_notifier_v1_admin_proto_rawDesc = "" +
 	"created_at\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x12\x16\n" +
 	"\x06joined\x18\x04 \x01(\bR\x06joined\x12\x1c\n" +
 	"\tencrypted\x18\x05 \x01(\bR\tencrypted\x12\x14\n" +
-	"\x05chart\x18\x06 \x01(\bR\x05chart\"\xc2\x01\n" +
+	"\x05chart\x18\x06 \x01(\bR\x05chart\"\xda\x01\n" +
 	"\x05Token\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x12\n" +
 	"\x04kind\x18\x02 \x01(\tR\x04kind\x12\x18\n" +
@@ -1287,7 +1400,8 @@ const file_notifier_v1_admin_proto_rawDesc = "" +
 	"\n" +
 	"created_at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x12<\n" +
 	"\flast_used_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
-	"lastUsedAt\"k\n" +
+	"lastUsedAt\x12\x16\n" +
+	"\x06prefix\x18\x06 \x01(\tR\x06prefix\"k\n" +
 	"\x04Room\x12\x17\n" +
 	"\aroom_id\x18\x01 \x01(\tR\x06roomId\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x18\n" +
@@ -1328,20 +1442,26 @@ const file_notifier_v1_admin_proto_rawDesc = "" +
 	"\x15DeleteChannelResponse\"\x13\n" +
 	"\x11ListTokensRequest\"@\n" +
 	"\x12ListTokensResponse\x12*\n" +
-	"\x06tokens\x18\x01 \x03(\v2\x12.notifier.v1.TokenR\x06tokens\"V\n" +
+	"\x06tokens\x18\x01 \x03(\v2\x12.notifier.v1.TokenR\x06tokens\"n\n" +
 	"\x12CreateTokenRequest\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x12\n" +
 	"\x04kind\x18\x02 \x01(\tR\x04kind\x12\x18\n" +
-	"\achannel\x18\x03 \x01(\tR\achannel\"]\n" +
+	"\achannel\x18\x03 \x01(\tR\achannel\x12\x16\n" +
+	"\x06prefix\x18\x04 \x01(\tR\x06prefix\"]\n" +
 	"\x13CreateTokenResponse\x12(\n" +
 	"\x05token\x18\x01 \x01(\v2\x12.notifier.v1.TokenR\x05token\x12\x1c\n" +
-	"\tplaintext\x18\x02 \x01(\tR\tplaintext\"(\n" +
+	"\tplaintext\x18\x02 \x01(\tR\tplaintext\"@\n" +
+	"\x12UpdateTokenRequest\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12\x16\n" +
+	"\x06prefix\x18\x02 \x01(\tR\x06prefix\"?\n" +
+	"\x13UpdateTokenResponse\x12(\n" +
+	"\x05token\x18\x01 \x01(\v2\x12.notifier.v1.TokenR\x05token\"(\n" +
 	"\x12DeleteTokenRequest\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\"\x15\n" +
 	"\x13DeleteTokenResponse\"7\n" +
 	"\x1bSendTestNotificationRequest\x12\x18\n" +
 	"\achannel\x18\x01 \x01(\tR\achannel\"\x1e\n" +
-	"\x1cSendTestNotificationResponse2\xc5\a\n" +
+	"\x1cSendTestNotificationResponse2\x99\b\n" +
 	"\fAdminService\x12L\n" +
 	"\tGetStatus\x12\x1d.notifier.v1.GetStatusRequest\x1a\x1e.notifier.v1.GetStatusResponse\"\x00\x12U\n" +
 	"\fListChannels\x12 .notifier.v1.ListChannelsRequest\x1a!.notifier.v1.ListChannelsResponse\"\x00\x12L\n" +
@@ -1353,6 +1473,7 @@ const file_notifier_v1_admin_proto_rawDesc = "" +
 	"\n" +
 	"ListTokens\x12\x1e.notifier.v1.ListTokensRequest\x1a\x1f.notifier.v1.ListTokensResponse\"\x00\x12R\n" +
 	"\vCreateToken\x12\x1f.notifier.v1.CreateTokenRequest\x1a .notifier.v1.CreateTokenResponse\"\x00\x12R\n" +
+	"\vUpdateToken\x12\x1f.notifier.v1.UpdateTokenRequest\x1a .notifier.v1.UpdateTokenResponse\"\x00\x12R\n" +
 	"\vDeleteToken\x12\x1f.notifier.v1.DeleteTokenRequest\x1a .notifier.v1.DeleteTokenResponse\"\x00\x12m\n" +
 	"\x14SendTestNotification\x12(.notifier.v1.SendTestNotificationRequest\x1a).notifier.v1.SendTestNotificationResponse\"\x00BFZDgithub.com/thomas-maurice/matrix-notifier/gen/notifier/v1;notifierv1b\x06proto3"
 
@@ -1368,7 +1489,7 @@ func file_notifier_v1_admin_proto_rawDescGZIP() []byte {
 	return file_notifier_v1_admin_proto_rawDescData
 }
 
-var file_notifier_v1_admin_proto_msgTypes = make([]protoimpl.MessageInfo, 25)
+var file_notifier_v1_admin_proto_msgTypes = make([]protoimpl.MessageInfo, 27)
 var file_notifier_v1_admin_proto_goTypes = []any{
 	(*Channel)(nil),                      // 0: notifier.v1.Channel
 	(*Token)(nil),                        // 1: notifier.v1.Token
@@ -1391,50 +1512,55 @@ var file_notifier_v1_admin_proto_goTypes = []any{
 	(*ListTokensResponse)(nil),           // 18: notifier.v1.ListTokensResponse
 	(*CreateTokenRequest)(nil),           // 19: notifier.v1.CreateTokenRequest
 	(*CreateTokenResponse)(nil),          // 20: notifier.v1.CreateTokenResponse
-	(*DeleteTokenRequest)(nil),           // 21: notifier.v1.DeleteTokenRequest
-	(*DeleteTokenResponse)(nil),          // 22: notifier.v1.DeleteTokenResponse
-	(*SendTestNotificationRequest)(nil),  // 23: notifier.v1.SendTestNotificationRequest
-	(*SendTestNotificationResponse)(nil), // 24: notifier.v1.SendTestNotificationResponse
-	(*timestamppb.Timestamp)(nil),        // 25: google.protobuf.Timestamp
+	(*UpdateTokenRequest)(nil),           // 21: notifier.v1.UpdateTokenRequest
+	(*UpdateTokenResponse)(nil),          // 22: notifier.v1.UpdateTokenResponse
+	(*DeleteTokenRequest)(nil),           // 23: notifier.v1.DeleteTokenRequest
+	(*DeleteTokenResponse)(nil),          // 24: notifier.v1.DeleteTokenResponse
+	(*SendTestNotificationRequest)(nil),  // 25: notifier.v1.SendTestNotificationRequest
+	(*SendTestNotificationResponse)(nil), // 26: notifier.v1.SendTestNotificationResponse
+	(*timestamppb.Timestamp)(nil),        // 27: google.protobuf.Timestamp
 }
 var file_notifier_v1_admin_proto_depIdxs = []int32{
-	25, // 0: notifier.v1.Channel.created_at:type_name -> google.protobuf.Timestamp
-	25, // 1: notifier.v1.Token.created_at:type_name -> google.protobuf.Timestamp
-	25, // 2: notifier.v1.Token.last_used_at:type_name -> google.protobuf.Timestamp
+	27, // 0: notifier.v1.Channel.created_at:type_name -> google.protobuf.Timestamp
+	27, // 1: notifier.v1.Token.created_at:type_name -> google.protobuf.Timestamp
+	27, // 2: notifier.v1.Token.last_used_at:type_name -> google.protobuf.Timestamp
 	2,  // 3: notifier.v1.ListRoomsResponse.rooms:type_name -> notifier.v1.Room
-	25, // 4: notifier.v1.GetStatusResponse.last_sync:type_name -> google.protobuf.Timestamp
+	27, // 4: notifier.v1.GetStatusResponse.last_sync:type_name -> google.protobuf.Timestamp
 	0,  // 5: notifier.v1.ListChannelsResponse.channels:type_name -> notifier.v1.Channel
 	0,  // 6: notifier.v1.CreateChannelResponse.channel:type_name -> notifier.v1.Channel
 	0,  // 7: notifier.v1.UpdateChannelResponse.channel:type_name -> notifier.v1.Channel
 	1,  // 8: notifier.v1.ListTokensResponse.tokens:type_name -> notifier.v1.Token
 	1,  // 9: notifier.v1.CreateTokenResponse.token:type_name -> notifier.v1.Token
-	7,  // 10: notifier.v1.AdminService.GetStatus:input_type -> notifier.v1.GetStatusRequest
-	9,  // 11: notifier.v1.AdminService.ListChannels:input_type -> notifier.v1.ListChannelsRequest
-	3,  // 12: notifier.v1.AdminService.ListRooms:input_type -> notifier.v1.ListRoomsRequest
-	5,  // 13: notifier.v1.AdminService.LeaveRoom:input_type -> notifier.v1.LeaveRoomRequest
-	11, // 14: notifier.v1.AdminService.CreateChannel:input_type -> notifier.v1.CreateChannelRequest
-	13, // 15: notifier.v1.AdminService.UpdateChannel:input_type -> notifier.v1.UpdateChannelRequest
-	15, // 16: notifier.v1.AdminService.DeleteChannel:input_type -> notifier.v1.DeleteChannelRequest
-	17, // 17: notifier.v1.AdminService.ListTokens:input_type -> notifier.v1.ListTokensRequest
-	19, // 18: notifier.v1.AdminService.CreateToken:input_type -> notifier.v1.CreateTokenRequest
-	21, // 19: notifier.v1.AdminService.DeleteToken:input_type -> notifier.v1.DeleteTokenRequest
-	23, // 20: notifier.v1.AdminService.SendTestNotification:input_type -> notifier.v1.SendTestNotificationRequest
-	8,  // 21: notifier.v1.AdminService.GetStatus:output_type -> notifier.v1.GetStatusResponse
-	10, // 22: notifier.v1.AdminService.ListChannels:output_type -> notifier.v1.ListChannelsResponse
-	4,  // 23: notifier.v1.AdminService.ListRooms:output_type -> notifier.v1.ListRoomsResponse
-	6,  // 24: notifier.v1.AdminService.LeaveRoom:output_type -> notifier.v1.LeaveRoomResponse
-	12, // 25: notifier.v1.AdminService.CreateChannel:output_type -> notifier.v1.CreateChannelResponse
-	14, // 26: notifier.v1.AdminService.UpdateChannel:output_type -> notifier.v1.UpdateChannelResponse
-	16, // 27: notifier.v1.AdminService.DeleteChannel:output_type -> notifier.v1.DeleteChannelResponse
-	18, // 28: notifier.v1.AdminService.ListTokens:output_type -> notifier.v1.ListTokensResponse
-	20, // 29: notifier.v1.AdminService.CreateToken:output_type -> notifier.v1.CreateTokenResponse
-	22, // 30: notifier.v1.AdminService.DeleteToken:output_type -> notifier.v1.DeleteTokenResponse
-	24, // 31: notifier.v1.AdminService.SendTestNotification:output_type -> notifier.v1.SendTestNotificationResponse
-	21, // [21:32] is the sub-list for method output_type
-	10, // [10:21] is the sub-list for method input_type
-	10, // [10:10] is the sub-list for extension type_name
-	10, // [10:10] is the sub-list for extension extendee
-	0,  // [0:10] is the sub-list for field type_name
+	1,  // 10: notifier.v1.UpdateTokenResponse.token:type_name -> notifier.v1.Token
+	7,  // 11: notifier.v1.AdminService.GetStatus:input_type -> notifier.v1.GetStatusRequest
+	9,  // 12: notifier.v1.AdminService.ListChannels:input_type -> notifier.v1.ListChannelsRequest
+	3,  // 13: notifier.v1.AdminService.ListRooms:input_type -> notifier.v1.ListRoomsRequest
+	5,  // 14: notifier.v1.AdminService.LeaveRoom:input_type -> notifier.v1.LeaveRoomRequest
+	11, // 15: notifier.v1.AdminService.CreateChannel:input_type -> notifier.v1.CreateChannelRequest
+	13, // 16: notifier.v1.AdminService.UpdateChannel:input_type -> notifier.v1.UpdateChannelRequest
+	15, // 17: notifier.v1.AdminService.DeleteChannel:input_type -> notifier.v1.DeleteChannelRequest
+	17, // 18: notifier.v1.AdminService.ListTokens:input_type -> notifier.v1.ListTokensRequest
+	19, // 19: notifier.v1.AdminService.CreateToken:input_type -> notifier.v1.CreateTokenRequest
+	21, // 20: notifier.v1.AdminService.UpdateToken:input_type -> notifier.v1.UpdateTokenRequest
+	23, // 21: notifier.v1.AdminService.DeleteToken:input_type -> notifier.v1.DeleteTokenRequest
+	25, // 22: notifier.v1.AdminService.SendTestNotification:input_type -> notifier.v1.SendTestNotificationRequest
+	8,  // 23: notifier.v1.AdminService.GetStatus:output_type -> notifier.v1.GetStatusResponse
+	10, // 24: notifier.v1.AdminService.ListChannels:output_type -> notifier.v1.ListChannelsResponse
+	4,  // 25: notifier.v1.AdminService.ListRooms:output_type -> notifier.v1.ListRoomsResponse
+	6,  // 26: notifier.v1.AdminService.LeaveRoom:output_type -> notifier.v1.LeaveRoomResponse
+	12, // 27: notifier.v1.AdminService.CreateChannel:output_type -> notifier.v1.CreateChannelResponse
+	14, // 28: notifier.v1.AdminService.UpdateChannel:output_type -> notifier.v1.UpdateChannelResponse
+	16, // 29: notifier.v1.AdminService.DeleteChannel:output_type -> notifier.v1.DeleteChannelResponse
+	18, // 30: notifier.v1.AdminService.ListTokens:output_type -> notifier.v1.ListTokensResponse
+	20, // 31: notifier.v1.AdminService.CreateToken:output_type -> notifier.v1.CreateTokenResponse
+	22, // 32: notifier.v1.AdminService.UpdateToken:output_type -> notifier.v1.UpdateTokenResponse
+	24, // 33: notifier.v1.AdminService.DeleteToken:output_type -> notifier.v1.DeleteTokenResponse
+	26, // 34: notifier.v1.AdminService.SendTestNotification:output_type -> notifier.v1.SendTestNotificationResponse
+	23, // [23:35] is the sub-list for method output_type
+	11, // [11:23] is the sub-list for method input_type
+	11, // [11:11] is the sub-list for extension type_name
+	11, // [11:11] is the sub-list for extension extendee
+	0,  // [0:11] is the sub-list for field type_name
 }
 
 func init() { file_notifier_v1_admin_proto_init() }
@@ -1448,7 +1574,7 @@ func file_notifier_v1_admin_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_notifier_v1_admin_proto_rawDesc), len(file_notifier_v1_admin_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   25,
+			NumMessages:   27,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

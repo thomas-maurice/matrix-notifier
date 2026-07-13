@@ -174,7 +174,7 @@ func (s *Server) CreateToken(ctx context.Context, req *connect.Request[notifierv
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
-	plaintext, tok, err := s.store.CreateToken(ctx, req.Msg.Name, kind, req.Msg.Channel)
+	plaintext, tok, err := s.store.CreateToken(ctx, req.Msg.Name, kind, req.Msg.Channel, req.Msg.Prefix)
 	if err != nil {
 		return nil, storeError(err)
 	}
@@ -182,6 +182,19 @@ func (s *Server) CreateToken(ctx context.Context, req *connect.Request[notifierv
 		Token:     protoToken(*tok),
 		Plaintext: plaintext,
 	}), nil
+}
+
+// UpdateToken changes a token's notification prefix without re-minting the
+// credential producers already hold.
+func (s *Server) UpdateToken(ctx context.Context, req *connect.Request[notifierv1.UpdateTokenRequest]) (*connect.Response[notifierv1.UpdateTokenResponse], error) {
+	if req.Msg.Name == "" {
+		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("name is required"))
+	}
+	tok, err := s.store.UpdateTokenPrefix(ctx, req.Msg.Name, req.Msg.Prefix)
+	if err != nil {
+		return nil, storeError(err)
+	}
+	return connect.NewResponse(&notifierv1.UpdateTokenResponse{Token: protoToken(*tok)}), nil
 }
 
 func (s *Server) DeleteToken(ctx context.Context, req *connect.Request[notifierv1.DeleteTokenRequest]) (*connect.Response[notifierv1.DeleteTokenResponse], error) {
@@ -224,6 +237,7 @@ func protoToken(tok store.IngestToken) *notifierv1.Token {
 		Name:      tok.Name,
 		Kind:      string(tok.Kind),
 		Channel:   tok.Channel.Name,
+		Prefix:    tok.Prefix,
 		CreatedAt: timestamppb.New(tok.CreatedAt),
 	}
 	if tok.LastUsedAt != nil {

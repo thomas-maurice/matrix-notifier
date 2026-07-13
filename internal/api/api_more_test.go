@@ -97,3 +97,20 @@ func TestUpdateChannelTogglesChart(t *testing.T) {
 	_, err = client.UpdateChannel(ctx, connect.NewRequest(&notifierv1.UpdateChannelRequest{Name: "ghost", Chart: true}))
 	assert.Equal(t, connect.CodeNotFound, connect.CodeOf(err))
 }
+
+func TestTokenPrefixLifecycle(t *testing.T) {
+	client, _ := newAuthedClient(t, "test-admin-token")
+	ctx := context.Background()
+	_, err := client.CreateChannel(ctx, connect.NewRequest(&notifierv1.CreateChannelRequest{Name: "c", RoomId: "!r:x"}))
+	require.NoError(t, err)
+	created, err := client.CreateToken(ctx, connect.NewRequest(&notifierv1.CreateTokenRequest{Name: "sonarr", Channel: "c", Prefix: "📺"}))
+	require.NoError(t, err)
+	assert.Equal(t, "📺", created.Msg.Token.Prefix)
+
+	updated, err := client.UpdateToken(ctx, connect.NewRequest(&notifierv1.UpdateTokenRequest{Name: "sonarr", Prefix: "🎬"}))
+	require.NoError(t, err)
+	assert.Equal(t, "🎬", updated.Msg.Token.Prefix)
+
+	_, err = client.UpdateToken(ctx, connect.NewRequest(&notifierv1.UpdateTokenRequest{Name: "ghost", Prefix: "x"}))
+	assert.Equal(t, connect.CodeNotFound, connect.CodeOf(err))
+}

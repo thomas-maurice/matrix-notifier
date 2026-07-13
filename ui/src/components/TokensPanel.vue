@@ -9,6 +9,7 @@ const minted = ref(null)
 const newName = ref('')
 const newKind = ref('any')
 const newChannel = ref('')
+const newPrefix = ref('')
 
 async function refresh() {
   try {
@@ -26,9 +27,22 @@ async function create() {
   error.value = ''
   minted.value = null
   try {
-    const resp = await api.createToken(newName.value.trim(), newKind.value, newChannel.value)
+    const resp = await api.createToken(newName.value.trim(), newKind.value, newChannel.value, newPrefix.value.trim())
     minted.value = resp
     newName.value = ''
+    newPrefix.value = ''
+    await refresh()
+  } catch (e) {
+    error.value = e.message
+  }
+}
+
+async function editPrefix(tok) {
+  const prefix = prompt(`Notification prefix for "${tok.name}" (emoji or short text, empty to clear):`, tok.prefix || '')
+  if (prefix === null) return
+  error.value = ''
+  try {
+    await api.updateToken(tok.name, prefix.trim())
     await refresh()
   } catch (e) {
     error.value = e.message
@@ -71,8 +85,8 @@ onMounted(refresh)
     <div class="card-header"><i class="fa-solid fa-plus me-2"></i>New token</div>
     <div class="card-body">
       <form class="row g-2" @submit.prevent="create">
-        <div class="col-md-4">
-          <input v-model="newName" class="form-control" placeholder="name (e.g. prometheus)" required />
+        <div class="col-md-3">
+          <input v-model="newName" class="form-control" placeholder="name (e.g. sonarr)" required />
         </div>
         <div class="col-md-3">
           <select v-model="newKind" class="form-select">
@@ -81,10 +95,13 @@ onMounted(refresh)
             <option value="alertmanager">alertmanager only</option>
           </select>
         </div>
-        <div class="col-md-3">
+        <div class="col-md-2">
           <select v-model="newChannel" class="form-select" required>
             <option v-for="ch in channels" :key="ch.name" :value="ch.name">{{ ch.name }}</option>
           </select>
+        </div>
+        <div class="col-md-2">
+          <input v-model="newPrefix" class="form-control" placeholder="prefix 📺" title="Prepended to notification titles" />
         </div>
         <div class="col-md-2">
           <button class="btn btn-primary w-100" type="submit" :disabled="!channels.length">Create</button>
@@ -99,13 +116,18 @@ onMounted(refresh)
     <div class="card-body p-0">
       <table class="table mb-0 align-middle">
         <thead>
-          <tr><th class="ps-3">Name</th><th>Kind</th><th>Channel</th><th>Created</th><th>Last used</th><th class="text-end pe-3"></th></tr>
+          <tr><th class="ps-3">Name</th><th>Kind</th><th>Channel</th><th>Prefix</th><th>Created</th><th>Last used</th><th class="text-end pe-3"></th></tr>
         </thead>
         <tbody>
           <tr v-for="tok in tokens" :key="tok.name">
             <td class="ps-3">{{ tok.name }}</td>
             <td><span class="badge text-bg-secondary">{{ tok.kind }}</span></td>
             <td>{{ tok.channel }}</td>
+            <td>
+              <button class="btn btn-sm btn-outline-secondary" title="Edit prefix" @click="editPrefix(tok)">
+                {{ tok.prefix || '—' }} <i class="fa-solid fa-pen ms-1 small"></i>
+              </button>
+            </td>
             <td class="text-secondary">{{ fmtDate(tok.createdAt) }}</td>
             <td class="text-secondary">{{ fmtDate(tok.lastUsedAt) }}</td>
             <td class="text-end pe-3">
@@ -115,7 +137,7 @@ onMounted(refresh)
             </td>
           </tr>
           <tr v-if="!tokens.length">
-            <td colspan="6" class="text-center text-secondary py-3">No tokens yet</td>
+            <td colspan="7" class="text-center text-secondary py-3">No tokens yet</td>
           </tr>
         </tbody>
       </table>

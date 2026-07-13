@@ -56,6 +56,9 @@ const (
 	// AdminServiceCreateTokenProcedure is the fully-qualified name of the AdminService's CreateToken
 	// RPC.
 	AdminServiceCreateTokenProcedure = "/notifier.v1.AdminService/CreateToken"
+	// AdminServiceUpdateTokenProcedure is the fully-qualified name of the AdminService's UpdateToken
+	// RPC.
+	AdminServiceUpdateTokenProcedure = "/notifier.v1.AdminService/UpdateToken"
 	// AdminServiceDeleteTokenProcedure is the fully-qualified name of the AdminService's DeleteToken
 	// RPC.
 	AdminServiceDeleteTokenProcedure = "/notifier.v1.AdminService/DeleteToken"
@@ -77,6 +80,7 @@ type AdminServiceClient interface {
 	DeleteChannel(context.Context, *connect.Request[v1.DeleteChannelRequest]) (*connect.Response[v1.DeleteChannelResponse], error)
 	ListTokens(context.Context, *connect.Request[v1.ListTokensRequest]) (*connect.Response[v1.ListTokensResponse], error)
 	CreateToken(context.Context, *connect.Request[v1.CreateTokenRequest]) (*connect.Response[v1.CreateTokenResponse], error)
+	UpdateToken(context.Context, *connect.Request[v1.UpdateTokenRequest]) (*connect.Response[v1.UpdateTokenResponse], error)
 	DeleteToken(context.Context, *connect.Request[v1.DeleteTokenRequest]) (*connect.Response[v1.DeleteTokenResponse], error)
 	SendTestNotification(context.Context, *connect.Request[v1.SendTestNotificationRequest]) (*connect.Response[v1.SendTestNotificationResponse], error)
 }
@@ -146,6 +150,12 @@ func NewAdminServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 			connect.WithSchema(adminServiceMethods.ByName("CreateToken")),
 			connect.WithClientOptions(opts...),
 		),
+		updateToken: connect.NewClient[v1.UpdateTokenRequest, v1.UpdateTokenResponse](
+			httpClient,
+			baseURL+AdminServiceUpdateTokenProcedure,
+			connect.WithSchema(adminServiceMethods.ByName("UpdateToken")),
+			connect.WithClientOptions(opts...),
+		),
 		deleteToken: connect.NewClient[v1.DeleteTokenRequest, v1.DeleteTokenResponse](
 			httpClient,
 			baseURL+AdminServiceDeleteTokenProcedure,
@@ -172,6 +182,7 @@ type adminServiceClient struct {
 	deleteChannel        *connect.Client[v1.DeleteChannelRequest, v1.DeleteChannelResponse]
 	listTokens           *connect.Client[v1.ListTokensRequest, v1.ListTokensResponse]
 	createToken          *connect.Client[v1.CreateTokenRequest, v1.CreateTokenResponse]
+	updateToken          *connect.Client[v1.UpdateTokenRequest, v1.UpdateTokenResponse]
 	deleteToken          *connect.Client[v1.DeleteTokenRequest, v1.DeleteTokenResponse]
 	sendTestNotification *connect.Client[v1.SendTestNotificationRequest, v1.SendTestNotificationResponse]
 }
@@ -221,6 +232,11 @@ func (c *adminServiceClient) CreateToken(ctx context.Context, req *connect.Reque
 	return c.createToken.CallUnary(ctx, req)
 }
 
+// UpdateToken calls notifier.v1.AdminService.UpdateToken.
+func (c *adminServiceClient) UpdateToken(ctx context.Context, req *connect.Request[v1.UpdateTokenRequest]) (*connect.Response[v1.UpdateTokenResponse], error) {
+	return c.updateToken.CallUnary(ctx, req)
+}
+
 // DeleteToken calls notifier.v1.AdminService.DeleteToken.
 func (c *adminServiceClient) DeleteToken(ctx context.Context, req *connect.Request[v1.DeleteTokenRequest]) (*connect.Response[v1.DeleteTokenResponse], error) {
 	return c.deleteToken.CallUnary(ctx, req)
@@ -244,6 +260,7 @@ type AdminServiceHandler interface {
 	DeleteChannel(context.Context, *connect.Request[v1.DeleteChannelRequest]) (*connect.Response[v1.DeleteChannelResponse], error)
 	ListTokens(context.Context, *connect.Request[v1.ListTokensRequest]) (*connect.Response[v1.ListTokensResponse], error)
 	CreateToken(context.Context, *connect.Request[v1.CreateTokenRequest]) (*connect.Response[v1.CreateTokenResponse], error)
+	UpdateToken(context.Context, *connect.Request[v1.UpdateTokenRequest]) (*connect.Response[v1.UpdateTokenResponse], error)
 	DeleteToken(context.Context, *connect.Request[v1.DeleteTokenRequest]) (*connect.Response[v1.DeleteTokenResponse], error)
 	SendTestNotification(context.Context, *connect.Request[v1.SendTestNotificationRequest]) (*connect.Response[v1.SendTestNotificationResponse], error)
 }
@@ -309,6 +326,12 @@ func NewAdminServiceHandler(svc AdminServiceHandler, opts ...connect.HandlerOpti
 		connect.WithSchema(adminServiceMethods.ByName("CreateToken")),
 		connect.WithHandlerOptions(opts...),
 	)
+	adminServiceUpdateTokenHandler := connect.NewUnaryHandler(
+		AdminServiceUpdateTokenProcedure,
+		svc.UpdateToken,
+		connect.WithSchema(adminServiceMethods.ByName("UpdateToken")),
+		connect.WithHandlerOptions(opts...),
+	)
 	adminServiceDeleteTokenHandler := connect.NewUnaryHandler(
 		AdminServiceDeleteTokenProcedure,
 		svc.DeleteToken,
@@ -341,6 +364,8 @@ func NewAdminServiceHandler(svc AdminServiceHandler, opts ...connect.HandlerOpti
 			adminServiceListTokensHandler.ServeHTTP(w, r)
 		case AdminServiceCreateTokenProcedure:
 			adminServiceCreateTokenHandler.ServeHTTP(w, r)
+		case AdminServiceUpdateTokenProcedure:
+			adminServiceUpdateTokenHandler.ServeHTTP(w, r)
 		case AdminServiceDeleteTokenProcedure:
 			adminServiceDeleteTokenHandler.ServeHTTP(w, r)
 		case AdminServiceSendTestNotificationProcedure:
@@ -388,6 +413,10 @@ func (UnimplementedAdminServiceHandler) ListTokens(context.Context, *connect.Req
 
 func (UnimplementedAdminServiceHandler) CreateToken(context.Context, *connect.Request[v1.CreateTokenRequest]) (*connect.Response[v1.CreateTokenResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("notifier.v1.AdminService.CreateToken is not implemented"))
+}
+
+func (UnimplementedAdminServiceHandler) UpdateToken(context.Context, *connect.Request[v1.UpdateTokenRequest]) (*connect.Response[v1.UpdateTokenResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("notifier.v1.AdminService.UpdateToken is not implemented"))
 }
 
 func (UnimplementedAdminServiceHandler) DeleteToken(context.Context, *connect.Request[v1.DeleteTokenRequest]) (*connect.Response[v1.DeleteTokenResponse], error) {

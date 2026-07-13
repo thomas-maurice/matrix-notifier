@@ -22,6 +22,7 @@ service AdminService {
 
   rpc ListTokens(ListTokensRequest) returns (ListTokensResponse) {}
   rpc CreateToken(CreateTokenRequest) returns (CreateTokenResponse) {}
+  rpc UpdateToken(UpdateTokenRequest) returns (UpdateTokenResponse) {}
   rpc DeleteToken(DeleteTokenRequest) returns (DeleteTokenResponse) {}
 
   rpc SendTestNotification(SendTestNotificationRequest) returns (SendTestNotificationResponse) {}
@@ -46,6 +47,8 @@ message Token {
   string channel = 3;
   google.protobuf.Timestamp created_at = 4;
   google.protobuf.Timestamp last_used_at = 5;
+  // Prepended to notification titles (e.g. an emoji per producer).
+  string prefix = 6;
 }
 
 // Room is a room the bot has joined, whether or not a channel maps to it.
@@ -125,12 +128,22 @@ message CreateTokenRequest {
   string name = 1;
   string kind = 2;
   string channel = 3;
+  string prefix = 4;
 }
 
 message CreateTokenResponse {
   Token token = 1;
   // The plaintext token, returned exactly once. Only its hash is stored.
   string plaintext = 2;
+}
+
+message UpdateTokenRequest {
+  string name = 1;
+  string prefix = 2;
+}
+
+message UpdateTokenResponse {
+  Token token = 1;
 }
 
 message DeleteTokenRequest {
