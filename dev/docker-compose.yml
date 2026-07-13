@@ -1,0 +1,62 @@
+name: matrix-notifier-dev
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: synapse
+      POSTGRES_PASSWORD: synapse
+      POSTGRES_DB: synapse
+      # Synapse requires a C-locale, UTF8 database.
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U synapse"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+
+  synapse:
+    image: matrixdotorg/synapse:latest
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SYNAPSE_SERVER_NAME: localhost
+      SYNAPSE_REPORT_STATS: "no"
+    ports:
+      - "127.0.0.1:8008:8008"
+    volumes:
+      - ./synapse/data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8008/health')\""]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "127.0.0.1:9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+
+  element:
+    image: vectorim/element-web:latest
+    ports:
+      - "127.0.0.1:8009:80"
+    volumes:
+      - ./element-config.json:/app/config.json:ro
+
+  synapse-admin:
+    image: ghcr.io/etkecc/synapse-admin:latest
+    ports:
+      - "127.0.0.1:8010:8080"
+    volumes:
+      - ./synapse-admin-config.json:/var/public/config.json:ro
+
+volumes:
+  pgdata:

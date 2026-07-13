@@ -1,0 +1,40 @@
+# matrix-notifier configuration. All keys can be overridden with
+# MATRIX_NOTIFIER_* environment variables (e.g. MATRIX_NOTIFIER_MATRIX_PASSWORD,
+# MATRIX_NOTIFIER_ADMIN_TOKEN_HASH).
+
+# Address the HTTP server listens on (ingest + admin API + web UI).
+listen: ":8686"
+# debug | info | warn | error
+log_level: "info"
+# Holds the E2EE pickle key and the cross-signing recovery key. Back it up
+# together with the database.
+data_dir: "./data"
+
+matrix:
+  homeserver: "https://matrix.example.org"
+  user_id: "@notifier:example.org"
+  password: "bot-account-password"
+  # Homeservers whose users may invite the bot into rooms. Unset/empty =
+  # only the bot's own homeserver; federated invites are declined.
+  # allowed_servers: ["example.org", "friends.org"]
+
+database:
+  # sqlite | postgres — used by BOTH the E2EE crypto store and the
+  # channel/token store.
+  type: "sqlite"
+  # File path for sqlite, DSN for postgres:
+  # uri: "postgres://user:pass@host:5432/notifier?sslmode=disable"
+  uri: "./data/notifier.db"
+
+# argon2id hash of the admin API/UI token. Generate with:
+#   echo -n "your-admin-token" | matrix-notifier token hash
+# Prefer supplying it via MATRIX_NOTIFIER_ADMIN_TOKEN_HASH instead of the file.
+admin_token_hash: "$argon2id$v=19$m=65536,t=1,p=..."
+
+# Optional: enables Prometheus chart rendering for alertmanager
+# notifications on channels that opt in (chart flag). The chart is queried
+# from the alert's g0.expr and attached as an ENCRYPTED image.
+# prometheus_url: "http://prometheus:9090"
+
+# Channels (name -> Matrix room) and ingest tokens are NOT configured here:
+# manage them at runtime via the web UI at / or the Connect RPC admin API.

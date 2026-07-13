@@ -1,0 +1,21 @@
+version: "2"
+
+run:
+  build-tags:
+    - goolm
+
+linters:
+  settings:
+    errcheck:
+      exclude-functions:
+        # Idiomatic defer Close() on cleanup paths.
+        - (io.Closer).Close
+        - (*github.com/thomas-maurice/matrix-notifier/internal/matrix.Bot).Close
+        - (*maunium.net/go/mautrix/crypto/cryptohelper.CryptoHelper).Close
+        - fmt.Fprintln
+  exclusions:
+    rules:
+      # Test fakes and fixtures are allowed to drop errors.
+      - path: _test\.go
+        linters:
+          - errcheck

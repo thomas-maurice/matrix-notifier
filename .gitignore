@@ -1,0 +1,10 @@
+/bin/
+/data/
+/config.dev.yaml
+/config.yaml
+/dev/synapse/data/
+/dev/.room_id
+/dev/cmdclient.db*
+/ui/node_modules/
+/ui/dist/
+.DS_Store

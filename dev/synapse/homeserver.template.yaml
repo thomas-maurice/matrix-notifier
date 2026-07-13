@@ -1,0 +1,59 @@
+# Dev-only Synapse config for matrix-notifier. Copied over the generated
+# /data/homeserver.yaml by dev/bootstrap.sh — do not put secrets you care
+# about in here.
+server_name: "localhost"
+pid_file: /data/homeserver.pid
+public_baseurl: http://localhost:8008/
+
+listeners:
+  - port: 8008
+    tls: false
+    type: http
+    x_forwarded: true
+    resources:
+      - names: [client, federation]
+        compress: false
+
+database:
+  name: psycopg2
+  args:
+    user: synapse
+    password: synapse
+    database: synapse
+    host: postgres
+    cp_min: 5
+    cp_max: 10
+
+log_config: "/data/localhost.log.config"
+media_store_path: /data/media_store
+signing_key_path: "/data/localhost.signing.key"
+
+registration_shared_secret: "dev-registration-secret-not-for-production"
+macaroon_secret_key: "dev-macaroon-secret-not-for-production"
+form_secret: "dev-form-secret-not-for-production"
+
+enable_registration: false
+report_stats: false
+trusted_key_servers: []
+suppress_key_server_warning: true
+
+# Purge media blobs after their lifetime. Room retention deletes events (and
+# with them the E2EE attachment keys); this actually frees the disk.
+media_retention:
+  local_media_lifetime: 30d
+  remote_media_cache_lifetime: 14d
+
+# Keep dev snappy.
+rc_message:
+  per_second: 1000
+  burst_count: 1000
+rc_login:
+  address:
+    per_second: 1000
+    burst_count: 1000
+  account:
+    per_second: 1000
+    burst_count: 1000
+  failed_attempts:
+    per_second: 1000
+    burst_count: 1000

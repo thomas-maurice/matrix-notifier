@@ -1,0 +1,264 @@
+# matrix-notifier
+
+HTTP notification gateway that delivers to **end-to-end encrypted** Matrix
+rooms. It impersonates servers your tooling already knows how to talk to, so
+nothing needs a Matrix client:
+
+- **Gotify**: `POST /message` — accepts JSON, urlencoded and multipart forms,
+  tokens via `X-Gotify-Key`, `?token=`, or `Authorization: Bearer`. Message
+  bodies are rendered as markdown.
+- **Prometheus Alertmanager**: `POST /alertmanager` — webhook receiver
+  (payload v4), formatted with firing/resolved counts, severity, summaries
+  and generator links.
+
+Notifications are routed by **channels**: a channel maps a name to a Matrix
+room (ID or `#alias`, resolved at creation), and every ingest token belongs
+to a channel (optionally restricted to one endpoint kind). Channels and
+tokens live in the database and are managed at runtime through the **web
+UI** (served at `/`) or the **Connect RPC admin API**
+(`/notifier.v1.AdminService/...`) — never in the config file.
+
+## Prometheus charts
+
+Charts are double opt-in: the **channel** must have the chart flag, and the
+**alert rule** must carry a `chart: true` annotation — so a chart-capable
+channel doesn't graph every alert that passes through. When both match, the
+bot extracts the firing expression from the alert's `generatorURL`,
+range-queries `prometheus_url` (last 30 min, widened to the alert's start),
+renders a Grafana-style PNG, and delivers the notification as a **single
+message**: the chart with the alert text as its caption (MSC2530). The blob
+is an **encrypted attachment** (AES-CTR, key inside the megolm event — the
+server never sees the plot). Delivery is asynchronous and best-effort: if
+Prometheus is down or the query fails, the notification degrades to plain
+text; the webhook never waits and never fails because of a chart.
+
+```yaml
+# in your Prometheus alerting rule:
+annotations:
+  summary: "CPU above 90% for 10m"
+  chart: "true"
+```
+
+For expiring rooms note that Synapse's event retention does not delete media
+blobs — pair it with `media_retention` (the dev stack sets
+`local_media_lifetime: 30d`). Purged events take the attachment decryption
+keys with them, so expired charts are unreadable ciphertext either way.
+
+The bot logs in with password auth (stable device ID across restarts),
+bootstraps **cross-signing** on first run (recovery key persisted in
+`data_dir`), signs its own device — so it shows up verified — and refuses to
+send to a room that is not encrypted. If the sync loop dies fatally (revoked
+token), the process exits loudly; restarting it self-heals.
+
+## Interactive verification (green shield)
+
+The bot answers **SAS (emoji) verification**: hit "Verify user" in Element
+from any room member, the bot auto-accepts and confirms, and both sides
+cross-sign each other's master keys. The emojis are logged bot-side if you
+want to compare them. After that the bot shows the green shield for you (and
+you for it) permanently.
+
+## Admin API and UI
+
+Everything operational is driven over a Connect RPC service, authenticated
+with a single **admin token** checked against an argon2id hash:
+
+```sh
+# mint a token however you like, then hash it for the config:
+openssl rand -hex 24 | tee /dev/stderr | matrix-notifier token hash
+# → put the hash in admin_token_hash (or MATRIX_NOTIFIER_ADMIN_TOKEN_HASH)
+```
+
+The web UI (Vue 3 + Bootstrap, embedded in the binary, same listener) covers
+status (sync health, verification, per-channel joined/encrypted state,
+delivery counters), channel CRUD, token CRUD (plaintext shown exactly once)
+and test notifications. The API is plain Connect JSON — curl works:
+
+```sh
+curl -X POST http://localhost:8686/notifier.v1.AdminService/CreateChannel \
+  -H 'Authorization: Bearer <admin-token>' -H 'Content-Type: application/json' \
+  -d '{"name": "infra", "roomId": "!room:example.org"}'
+```
+
+Ingest tokens are random 256-bit values stored as SHA-256 (argon2 is
+deliberately reserved for the admin token: a KDF per alertmanager burst
+would be self-inflicted DoS).
+
+## Configuration
+
+See [config.example.yaml](config.example.yaml). One database (`sqlite` or
+`postgres`) holds both the E2EE crypto store and the channel/token store
+(GORM, auto-migrated). Every key can be overridden via `MATRIX_NOTIFIER_*`
+env vars.
+
+Operational flow: create an **encrypted** room, invite the bot (it joins on
+its own), map it to a channel in the UI (joined-but-unmapped rooms are
+offered as one-click suggestions), mint a token, point your producer at the
+endpoint.
+
+Auto-join is gated by inviter homeserver: invites from servers outside
+`matrix.allowed_servers` (default: the bot's own homeserver) are declined
+and logged, so federated strangers cannot pull the bot into rooms.
+
+## Room commands
+
+In any room it's joined to, the bot reacts to commands — only to messages
+that arrived **encrypted**, and only after it started (no backfill replay):
+
+- `!notify ping` — liveness check
+- `!notify status` — device, verification, delivery stats
+- `!notify test` — send a test notification to the current room
+- `!notify help` — command list
+
+## Identity, the recovery key, and resets
+
+On first start the bot generates the account's cross-signing keys and writes
+the **recovery key** to `<data_dir>/recovery.key`. That file is the bot's
+identity anchor: **back it up now** (password manager, vault — anywhere
+durable). Everything else is replaceable; this file is what makes a rebuilt
+bot *the same* bot. It is standard SSSS — Element accepts it as a Security
+Key for the bot's account.
+
+| What                        | Where                        | If lost                          |
+|-----------------------------|------------------------------|----------------------------------|
+| Recovery key                | `<data_dir>/recovery.key`    | see "lost everything" below      |
+| Pickle key (encrypts the DB)| `<data_dir>/pickle.key`      | crypto DB unusable — same as lost DB |
+| Crypto store (olm sessions) | the configured database      | recreated on start (new device)  |
+| Channels + tokens           | the configured database      | recreate via UI/API              |
+
+### Reset with the recovery key (crypto DB / pickle key / host lost)
+
+Nothing to do — this is automatic. Keep (or restore) `recovery.key` in
+`data_dir`, point the bot at an empty database, and start it. It logs in as
+a new device, fetches the cross-signing keys from the server using the
+recovery key, signs the new device, and comes up verified:
+
+```
+INFO logged in user_id=@notifier:... device_id=NEWDEVICE
+INFO device verified with existing recovery key
+```
+
+The Matrix identity is unchanged: clients keep trusting the bot, no shields
+turn red. Messages sent *before* the rebuild can no longer be decrypted by
+the bot (send-mostly, so nothing is affected in practice — commands only
+react to messages that arrive after startup anyway).
+
+The reverse mismatch is also guarded: if a `recovery.key` sits on disk but
+the server has **no** cross-signing keys (stale data dir pointed at a new or
+wiped server), the bot refuses to overwrite the file — move it away or run
+`--reset-identity` to state your intent.
+
+### Reset when you COMPLETELY lost everything (recovery key included)
+
+Without the recovery key the bot cannot prove it owns the existing
+cross-signing keys, and it will refuse to start:
+
+```
+cross-signing keys exist on the server but the recovery key is unavailable
+```
+
+The way out is to burn the old identity and mint a new one. Run **once**:
+
+```sh
+matrix-notifier --config config.yaml --reset-identity
+```
+
+This burns the old identity completely (everything authenticated with the
+bot's password):
+
+1. **Logs out every other device** of the account (`/delete_devices`): their
+   access tokens are revoked, their device keys removed, and they receive no
+   future megolm sessions.
+2. **Replaces the account's cross-signing keys** on the server, signs the
+   current device with the new keys.
+3. Writes a **new** `recovery.key`. Back that one up too, the old one is now
+   worthless.
+
+Consequences of a reset — this is why it's a flag and not automatic:
+
+- Anyone who verified the bot sees an identity change: Element shows the
+  classic "identity has changed" warning and the bot must be re-trusted.
+- Old encrypted history stays undecryptable for the bot. Room membership,
+  the account, and its password are untouched.
+- Nothing retroactively hides what a logged-in device already decrypted
+  while it was live; if the *password* itself is compromised, rotate it too
+  (the reset does not change it).
+
+Do **not** leave `--reset-identity` in a service unit / restart loop: every
+start would mint a fresh identity. Run it once, then start the bot normally.
+
+## Dev stack
+
+Requires Docker, `jq`, Go and Node. Ports published on localhost:
+
+| Service       | URL                     |
+|---------------|-------------------------|
+| Synapse       | `http://localhost:8008` |
+| Element Web   | `http://localhost:8009` |
+| synapse-admin | `http://localhost:8010` |
+| Prometheus    | `http://localhost:9090` |
+| Postgres      | `localhost:5432`        |
+| bot (UI+API+ingest) | `http://localhost:8686` |
+
+```sh
+make dev-up    # Synapse + Postgres + Element + synapse-admin, accounts, encrypted room, config.dev.yaml
+make run-dev   # build (UI included) and run the bot
+make dev-seed  # create a "notifications" channel + ingest token via the admin API
+make dev-down  # stop containers (state kept)
+make dev-nuke  # full reset: containers, volumes, keys, room, bot state
+```
+
+Dev credentials: Matrix admin `admin`/`admin` (Element + synapse-admin),
+bot admin token `dev-admin-token` (web UI at `http://localhost:8686`).
+
+Send a test notification with the token `make dev-seed` printed:
+
+```sh
+curl -X POST 'http://localhost:8686/message?token=mn_...' \
+  -F title='Hello' -F message='**It works!**' -F priority=5
+```
+
+To drive bot commands or SAS verification from the CLI through real E2EE:
+
+```sh
+go run -tags goolm ./dev/cmdclient -room "$(cat dev/.room_id)" -message '!notify status'
+go run -tags goolm ./dev/cmdclient -room "$(cat dev/.room_id)" -verify   # asserts mutual cross-signing
+```
+
+## Alertmanager receiver config
+
+```yaml
+receivers:
+  - name: matrix
+    webhook_configs:
+      - url: http://your-host:8686/alertmanager
+        http_config:
+          authorization:
+            credentials: mn_your-ingest-token
+```
+
+## CI
+
+GitHub Actions (mirroring `thomas-maurice/cortex`):
+
+- **test** — on every PR and non-master push: UI build + vitest, `go build`/`go vet`/golangci-lint/buf lint, `go test -race`.
+- **build** — on master pushes and `v*` tags: runs the test workflow, then
+  builds and pushes a multi-arch (amd64/arm64) image to
+  `ghcr.io/thomas-maurice/matrix-notifier` — `:latest` + `:sha-…` on master,
+  `:X.Y.Z`/`:X.Y` on tags.
+
+The Docker image runs as a non-root user with `/data` as the volume for
+`data_dir`; mount your config at `/config/config.yaml` (or override the
+command). CGO is required by the SQLite store, so cross-arch images compile
+under qemu.
+
+## Building
+
+mautrix-go's pure-Go olm implementation is behind a build tag; always build
+with `-tags goolm` (the Makefile does). The admin UI is built with Vite and
+embedded via `go:embed` — `make build` builds it automatically if missing;
+`make ui` rebuilds it explicitly. Regenerate the RPC stubs with `make proto`.
+
+```sh
+make build && make test
+```

@@ -1,0 +1,146 @@
+syntax = "proto3";
+
+package notifier.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/thomas-maurice/matrix-notifier/gen/notifier/v1;notifierv1";
+
+// AdminService manages channels, ingest tokens, and exposes bot health.
+// All RPCs require the admin bearer token.
+service AdminService {
+  rpc GetStatus(GetStatusRequest) returns (GetStatusResponse) {}
+
+  rpc ListChannels(ListChannelsRequest) returns (ListChannelsResponse) {}
+  rpc ListRooms(ListRoomsRequest) returns (ListRoomsResponse) {}
+  // LeaveRoom makes the bot leave (and forget) a room. Refused while a
+  // channel still maps to it.
+  rpc LeaveRoom(LeaveRoomRequest) returns (LeaveRoomResponse) {}
+  rpc CreateChannel(CreateChannelRequest) returns (CreateChannelResponse) {}
+  rpc UpdateChannel(UpdateChannelRequest) returns (UpdateChannelResponse) {}
+  rpc DeleteChannel(DeleteChannelRequest) returns (DeleteChannelResponse) {}
+
+  rpc ListTokens(ListTokensRequest) returns (ListTokensResponse) {}
+  rpc CreateToken(CreateTokenRequest) returns (CreateTokenResponse) {}
+  rpc DeleteToken(DeleteTokenRequest) returns (DeleteTokenResponse) {}
+
+  rpc SendTestNotification(SendTestNotificationRequest) returns (SendTestNotificationResponse) {}
+}
+
+message Channel {
+  string name = 1;
+  string room_id = 2;
+  google.protobuf.Timestamp created_at = 3;
+  // Live Matrix state: whether the bot has joined the room and whether the
+  // room is encrypted. A channel is only deliverable when both are true.
+  bool joined = 4;
+  bool encrypted = 5;
+  // Attach a rendered Prometheus chart to alertmanager notifications.
+  bool chart = 6;
+}
+
+message Token {
+  string name = 1;
+  // any | gotify | alertmanager
+  string kind = 2;
+  string channel = 3;
+  google.protobuf.Timestamp created_at = 4;
+  google.protobuf.Timestamp last_used_at = 5;
+}
+
+// Room is a room the bot has joined, whether or not a channel maps to it.
+message Room {
+  string room_id = 1;
+  string name = 2;
+  // Name of the channel bound to this room, empty if unmapped.
+  string channel = 3;
+  bool encrypted = 4;
+}
+
+message ListRoomsRequest {}
+
+message ListRoomsResponse {
+  repeated Room rooms = 1;
+}
+
+message LeaveRoomRequest {
+  string room_id = 1;
+}
+
+message LeaveRoomResponse {}
+
+message GetStatusRequest {}
+
+message GetStatusResponse {
+  string user_id = 1;
+  string device_id = 2;
+  bool verified = 3;
+  // Sync is considered healthy when the last sync is recent.
+  google.protobuf.Timestamp last_sync = 4;
+  int64 delivered_since_start = 5;
+  int64 uptime_seconds = 6;
+  string version = 7;
+  string database_type = 8;
+}
+
+message ListChannelsRequest {}
+
+message ListChannelsResponse {
+  repeated Channel channels = 1;
+}
+
+message CreateChannelRequest {
+  string name = 1;
+  string room_id = 2;
+  bool chart = 3;
+}
+
+message CreateChannelResponse {
+  Channel channel = 1;
+}
+
+message UpdateChannelRequest {
+  string name = 1;
+  // Toggle chart attachment for alertmanager notifications.
+  bool chart = 2;
+}
+
+message UpdateChannelResponse {
+  Channel channel = 1;
+}
+
+message DeleteChannelRequest {
+  string name = 1;
+}
+
+message DeleteChannelResponse {}
+
+message ListTokensRequest {}
+
+message ListTokensResponse {
+  repeated Token tokens = 1;
+}
+
+message CreateTokenRequest {
+  string name = 1;
+  string kind = 2;
+  string channel = 3;
+}
+
+message CreateTokenResponse {
+  Token token = 1;
+  // The plaintext token, returned exactly once. Only its hash is stored.
+  string plaintext = 2;
+}
+
+message DeleteTokenRequest {
+  string name = 1;
+}
+
+message DeleteTokenResponse {}
+
+message SendTestNotificationRequest {
+  string channel = 1;
+}
+
+message SendTestNotificationResponse {}

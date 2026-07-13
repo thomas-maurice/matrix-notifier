@@ -1,0 +1,11 @@
+bin/
+data/
+config.yaml
+config.dev.yaml
+dev/synapse/data/
+dev/.room_id
+dev/cmdclient.db*
+ui/node_modules/
+ui/dist/
+.github/
+*.md

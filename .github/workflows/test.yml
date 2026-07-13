@@ -1,0 +1,59 @@
+name: test
+
+on:
+  pull_request:
+  push:
+    branches-ignore:
+      - master
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26"
+          cache: true
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: ui/package-lock.json
+
+      # The binary go:embeds ui/dist; build it so the embed has real assets.
+      - name: Build web UI
+        run: cd ui && npm ci --no-fund --no-audit && npm run build
+
+      - name: Test web UI
+        run: cd ui && npm test
+
+      - name: Build
+        run: go build -tags goolm ./...
+
+      - name: Vet
+        run: go vet -tags goolm ./...
+
+      - name: Lint
+        uses: golangci/golangci-lint-action@v9
+        with:
+          version: v2.12.2
+
+      - name: Buf lint
+        uses: bufbuild/buf-action@v1
+        with:
+          lint: true
+          format: false
+          push: false
+          breaking: ${{ github.event_name == 'pull_request' }}
+          breaking_against: "https://github.com/thomas-maurice/matrix-notifier.git#branch=master"
+
+      - name: Test
+        run: go test -race -tags goolm ./...
