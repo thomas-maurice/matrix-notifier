@@ -36,5 +36,11 @@ admin_token_hash: "$argon2id$v=19$m=65536,t=1,p=..."
 # from the alert's g0.expr and attached as an ENCRYPTED image.
 # prometheus_url: "http://prometheus:9090"
 
+# Per-ingest-token rate limit (token bucket). Generous defaults; set
+# rate_limit_per_second to 0 to disable. Protects rooms from a runaway
+# producer — exceeding it returns HTTP 429.
+rate_limit_per_second: 5
+rate_limit_burst: 20
+
 # Channels (name -> Matrix room) and ingest tokens are NOT configured here:
 # manage them at runtime via the web UI at / or the Connect RPC admin API.

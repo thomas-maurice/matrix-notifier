@@ -13,6 +13,10 @@ ui-ensure:
 test:
 	go test -tags $(GO_TAGS) ./...
 
+# Integration tests spin up a real Synapse via testcontainers (needs Docker).
+test-integration:
+	go test -tags "$(GO_TAGS) integration" -timeout 300s ./test/integration/...
+
 # Build the admin UI into ui/dist (embedded into the binary on next build).
 ui:
 	cd ui && npm install --no-fund --no-audit && npm run build

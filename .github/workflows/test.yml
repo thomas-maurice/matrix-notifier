@@ -57,3 +57,17 @@ jobs:
 
       - name: Test
         run: go test -race -tags goolm ./...
+
+  # Real-Synapse E2EE regression guard (login, cross-signing, encrypted
+  # send + decrypt). Separate job because it pulls a container image and is
+  # the thing that catches mautrix-go version bumps.
+  integration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26"
+          cache: true
+      - name: Integration test
+        run: go test -tags "goolm integration" -timeout 300s ./test/integration/...

@@ -184,13 +184,13 @@ func (s *Server) CreateToken(ctx context.Context, req *connect.Request[notifierv
 	}), nil
 }
 
-// UpdateToken changes a token's notification prefix without re-minting the
+// UpdateToken changes a token's prefix and/or channel without re-minting the
 // credential producers already hold.
 func (s *Server) UpdateToken(ctx context.Context, req *connect.Request[notifierv1.UpdateTokenRequest]) (*connect.Response[notifierv1.UpdateTokenResponse], error) {
 	if req.Msg.Name == "" {
 		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("name is required"))
 	}
-	tok, err := s.store.UpdateTokenPrefix(ctx, req.Msg.Name, req.Msg.Prefix)
+	tok, err := s.store.UpdateToken(ctx, req.Msg.Name, req.Msg.Prefix, req.Msg.Channel)
 	if err != nil {
 		return nil, storeError(err)
 	}

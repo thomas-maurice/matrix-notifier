@@ -56,6 +56,8 @@ func (r *recordingSender) Images() []string {
 	return append([]string(nil), r.images...)
 }
 
+func (r *recordingSender) Healthy() (bool, string) { return true, "ok" }
+
 // newTestServer builds a server backed by a real in-memory store with one
 // channel ("alerts" → !room:x) and one gotify-kind token plus one any-kind
 // token.
@@ -70,7 +72,7 @@ func newTestServer(t *testing.T) (*recordingSender, *store.Store, http.Handler, 
 	anyToken, _, err := st.CreateToken(context.Background(), "any-kind", store.KindAny, "alerts", "")
 	require.NoError(t, err)
 	sender := &recordingSender{}
-	return sender, st, New(slog.New(slog.DiscardHandler), sender, st, nil), gotifyToken, anyToken
+	return sender, st, New(slog.New(slog.DiscardHandler), sender, st, nil, nil), gotifyToken, anyToken
 }
 
 // Every ingest endpoint is a write path into the user's Matrix rooms; an

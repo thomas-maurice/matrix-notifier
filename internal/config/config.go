@@ -39,6 +39,11 @@ type Config struct {
 	// on channels that opt in. Empty disables charts.
 	PrometheusURL string `mapstructure:"prometheus_url"`
 
+	// RateLimitPerSecond throttles each ingest token to this many requests
+	// per second (0 disables). RateLimitBurst is the bucket size.
+	RateLimitPerSecond float64 `mapstructure:"rate_limit_per_second"`
+	RateLimitBurst     int     `mapstructure:"rate_limit_burst"`
+
 	// ResetIdentity is set by the --reset-identity CLI flag, not the config
 	// file: on startup, replace the account's cross-signing keys and write a
 	// fresh recovery key. For when the recovery key is lost.
@@ -52,6 +57,9 @@ func Load(path string) (*Config, error) {
 	v.SetDefault("data_dir", "./data")
 	v.SetDefault("database.type", "sqlite")
 	v.SetDefault("database.uri", "./data/notifier.db")
+	// Generous per-token defaults: throttle only a genuinely runaway producer.
+	v.SetDefault("rate_limit_per_second", 5.0)
+	v.SetDefault("rate_limit_burst", 20)
 
 	if path != "" {
 		v.SetConfigFile(path)

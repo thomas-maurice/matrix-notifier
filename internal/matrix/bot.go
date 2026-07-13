@@ -30,10 +30,19 @@ import (
 
 	"github.com/thomas-maurice/matrix-notifier/internal/config"
 	"github.com/thomas-maurice/matrix-notifier/internal/logging"
+	"github.com/thomas-maurice/matrix-notifier/internal/metrics"
 	"github.com/thomas-maurice/matrix-notifier/internal/notify"
 )
 
-const firstSyncTimeout = 30 * time.Second
+const (
+	firstSyncTimeout = 30 * time.Second
+	// syncStaleThreshold is how old the last sync may be before the bot is
+	// considered unhealthy. Matrix long-polls every ~30s, so a couple of
+	// missed cycles is the signal.
+	syncStaleThreshold = 90 * time.Second
+	// metricsInterval is how often the sync-age gauge is refreshed.
+	metricsInterval = 15 * time.Second
+)
 
 // Bot is a Matrix client that delivers notifications to a single encrypted
 // room. It refuses to send to unencrypted rooms.
@@ -51,6 +60,9 @@ type Bot struct {
 	startTime    time.Time
 	delivered    atomic.Int64
 	lastSyncUnix atomic.Int64
+
+	// retryBase is the linear backoff step for sends; overridable in tests.
+	retryBase time.Duration
 }
 
 func New(ctx context.Context, cfg *config.Config) (*Bot, error) {
@@ -156,8 +168,32 @@ func (b *Bot) Start(ctx context.Context) error {
 		return fmt.Errorf("bootstrapping device verification: %w", err)
 	}
 
+	go b.metricsLoop(ctx)
+
 	log.Info("matrix bot ready", "user_id", b.client.UserID, "device_id", b.client.DeviceID)
 	return nil
+}
+
+// metricsLoop keeps the sync-age and verification gauges fresh until ctx is
+// cancelled.
+func (b *Bot) metricsLoop(ctx context.Context) {
+	ticker := time.NewTicker(metricsInterval)
+	defer ticker.Stop()
+	for {
+		if unix := b.lastSyncUnix.Load(); unix > 0 {
+			metrics.SyncAge.Set(time.Since(time.Unix(unix, 0)).Seconds())
+		}
+		verified := 0.0
+		if _, ok, err := b.helper.Machine().GetOwnVerificationStatus(ctx); err == nil && ok {
+			verified = 1
+		}
+		metrics.Verified.Set(verified)
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+		}
+	}
 }
 
 // SyncErr delivers a fatal sync-loop error (e.g. a revoked access token).
@@ -460,18 +496,26 @@ func InviterAllowed(inviter, self id.UserID, allowedServers []string) bool {
 	return false
 }
 
+const (
+	sendMaxAttempts = 3
+	sendRetryBase   = 2 * time.Second
+)
+
 // Send renders the notification as markdown and sends it to the given room.
 // Sending to an unencrypted room is a hard error.
 func (b *Bot) Send(ctx context.Context, roomID string, n notify.Notification) error {
+	start := time.Now()
 	if err := b.sendMarkdown(ctx, id.RoomID(roomID), BuildMarkdown(n)); err != nil {
 		return err
 	}
+	metrics.SendDuration.Observe(time.Since(start).Seconds())
 	b.delivered.Add(1)
 	return nil
 }
 
 // sendMarkdown delivers a markdown message to a room, refusing if the room
-// is not encrypted.
+// is not encrypted. The network send is retried to ride out transient
+// failures (e.g. a homeserver restart).
 func (b *Bot) sendMarkdown(ctx context.Context, roomID id.RoomID, md string) error {
 	if md == "" {
 		return nil
@@ -484,10 +528,40 @@ func (b *Bot) sendMarkdown(ctx context.Context, roomID id.RoomID, md string) err
 		return fmt.Errorf("room %s is not encrypted (or the bot has not joined it): refusing to send", roomID)
 	}
 	content := format.RenderMarkdown(md, true, false)
-	if _, err := b.client.SendMessageEvent(ctx, roomID, event.EventMessage, &content); err != nil {
-		return fmt.Errorf("sending message: %w", err)
+	return b.retrySend(ctx, func() error {
+		_, err := b.client.SendMessageEvent(ctx, roomID, event.EventMessage, &content)
+		return err
+	})
+}
+
+// retrySend runs fn up to sendMaxAttempts times with linear backoff. It is
+// for transient Matrix/network errors only; the caller must have already
+// rejected non-retryable conditions (e.g. an unencrypted room). Context
+// cancellation aborts immediately.
+func (b *Bot) retrySend(ctx context.Context, fn func() error) error {
+	var err error
+	for attempt := 1; attempt <= sendMaxAttempts; attempt++ {
+		if err = fn(); err == nil {
+			return nil
+		}
+		if ctx.Err() != nil {
+			return fmt.Errorf("sending message: %w", err)
+		}
+		if attempt < sendMaxAttempts {
+			metrics.SendRetries.Inc()
+			logging.From(ctx).Warn("send failed, retrying", "attempt", attempt, "error", err)
+			base := b.retryBase
+			if base == 0 {
+				base = sendRetryBase
+			}
+			select {
+			case <-ctx.Done():
+				return fmt.Errorf("sending message: %w", err)
+			case <-time.After(time.Duration(attempt) * base):
+			}
+		}
 	}
-	return nil
+	return fmt.Errorf("sending message after %d attempts: %w", sendMaxAttempts, err)
 }
 
 // SendWithImage delivers a notification as a single m.image event carrying
@@ -505,6 +579,7 @@ func (b *Bot) SendWithImage(ctx context.Context, roomID string, n notify.Notific
 		return fmt.Errorf("room %s is not encrypted (or the bot has not joined it): refusing to send", rid)
 	}
 
+	start := time.Now()
 	size := len(png)
 	file := attachment.NewEncryptedFile()
 	file.EncryptInPlace(png)
@@ -529,11 +604,33 @@ func (b *Bot) SendWithImage(ctx context.Context, roomID string, n notify.Notific
 			URL:           upload.ContentURI.CUString(),
 		},
 	}
-	if _, err := b.client.SendMessageEvent(ctx, rid, event.EventMessage, content); err != nil {
-		return fmt.Errorf("sending image event: %w", err)
+	if err := b.retrySend(ctx, func() error {
+		_, err := b.client.SendMessageEvent(ctx, rid, event.EventMessage, content)
+		return err
+	}); err != nil {
+		return err
 	}
+	metrics.SendDuration.Observe(time.Since(start).Seconds())
 	b.delivered.Add(1)
 	return nil
+}
+
+// Healthy reports whether the bot is operational: logged in and syncing
+// recently. Used by the /health endpoint so a stalled sync is visible to
+// traefik and docker, not just the fatal-exit path.
+func (b *Bot) Healthy() (bool, string) {
+	if b.client.UserID == "" {
+		return false, "not logged in"
+	}
+	unix := b.lastSyncUnix.Load()
+	if unix == 0 {
+		return false, "no sync yet"
+	}
+	age := time.Since(time.Unix(unix, 0))
+	if age > syncStaleThreshold {
+		return false, fmt.Sprintf("last sync %s ago", age.Round(time.Second))
+	}
+	return true, "ok"
 }
 
 // BuildMarkdown converts a notification into the markdown that gets rendered

@@ -27,16 +27,17 @@ const (
 	KindAny          TokenKind = "any"
 	KindGotify       TokenKind = "gotify"
 	KindAlertmanager TokenKind = "alertmanager"
+	KindGitea        TokenKind = "gitea"
 )
 
 func ParseKind(s string) (TokenKind, error) {
 	switch TokenKind(s) {
-	case KindAny, KindGotify, KindAlertmanager:
+	case KindAny, KindGotify, KindAlertmanager, KindGitea:
 		return TokenKind(s), nil
 	case "":
 		return KindAny, nil
 	default:
-		return "", fmt.Errorf("invalid token kind %q (want any, gotify or alertmanager)", s)
+		return "", fmt.Errorf("invalid token kind %q (want any, gotify, alertmanager or gitea)", s)
 	}
 }
 
@@ -267,15 +268,34 @@ func (s *Store) ResolveToken(ctx context.Context, plaintext string, endpoint Tok
 	return &tok, nil
 }
 
-// UpdateTokenPrefix changes a token's notification prefix in place, so
-// producers keep their credentials.
-func (s *Store) UpdateTokenPrefix(ctx context.Context, name, prefix string) (*IngestToken, error) {
-	res := s.db.WithContext(ctx).Model(&IngestToken{}).Where("name = ?", name).Update("prefix", prefix)
-	if res.Error != nil {
-		return nil, res.Error
-	}
-	if res.RowsAffected == 0 {
-		return nil, fmt.Errorf("token %q: %w", name, ErrNotFound)
+// UpdateToken changes a token's prefix and, when channelName is non-empty,
+// reassigns it to another channel (and thus another room) — all in place, so
+// producers keep their credentials. The prefix is always set (empty clears
+// it); the channel is left unchanged when channelName is empty.
+func (s *Store) UpdateToken(ctx context.Context, name, prefix, channelName string) (*IngestToken, error) {
+	err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var tok IngestToken
+		if err := tx.Where("name = ?", name).First(&tok).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return fmt.Errorf("token %q: %w", name, ErrNotFound)
+			}
+			return err
+		}
+		updates := map[string]any{"prefix": prefix}
+		if channelName != "" {
+			var ch Channel
+			if err := tx.Where("name = ?", channelName).First(&ch).Error; err != nil {
+				if errors.Is(err, gorm.ErrRecordNotFound) {
+					return fmt.Errorf("channel %q: %w", channelName, ErrNotFound)
+				}
+				return err
+			}
+			updates["channel_id"] = ch.ID
+		}
+		return tx.Model(&IngestToken{}).Where("id = ?", tok.ID).Updates(updates).Error
+	})
+	if err != nil {
+		return nil, err
 	}
 	var tok IngestToken
 	if err := s.db.WithContext(ctx).Preload("Channel").Where("name = ?", name).First(&tok).Error; err != nil {

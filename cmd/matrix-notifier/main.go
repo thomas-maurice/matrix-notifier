@@ -164,10 +164,11 @@ func run(configPath string, resetIdentity bool) error {
 		charts = chart.New(cfg.PrometheusURL)
 		log.Info("chart rendering enabled", "prometheus_url", cfg.PrometheusURL)
 	}
-	ingest := server.New(log, bot, st, charts)
+	rl := server.NewLimiters(cfg.RateLimitPerSecond, cfg.RateLimitBurst)
+	ingest := server.New(log, bot, st, charts, rl)
 	mux := http.NewServeMux()
 	mux.Handle(adminPath, adminHandler)
-	for _, p := range []string{"/message", "/alertmanager", "/health", "/version"} {
+	for _, p := range []string{"/message", "/alertmanager", "/gitea", "/forgejo", "/health", "/version", "/metrics"} {
 		mux.Handle(p, ingest)
 	}
 	mux.Handle("/", ui.Handler())

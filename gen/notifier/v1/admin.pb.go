@@ -1125,9 +1125,12 @@ func (x *CreateTokenResponse) GetPlaintext() string {
 }
 
 type UpdateTokenRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Prefix        string                 `protobuf:"bytes,2,opt,name=prefix,proto3" json:"prefix,omitempty"`
+	state  protoimpl.MessageState `protogen:"open.v1"`
+	Name   string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Prefix string                 `protobuf:"bytes,2,opt,name=prefix,proto3" json:"prefix,omitempty"`
+	// Reassign the token to another channel (and room). Empty leaves it
+	// unchanged.
+	Channel       string `protobuf:"bytes,3,opt,name=channel,proto3" json:"channel,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1172,6 +1175,13 @@ func (x *UpdateTokenRequest) GetName() string {
 func (x *UpdateTokenRequest) GetPrefix() string {
 	if x != nil {
 		return x.Prefix
+	}
+	return ""
+}
+
+func (x *UpdateTokenRequest) GetChannel() string {
+	if x != nil {
+		return x.Channel
 	}
 	return ""
 }
@@ -1450,10 +1460,11 @@ const file_notifier_v1_admin_proto_rawDesc = "" +
 	"\x06prefix\x18\x04 \x01(\tR\x06prefix\"]\n" +
 	"\x13CreateTokenResponse\x12(\n" +
 	"\x05token\x18\x01 \x01(\v2\x12.notifier.v1.TokenR\x05token\x12\x1c\n" +
-	"\tplaintext\x18\x02 \x01(\tR\tplaintext\"@\n" +
+	"\tplaintext\x18\x02 \x01(\tR\tplaintext\"Z\n" +
 	"\x12UpdateTokenRequest\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x16\n" +
-	"\x06prefix\x18\x02 \x01(\tR\x06prefix\"?\n" +
+	"\x06prefix\x18\x02 \x01(\tR\x06prefix\x12\x18\n" +
+	"\achannel\x18\x03 \x01(\tR\achannel\"?\n" +
 	"\x13UpdateTokenResponse\x12(\n" +
 	"\x05token\x18\x01 \x01(\v2\x12.notifier.v1.TokenR\x05token\"(\n" +
 	"\x12DeleteTokenRequest\x12\x12\n" +

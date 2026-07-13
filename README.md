@@ -10,6 +10,30 @@ nothing needs a Matrix client:
 - **Prometheus Alertmanager**: `POST /alertmanager` — webhook receiver
   (payload v4), formatted with firing/resolved counts, severity, summaries
   and generator links.
+- **Gitea / Forgejo**: `POST /gitea` (alias `POST /forgejo`) — webhook
+  receiver for push, pull-request, issue, release and branch/tag events. The
+  event type is read from the `X-Gitea-Event` / `X-Forgejo-Event` header;
+  pass the token as `?token=`.
+
+Each ingest token can carry a **prefix** (e.g. an emoji) prepended to its
+notifications, so `sonarr 📺` / `radarr 🎬` / `gitea 🐙` are distinguishable
+even in a shared room. A token's **prefix and target channel/room can be
+changed in place** (UI or `UpdateToken`) without re-minting the credential a
+producer already holds. Tokens are optionally restricted to one endpoint
+kind. Per-token **rate limiting** (token bucket, generous default) returns
+429 to a runaway producer instead of flooding a room.
+
+## Observability
+
+- `GET /metrics` — Prometheus metrics: notifications delivered/failed
+  (by channel and kind), ingest rejections (by reason), send retries and
+  latency, chart render outcomes and duration, **sync age**, and device
+  verification status. Scrape it and alert on `matrix_notifier_sync_age_seconds`.
+- `GET /health` — reflects real Matrix state: 200 when logged in and syncing
+  recently, 503 (with a reason) when the sync has stalled, so traefik and
+  docker detect a zombie the fatal-exit path wouldn't catch.
+- Sends are retried a few times over ~30s to ride out a homeserver restart;
+  refusal to send to an unencrypted room is never retried.
 
 Notifications are routed by **channels**: a channel maps a name to a Matrix
 room (ID or `#alias`, resolved at creation), and every ingest token belongs

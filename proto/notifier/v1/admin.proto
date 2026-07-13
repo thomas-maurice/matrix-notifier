@@ -140,6 +140,9 @@ message CreateTokenResponse {
 message UpdateTokenRequest {
   string name = 1;
   string prefix = 2;
+  // Reassign the token to another channel (and room). Empty leaves it
+  // unchanged.
+  string channel = 3;
 }
 
 message UpdateTokenResponse {

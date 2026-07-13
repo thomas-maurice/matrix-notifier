@@ -114,3 +114,24 @@ func TestTokenPrefixLifecycle(t *testing.T) {
 	_, err = client.UpdateToken(ctx, connect.NewRequest(&notifierv1.UpdateTokenRequest{Name: "ghost", Prefix: "x"}))
 	assert.Equal(t, connect.CodeNotFound, connect.CodeOf(err))
 }
+
+func TestUpdateTokenChannelReassign(t *testing.T) {
+	client, _ := newAuthedClient(t, "test-admin-token")
+	ctx := context.Background()
+	_, err := client.CreateChannel(ctx, connect.NewRequest(&notifierv1.CreateChannelRequest{Name: "a", RoomId: "!a:x"}))
+	require.NoError(t, err)
+	_, err = client.CreateChannel(ctx, connect.NewRequest(&notifierv1.CreateChannelRequest{Name: "b", RoomId: "!b:x"}))
+	require.NoError(t, err)
+	_, err = client.CreateToken(ctx, connect.NewRequest(&notifierv1.CreateTokenRequest{Name: "t", Channel: "a", Prefix: "x"}))
+	require.NoError(t, err)
+
+	// Reassign channel; prefix preserved.
+	resp, err := client.UpdateToken(ctx, connect.NewRequest(&notifierv1.UpdateTokenRequest{Name: "t", Prefix: "x", Channel: "b"}))
+	require.NoError(t, err)
+	assert.Equal(t, "b", resp.Msg.Token.Channel)
+	assert.Equal(t, "x", resp.Msg.Token.Prefix)
+
+	// Unknown channel is NotFound.
+	_, err = client.UpdateToken(ctx, connect.NewRequest(&notifierv1.UpdateTokenRequest{Name: "t", Channel: "ghost"}))
+	assert.Equal(t, connect.CodeNotFound, connect.CodeOf(err))
+}

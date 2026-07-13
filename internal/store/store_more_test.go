@@ -133,9 +133,39 @@ func TestTokenPrefix(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "📺", resolved.Prefix)
 
-	updated, err := st.UpdateTokenPrefix(ctx, "sonarr", "🎬")
+	updated, err := st.UpdateToken(ctx, "sonarr", "🎬", "")
 	require.NoError(t, err)
 	assert.Equal(t, "🎬", updated.Prefix)
-	_, err = st.UpdateTokenPrefix(ctx, "ghost", "x")
+	assert.Equal(t, "c", updated.Channel.Name) // empty channel leaves it unchanged
+	_, err = st.UpdateToken(ctx, "ghost", "x", "")
 	assert.ErrorIs(t, err, ErrNotFound)
+}
+
+// Reassigning a token to another channel changes the room it delivers to,
+// without re-minting the credential producers already hold.
+func TestUpdateTokenChannel(t *testing.T) {
+	st := newTestStore(t)
+	ctx := context.Background()
+	_, err := st.CreateChannel(ctx, "old", "!old:x", false)
+	require.NoError(t, err)
+	_, err = st.CreateChannel(ctx, "new", "!new:x", false)
+	require.NoError(t, err)
+	plaintext, _, err := st.CreateToken(ctx, "prom", KindAlertmanager, "old", "🔥")
+	require.NoError(t, err)
+
+	updated, err := st.UpdateToken(ctx, "prom", "🔥", "new")
+	require.NoError(t, err)
+	assert.Equal(t, "new", updated.Channel.Name)
+	assert.Equal(t, "🔥", updated.Prefix) // prefix preserved
+
+	// The same credential now resolves to the new room.
+	resolved, err := st.ResolveToken(ctx, plaintext, KindAlertmanager)
+	require.NoError(t, err)
+	assert.Equal(t, "!new:x", resolved.Channel.RoomID)
+
+	// Reassigning to a non-existent channel is a clean not-found, no partial write.
+	_, err = st.UpdateToken(ctx, "prom", "🔥", "ghost")
+	assert.ErrorIs(t, err, ErrNotFound)
+	resolved, _ = st.ResolveToken(ctx, plaintext, KindAlertmanager)
+	assert.Equal(t, "!new:x", resolved.Channel.RoomID) // unchanged after the failed update
 }

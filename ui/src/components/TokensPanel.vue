@@ -42,10 +42,24 @@ async function editPrefix(tok) {
   if (prefix === null) return
   error.value = ''
   try {
-    await api.updateToken(tok.name, prefix.trim())
+    await api.updateToken(tok.name, prefix.trim(), tok.channel)
     await refresh()
   } catch (e) {
     error.value = e.message
+  }
+}
+
+async function changeChannel(tok, event) {
+  const channel = event.target.value
+  error.value = ''
+  info.value = ''
+  try {
+    await api.updateToken(tok.name, tok.prefix || '', channel)
+    info.value = `Token "${tok.name}" now routes to "${channel}"`
+    await refresh()
+  } catch (e) {
+    error.value = e.message
+    await refresh()
   }
 }
 
@@ -93,6 +107,7 @@ onMounted(refresh)
             <option value="any">any endpoint</option>
             <option value="gotify">gotify only</option>
             <option value="alertmanager">alertmanager only</option>
+            <option value="gitea">gitea/forgejo only</option>
           </select>
         </div>
         <div class="col-md-2">
@@ -122,7 +137,11 @@ onMounted(refresh)
           <tr v-for="tok in tokens" :key="tok.name">
             <td class="ps-3">{{ tok.name }}</td>
             <td><span class="badge text-bg-secondary">{{ tok.kind }}</span></td>
-            <td>{{ tok.channel }}</td>
+            <td>
+              <select class="form-select form-select-sm" :value="tok.channel" @change="changeChannel(tok, $event)" title="Route this token to another room">
+                <option v-for="ch in channels" :key="ch.name" :value="ch.name">{{ ch.name }}</option>
+              </select>
+            </td>
             <td>
               <button class="btn btn-sm btn-outline-secondary" title="Edit prefix" @click="editPrefix(tok)">
                 {{ tok.prefix || '—' }} <i class="fa-solid fa-pen ms-1 small"></i>
