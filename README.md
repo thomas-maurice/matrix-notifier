@@ -273,8 +273,9 @@ GitHub Actions (mirroring `thomas-maurice/cortex`):
 
 The Docker image runs as a non-root user with `/data` as the volume for
 `data_dir`; mount your config at `/config/config.yaml` (or override the
-command). CGO is required by the SQLite store, so cross-arch images compile
-under qemu.
+command). It is built for `linux/amd64` only (CGO/SQLite makes arm64 under
+qemu emulation prohibitively slow); add `linux/arm64` back to the build
+workflow's `platforms` if you need it.
 
 ## Building
 
