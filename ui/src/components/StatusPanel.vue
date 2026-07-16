@@ -1,11 +1,14 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { api } from '../api.js'
+import { notifyError } from '../toast.js'
 
 const status = ref(null)
 const channels = ref([])
-const error = ref('')
 let timer
+// This panel polls every 10s; only toast when the error state changes so a
+// persistent outage doesn't spam a toast every tick.
+let lastError = ''
 
 const syncHealthy = computed(() => {
   if (!status.value?.lastSync) return false
@@ -25,9 +28,12 @@ async function refresh() {
     const [st, ch] = await Promise.all([api.getStatus(), api.listChannels()])
     status.value = st
     channels.value = ch.channels || []
-    error.value = ''
+    lastError = ''
   } catch (e) {
-    error.value = e.message
+    if (e.message !== lastError) {
+      lastError = e.message
+      notifyError(e.message)
+    }
   }
 }
 
@@ -39,7 +45,6 @@ onUnmounted(() => clearInterval(timer))
 </script>
 
 <template>
-  <div v-if="error" class="alert alert-danger">{{ error }}</div>
   <div v-if="status" class="row g-4">
     <div class="col-md-6">
       <div class="card h-100">

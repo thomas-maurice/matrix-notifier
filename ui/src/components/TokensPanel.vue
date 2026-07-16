@@ -1,11 +1,10 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { api } from '../api.js'
+import { notifyError, notifySuccess } from '../toast.js'
 
 const tokens = ref([])
 const channels = ref([])
-const error = ref('')
-const info = ref('')
 const minted = ref(null)
 const newName = ref('')
 const newKind = ref('any')
@@ -18,73 +17,67 @@ async function refresh() {
     tokens.value = t.tokens || []
     channels.value = c.channels || []
     if (!newChannel.value && channels.value.length) newChannel.value = channels.value[0].name
-    error.value = ''
   } catch (e) {
-    error.value = e.message
+    notifyError(e.message)
   }
 }
 
 async function create() {
-  error.value = ''
   minted.value = null
   try {
     const resp = await api.createToken(newName.value.trim(), newKind.value, newChannel.value, newPrefix.value.trim())
     minted.value = resp
     newName.value = ''
     newPrefix.value = ''
+    notifySuccess(`Token "${resp.token.name}" created`)
     await refresh()
   } catch (e) {
-    error.value = e.message
+    notifyError(e.message)
   }
 }
 
 async function editPrefix(tok) {
   const prefix = prompt(`Notification prefix for "${tok.name}" (emoji or short text, empty to clear):`, tok.prefix || '')
   if (prefix === null) return
-  error.value = ''
-  info.value = ''
   try {
     // Send the current channel so editing the prefix never reroutes the token.
     await api.updateToken(tok.name, prefix.trim(), tok.channel)
+    notifySuccess(`Prefix updated for "${tok.name}"`)
     await refresh()
   } catch (e) {
-    error.value = e.message
+    notifyError(e.message)
   }
 }
 
 async function changeChannel(tok, event) {
   const channel = event.target.value
-  error.value = ''
-  info.value = ''
   try {
     await api.updateToken(tok.name, tok.prefix || '', channel)
-    info.value = `Token "${tok.name}" now routes to "${channel}"`
+    notifySuccess(`Token "${tok.name}" now routes to "${channel}"`)
     await refresh()
   } catch (e) {
-    error.value = e.message
+    notifyError(e.message)
     await refresh()
   }
 }
 
 async function remove(name) {
-  error.value = ''
   if (!confirm(`Delete token "${name}"? Producers using it will get 401s.`)) return
   try {
     await api.deleteToken(name)
+    notifySuccess(`Token "${name}" deleted`)
     await refresh()
   } catch (e) {
-    error.value = e.message
+    notifyError(e.message)
   }
 }
 
 async function test(tok) {
-  error.value = ''
-  info.value = ''
   try {
     await api.testToken(tok.name)
-    info.value = `Test notification sent via "${tok.name}" to ${tok.channel}`
+    notifySuccess(`Test notification sent via "${tok.name}" to ${tok.channel}`)
   } catch (e) {
-    error.value = e.message
+    notifyError(e.message)
   }
 }
 
@@ -100,8 +93,6 @@ onMounted(refresh)
 </script>
 
 <template>
-  <div v-if="error" class="alert alert-danger">{{ error }}</div>
-  <div v-if="info" class="alert alert-success">{{ info }}</div>
 
   <div v-if="minted" class="alert alert-warning">
     <div class="fw-bold mb-1"><i class="fa-solid fa-triangle-exclamation me-1"></i>

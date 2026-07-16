@@ -1,11 +1,10 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { api } from '../api.js'
+import { notifyError, notifySuccess } from '../toast.js'
 
 const channels = ref([])
 const rooms = ref([])
-const error = ref('')
-const info = ref('')
 const newName = ref('')
 const newRoomId = ref('')
 const newChart = ref(false)
@@ -17,9 +16,8 @@ async function refresh() {
     const [ch, rm] = await Promise.all([api.listChannels(), api.listRooms()])
     channels.value = ch.channels || []
     rooms.value = rm.rooms || []
-    error.value = ''
   } catch (e) {
-    error.value = e.message
+    notifyError(e.message)
   }
 }
 
@@ -30,86 +28,76 @@ function suggestedName(room) {
 // One click adds the room as a channel under its suggested name; if that
 // isn't possible (no name / name taken), fall back to pre-filling the form.
 async function addRoom(room) {
-  error.value = ''
-  info.value = ''
   const name = suggestedName(room)
   if (!name) {
     newRoomId.value = room.roomId
-    info.value = 'Room has no name — pick a channel name and hit Create.'
+    notifyError('Room has no name — pick a channel name and hit Create.')
     return
   }
   try {
     await api.createChannel(name, room.roomId, false)
-    info.value = `Channel "${name}" created for ${room.name}`
+    notifySuccess(`Channel "${name}" created for ${room.name}`)
     await refresh()
   } catch (e) {
     newRoomId.value = room.roomId
     newName.value = name
-    error.value = `Could not auto-create "${name}" (${e.message}) — adjust and hit Create.`
+    notifyError(`Could not auto-create "${name}" (${e.message}) — adjust and hit Create.`)
   }
 }
 
 async function create() {
-  error.value = ''
-  info.value = ''
   try {
     await api.createChannel(newName.value.trim(), newRoomId.value.trim(), newChart.value)
+    notifySuccess(`Channel "${newName.value.trim()}" created`)
     newName.value = ''
     newRoomId.value = ''
     newChart.value = false
     await refresh()
   } catch (e) {
-    error.value = e.message
+    notifyError(e.message)
   }
 }
 
 async function remove(name) {
-  error.value = ''
-  info.value = ''
   if (!confirm(`Delete channel "${name}"?`)) return
   try {
     await api.deleteChannel(name)
+    notifySuccess(`Channel "${name}" deleted`)
     await refresh()
   } catch (e) {
-    error.value = e.message
+    notifyError(e.message)
   }
 }
 
 async function toggleChart(ch) {
-  error.value = ''
-  info.value = ''
   try {
     await api.updateChannel(ch.name, !ch.chart)
-    info.value = `Charts ${ch.chart ? 'disabled' : 'enabled'} for "${ch.name}"`
+    notifySuccess(`Charts ${ch.chart ? 'disabled' : 'enabled'} for "${ch.name}"`)
     await refresh()
   } catch (e) {
-    error.value = e.message
+    notifyError(e.message)
     await refresh() // snap the switch back to reality
   }
 }
 
 async function leave(room) {
-  error.value = ''
-  info.value = ''
   const label = room.name || room.roomId
   if (!confirm(`Leave room "${label}"? Any channel mapped to it (and its tokens) will be deleted.`)) return
   try {
     await api.leaveRoom(room.roomId)
-    info.value = `Left ${label}`
+    notifySuccess(`Left ${label}`)
     await refresh()
   } catch (e) {
-    error.value = e.message
+    notifyError(e.message)
   }
 }
 
 async function sendTest(name) {
-  error.value = ''
-  info.value = ''
   try {
     await api.sendTest(name)
-    info.value = `Test notification sent to "${name}"`
+    notifySuccess(`Test notification sent to "${name}"`)
   } catch (e) {
-    error.value = e.message
+    notifyError(e.message)
   }
 }
 
@@ -117,8 +105,6 @@ onMounted(refresh)
 </script>
 
 <template>
-  <div v-if="error" class="alert alert-danger">{{ error }}</div>
-  <div v-if="info" class="alert alert-success">{{ info }}</div>
 
   <div class="card mb-4">
     <div class="card-header"><i class="fa-solid fa-plus me-2"></i>New channel</div>
