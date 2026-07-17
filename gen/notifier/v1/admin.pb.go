@@ -32,7 +32,9 @@ type Channel struct {
 	Joined    bool `protobuf:"varint,4,opt,name=joined,proto3" json:"joined,omitempty"`
 	Encrypted bool `protobuf:"varint,5,opt,name=encrypted,proto3" json:"encrypted,omitempty"`
 	// Attach a rendered Prometheus chart to alertmanager notifications.
-	Chart         bool `protobuf:"varint,6,opt,name=chart,proto3" json:"chart,omitempty"`
+	Chart bool `protobuf:"varint,6,opt,name=chart,proto3" json:"chart,omitempty"`
+	// Canonical alias of the room (#foo:server), empty if none is set.
+	Alias         string `protobuf:"bytes,7,opt,name=alias,proto3" json:"alias,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -107,6 +109,13 @@ func (x *Channel) GetChart() bool {
 		return x.Chart
 	}
 	return false
+}
+
+func (x *Channel) GetAlias() string {
+	if x != nil {
+		return x.Alias
+	}
+	return ""
 }
 
 type Token struct {
@@ -1474,7 +1483,7 @@ var File_notifier_v1_admin_proto protoreflect.FileDescriptor
 
 const file_notifier_v1_admin_proto_rawDesc = "" +
 	"\n" +
-	"\x17notifier/v1/admin.proto\x12\vnotifier.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"\xbd\x01\n" +
+	"\x17notifier/v1/admin.proto\x12\vnotifier.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"\xd3\x01\n" +
 	"\aChannel\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x17\n" +
 	"\aroom_id\x18\x02 \x01(\tR\x06roomId\x129\n" +
@@ -1482,7 +1491,8 @@ const file_notifier_v1_admin_proto_rawDesc = "" +
 	"created_at\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x12\x16\n" +
 	"\x06joined\x18\x04 \x01(\bR\x06joined\x12\x1c\n" +
 	"\tencrypted\x18\x05 \x01(\bR\tencrypted\x12\x14\n" +
-	"\x05chart\x18\x06 \x01(\bR\x05chart\"\xda\x01\n" +
+	"\x05chart\x18\x06 \x01(\bR\x05chart\x12\x14\n" +
+	"\x05alias\x18\a \x01(\tR\x05alias\"\xda\x01\n" +
 	"\x05Token\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x12\n" +
 	"\x04kind\x18\x02 \x01(\tR\x04kind\x12\x18\n" +

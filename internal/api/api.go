@@ -26,6 +26,7 @@ type Matrix interface {
 	notify.Sender
 	Status(ctx context.Context) matrix.Status
 	RoomStatus(ctx context.Context, roomID string) (joined, encrypted bool)
+	RoomAlias(ctx context.Context, roomID string) string
 	ResolveRoom(ctx context.Context, room string) (string, error)
 	JoinedRooms(ctx context.Context) ([]matrix.RoomInfo, error)
 	LeaveRoom(ctx context.Context, roomID string) error
@@ -248,6 +249,7 @@ func (s *Server) protoChannel(ctx context.Context, ch store.Channel) *notifierv1
 	return &notifierv1.Channel{
 		Name:      ch.Name,
 		RoomId:    ch.RoomID,
+		Alias:     s.bot.RoomAlias(ctx, ch.RoomID),
 		CreatedAt: timestamppb.New(ch.CreatedAt),
 		Joined:    joined,
 		Encrypted: encrypted,

@@ -36,6 +36,13 @@ func (f *fakeBot) Status(context.Context) matrix.Status {
 
 func (f *fakeBot) RoomStatus(context.Context, string) (bool, bool) { return true, true }
 
+func (f *fakeBot) RoomAlias(_ context.Context, roomID string) string {
+	if roomID == "!resolved:x" {
+		return "#alias:x"
+	}
+	return ""
+}
+
 func (f *fakeBot) ResolveRoom(_ context.Context, room string) (string, error) {
 	if room == "#alias:x" {
 		return "!resolved:x", nil
@@ -195,6 +202,8 @@ func TestCreateChannelResolvesAlias(t *testing.T) {
 	resp, err := client.CreateChannel(context.Background(), connect.NewRequest(&notifierv1.CreateChannelRequest{Name: "aliased", RoomId: "#alias:x"}))
 	require.NoError(t, err)
 	assert.Equal(t, "!resolved:x", resp.Msg.Channel.RoomId)
+	// The UI shows both forms: the stored ID and the room's canonical alias.
+	assert.Equal(t, "#alias:x", resp.Msg.Channel.Alias)
 }
 
 func TestStatus(t *testing.T) {

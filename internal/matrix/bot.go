@@ -279,6 +279,16 @@ func (b *Bot) ResolveRoom(ctx context.Context, room string) (string, error) {
 	return resp.RoomID.String(), nil
 }
 
+// RoomAlias returns the room's canonical alias (#foo:server), or "" when
+// none is set. Best-effort: lookup failures just mean no alias to display.
+func (b *Bot) RoomAlias(ctx context.Context, roomID string) string {
+	var content event.CanonicalAliasEventContent
+	if err := b.client.StateEvent(ctx, id.RoomID(roomID), event.StateCanonicalAlias, "", &content); err != nil {
+		return ""
+	}
+	return content.Alias.String()
+}
+
 // RoomStatus reports whether the bot has joined a room and whether the room
 // is encrypted, for per-channel health in the admin API.
 func (b *Bot) RoomStatus(ctx context.Context, roomID string) (joined, encrypted bool) {

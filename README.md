@@ -96,7 +96,8 @@ openssl rand -hex 24 | tee /dev/stderr | matrix-notifier token hash
 The web UI (Vue 3 + Bootstrap, embedded in the binary, same listener) covers
 status (sync health, verification, per-channel joined/encrypted state,
 delivery counters), channel CRUD, token CRUD (plaintext shown exactly once)
-and test notifications. The API is plain Connect JSON — curl works:
+and test notifications. Channel rooms are shown by ID with the room's
+canonical alias (`#notifs:example.org`) next to it when one is set. The API is plain Connect JSON — curl works:
 
 ```sh
 curl -X POST http://localhost:8686/notifier.v1.AdminService/CreateChannel \
@@ -225,7 +226,7 @@ Requires Docker, `jq`, Go and Node. Ports published on localhost:
 | bot (UI+API+ingest) | `http://localhost:8686` |
 
 ```sh
-make dev-up    # Synapse + Postgres + Element + synapse-admin, accounts, encrypted room, config.dev.yaml
+make dev-up    # Synapse + Postgres + Element + synapse-admin, accounts, encrypted room (alias #notifications:localhost), config.dev.yaml
 make run-dev   # build (UI included) and run the bot
 make dev-seed  # create a "notifications" channel + ingest token via the admin API
 make dev-down  # stop containers (state kept)

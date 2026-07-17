@@ -41,6 +41,8 @@ message Channel {
   bool encrypted = 5;
   // Attach a rendered Prometheus chart to alertmanager notifications.
   bool chart = 6;
+  // Canonical alias of the room (#foo:server), empty if none is set.
+  string alias = 7;
 }
 
 message Token {

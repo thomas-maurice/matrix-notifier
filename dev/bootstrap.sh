@@ -67,6 +67,14 @@ else
   echo "    created $ROOM_ID"
 fi
 
+echo "==> Setting canonical alias #notifications:localhost (idempotent)"
+curl -s -X PUT -H "Authorization: Bearer $ADMIN_TOKEN" \
+  "$HS/_matrix/client/v3/directory/room/%23notifications%3Alocalhost" \
+  -d "{\"room_id\": \"$ROOM_ID\"}" >/dev/null
+curl -sf -X PUT -H "Authorization: Bearer $ADMIN_TOKEN" \
+  "$HS/_matrix/client/v3/rooms/$ROOM_ID/state/m.room.canonical_alias" \
+  -d '{"alias": "#notifications:localhost"}' >/dev/null
+
 echo "==> Writing config.dev.yaml (admin token: dev-admin-token)"
 ADMIN_TOKEN_HASH=$(cd .. && go run -tags goolm ./cmd/matrix-notifier token hash dev-admin-token)
 sed "s|@ADMIN_TOKEN_HASH@|$ADMIN_TOKEN_HASH|" config.dev.template.yaml > ../config.dev.yaml
