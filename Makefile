@@ -28,12 +28,15 @@ proto:
 # token via the admin API. Requires the bot to be running.
 dev-seed:
 	@ROOM=$$(cat dev/.room_id); \
+	JWT=$$(curl -sf -X POST http://localhost:8686/notifier.v1.AdminService/Login \
+	  -H 'Content-Type: application/json' -d '{"password": "dev-admin-token"}' | jq -r .token); \
+	[ -n "$$JWT" ] || { echo "login failed (bot not running?)"; exit 1; }; \
 	curl -sf -X POST http://localhost:8686/notifier.v1.AdminService/CreateChannel \
-	  -H 'Authorization: Bearer dev-admin-token' -H 'Content-Type: application/json' \
+	  -H "Authorization: Bearer $$JWT" -H 'Content-Type: application/json' \
 	  -d "{\"name\": \"notifications\", \"roomId\": \"$$ROOM\"}" > /dev/null \
-	  && echo "channel 'notifications' -> $$ROOM" || echo "channel exists (or bot not running)"; \
+	  && echo "channel 'notifications' -> $$ROOM" || echo "channel exists"; \
 	curl -sf -X POST http://localhost:8686/notifier.v1.AdminService/CreateToken \
-	  -H 'Authorization: Bearer dev-admin-token' -H 'Content-Type: application/json' \
+	  -H "Authorization: Bearer $$JWT" -H 'Content-Type: application/json' \
 	  -d '{"name": "dev", "kind": "any", "channel": "notifications"}' | \
 	  python3 -c 'import json,sys; print("ingest token:", json.load(sys.stdin)["plaintext"])' \
 	  || echo "token 'dev' already exists"

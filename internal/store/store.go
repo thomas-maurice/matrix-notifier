@@ -97,7 +97,7 @@ func Open(cfg config.Database) (*Store, error) {
 	if err != nil {
 		return nil, fmt.Errorf("opening %s store: %w", cfg.Type, err)
 	}
-	if err := db.AutoMigrate(&Channel{}, &IngestToken{}); err != nil {
+	if err := db.AutoMigrate(&Channel{}, &IngestToken{}, &AdminCredential{}); err != nil {
 		return nil, fmt.Errorf("migrating schema: %w", err)
 	}
 	return &Store{db: db}, nil

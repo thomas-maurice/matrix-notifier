@@ -434,6 +434,280 @@ func (*LeaveRoomResponse) Descriptor() ([]byte, []int) {
 	return file_notifier_v1_admin_proto_rawDescGZIP(), []int{6}
 }
 
+type LoginRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Password      string                 `protobuf:"bytes,1,opt,name=password,proto3" json:"password,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *LoginRequest) Reset() {
+	*x = LoginRequest{}
+	mi := &file_notifier_v1_admin_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *LoginRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*LoginRequest) ProtoMessage() {}
+
+func (x *LoginRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_notifier_v1_admin_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use LoginRequest.ProtoReflect.Descriptor instead.
+func (*LoginRequest) Descriptor() ([]byte, []int) {
+	return file_notifier_v1_admin_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *LoginRequest) GetPassword() string {
+	if x != nil {
+		return x.Password
+	}
+	return ""
+}
+
+type LoginResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// JWT to present as "Authorization: Bearer <token>".
+	Token         string                 `protobuf:"bytes,1,opt,name=token,proto3" json:"token,omitempty"`
+	ExpiresAt     *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *LoginResponse) Reset() {
+	*x = LoginResponse{}
+	mi := &file_notifier_v1_admin_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *LoginResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*LoginResponse) ProtoMessage() {}
+
+func (x *LoginResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_notifier_v1_admin_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use LoginResponse.ProtoReflect.Descriptor instead.
+func (*LoginResponse) Descriptor() ([]byte, []int) {
+	return file_notifier_v1_admin_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *LoginResponse) GetToken() string {
+	if x != nil {
+		return x.Token
+	}
+	return ""
+}
+
+func (x *LoginResponse) GetExpiresAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.ExpiresAt
+	}
+	return nil
+}
+
+type LogoutRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *LogoutRequest) Reset() {
+	*x = LogoutRequest{}
+	mi := &file_notifier_v1_admin_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *LogoutRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*LogoutRequest) ProtoMessage() {}
+
+func (x *LogoutRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_notifier_v1_admin_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use LogoutRequest.ProtoReflect.Descriptor instead.
+func (*LogoutRequest) Descriptor() ([]byte, []int) {
+	return file_notifier_v1_admin_proto_rawDescGZIP(), []int{9}
+}
+
+type LogoutResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *LogoutResponse) Reset() {
+	*x = LogoutResponse{}
+	mi := &file_notifier_v1_admin_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *LogoutResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*LogoutResponse) ProtoMessage() {}
+
+func (x *LogoutResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_notifier_v1_admin_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use LogoutResponse.ProtoReflect.Descriptor instead.
+func (*LogoutResponse) Descriptor() ([]byte, []int) {
+	return file_notifier_v1_admin_proto_rawDescGZIP(), []int{10}
+}
+
+type ChangeAdminPasswordRequest struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	CurrentPassword string                 `protobuf:"bytes,1,opt,name=current_password,json=currentPassword,proto3" json:"current_password,omitempty"`
+	NewPassword     string                 `protobuf:"bytes,2,opt,name=new_password,json=newPassword,proto3" json:"new_password,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *ChangeAdminPasswordRequest) Reset() {
+	*x = ChangeAdminPasswordRequest{}
+	mi := &file_notifier_v1_admin_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ChangeAdminPasswordRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ChangeAdminPasswordRequest) ProtoMessage() {}
+
+func (x *ChangeAdminPasswordRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_notifier_v1_admin_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ChangeAdminPasswordRequest.ProtoReflect.Descriptor instead.
+func (*ChangeAdminPasswordRequest) Descriptor() ([]byte, []int) {
+	return file_notifier_v1_admin_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *ChangeAdminPasswordRequest) GetCurrentPassword() string {
+	if x != nil {
+		return x.CurrentPassword
+	}
+	return ""
+}
+
+func (x *ChangeAdminPasswordRequest) GetNewPassword() string {
+	if x != nil {
+		return x.NewPassword
+	}
+	return ""
+}
+
+type ChangeAdminPasswordResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Fresh JWT signed with the rotated secret; all previous tokens are dead.
+	Token         string                 `protobuf:"bytes,1,opt,name=token,proto3" json:"token,omitempty"`
+	ExpiresAt     *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ChangeAdminPasswordResponse) Reset() {
+	*x = ChangeAdminPasswordResponse{}
+	mi := &file_notifier_v1_admin_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ChangeAdminPasswordResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ChangeAdminPasswordResponse) ProtoMessage() {}
+
+func (x *ChangeAdminPasswordResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_notifier_v1_admin_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ChangeAdminPasswordResponse.ProtoReflect.Descriptor instead.
+func (*ChangeAdminPasswordResponse) Descriptor() ([]byte, []int) {
+	return file_notifier_v1_admin_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *ChangeAdminPasswordResponse) GetToken() string {
+	if x != nil {
+		return x.Token
+	}
+	return ""
+}
+
+func (x *ChangeAdminPasswordResponse) GetExpiresAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.ExpiresAt
+	}
+	return nil
+}
+
 type GetStatusRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -442,7 +716,7 @@ type GetStatusRequest struct {
 
 func (x *GetStatusRequest) Reset() {
 	*x = GetStatusRequest{}
-	mi := &file_notifier_v1_admin_proto_msgTypes[7]
+	mi := &file_notifier_v1_admin_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -454,7 +728,7 @@ func (x *GetStatusRequest) String() string {
 func (*GetStatusRequest) ProtoMessage() {}
 
 func (x *GetStatusRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_notifier_v1_admin_proto_msgTypes[7]
+	mi := &file_notifier_v1_admin_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -467,7 +741,7 @@ func (x *GetStatusRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetStatusRequest.ProtoReflect.Descriptor instead.
 func (*GetStatusRequest) Descriptor() ([]byte, []int) {
-	return file_notifier_v1_admin_proto_rawDescGZIP(), []int{7}
+	return file_notifier_v1_admin_proto_rawDescGZIP(), []int{13}
 }
 
 type GetStatusResponse struct {
@@ -487,7 +761,7 @@ type GetStatusResponse struct {
 
 func (x *GetStatusResponse) Reset() {
 	*x = GetStatusResponse{}
-	mi := &file_notifier_v1_admin_proto_msgTypes[8]
+	mi := &file_notifier_v1_admin_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -499,7 +773,7 @@ func (x *GetStatusResponse) String() string {
 func (*GetStatusResponse) ProtoMessage() {}
 
 func (x *GetStatusResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_notifier_v1_admin_proto_msgTypes[8]
+	mi := &file_notifier_v1_admin_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -512,7 +786,7 @@ func (x *GetStatusResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetStatusResponse.ProtoReflect.Descriptor instead.
 func (*GetStatusResponse) Descriptor() ([]byte, []int) {
-	return file_notifier_v1_admin_proto_rawDescGZIP(), []int{8}
+	return file_notifier_v1_admin_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *GetStatusResponse) GetUserId() string {
@@ -579,7 +853,7 @@ type ListChannelsRequest struct {
 
 func (x *ListChannelsRequest) Reset() {
 	*x = ListChannelsRequest{}
-	mi := &file_notifier_v1_admin_proto_msgTypes[9]
+	mi := &file_notifier_v1_admin_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -591,7 +865,7 @@ func (x *ListChannelsRequest) String() string {
 func (*ListChannelsRequest) ProtoMessage() {}
 
 func (x *ListChannelsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_notifier_v1_admin_proto_msgTypes[9]
+	mi := &file_notifier_v1_admin_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -604,7 +878,7 @@ func (x *ListChannelsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListChannelsRequest.ProtoReflect.Descriptor instead.
 func (*ListChannelsRequest) Descriptor() ([]byte, []int) {
-	return file_notifier_v1_admin_proto_rawDescGZIP(), []int{9}
+	return file_notifier_v1_admin_proto_rawDescGZIP(), []int{15}
 }
 
 type ListChannelsResponse struct {
@@ -616,7 +890,7 @@ type ListChannelsResponse struct {
 
 func (x *ListChannelsResponse) Reset() {
 	*x = ListChannelsResponse{}
-	mi := &file_notifier_v1_admin_proto_msgTypes[10]
+	mi := &file_notifier_v1_admin_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -628,7 +902,7 @@ func (x *ListChannelsResponse) String() string {
 func (*ListChannelsResponse) ProtoMessage() {}
 
 func (x *ListChannelsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_notifier_v1_admin_proto_msgTypes[10]
+	mi := &file_notifier_v1_admin_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -641,7 +915,7 @@ func (x *ListChannelsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListChannelsResponse.ProtoReflect.Descriptor instead.
 func (*ListChannelsResponse) Descriptor() ([]byte, []int) {
-	return file_notifier_v1_admin_proto_rawDescGZIP(), []int{10}
+	return file_notifier_v1_admin_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *ListChannelsResponse) GetChannels() []*Channel {
@@ -662,7 +936,7 @@ type CreateChannelRequest struct {
 
 func (x *CreateChannelRequest) Reset() {
 	*x = CreateChannelRequest{}
-	mi := &file_notifier_v1_admin_proto_msgTypes[11]
+	mi := &file_notifier_v1_admin_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -674,7 +948,7 @@ func (x *CreateChannelRequest) String() string {
 func (*CreateChannelRequest) ProtoMessage() {}
 
 func (x *CreateChannelRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_notifier_v1_admin_proto_msgTypes[11]
+	mi := &file_notifier_v1_admin_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -687,7 +961,7 @@ func (x *CreateChannelRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateChannelRequest.ProtoReflect.Descriptor instead.
 func (*CreateChannelRequest) Descriptor() ([]byte, []int) {
-	return file_notifier_v1_admin_proto_rawDescGZIP(), []int{11}
+	return file_notifier_v1_admin_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *CreateChannelRequest) GetName() string {
@@ -720,7 +994,7 @@ type CreateChannelResponse struct {
 
 func (x *CreateChannelResponse) Reset() {
 	*x = CreateChannelResponse{}
-	mi := &file_notifier_v1_admin_proto_msgTypes[12]
+	mi := &file_notifier_v1_admin_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -732,7 +1006,7 @@ func (x *CreateChannelResponse) String() string {
 func (*CreateChannelResponse) ProtoMessage() {}
 
 func (x *CreateChannelResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_notifier_v1_admin_proto_msgTypes[12]
+	mi := &file_notifier_v1_admin_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -745,7 +1019,7 @@ func (x *CreateChannelResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateChannelResponse.ProtoReflect.Descriptor instead.
 func (*CreateChannelResponse) Descriptor() ([]byte, []int) {
-	return file_notifier_v1_admin_proto_rawDescGZIP(), []int{12}
+	return file_notifier_v1_admin_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *CreateChannelResponse) GetChannel() *Channel {
@@ -766,7 +1040,7 @@ type UpdateChannelRequest struct {
 
 func (x *UpdateChannelRequest) Reset() {
 	*x = UpdateChannelRequest{}
-	mi := &file_notifier_v1_admin_proto_msgTypes[13]
+	mi := &file_notifier_v1_admin_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -778,7 +1052,7 @@ func (x *UpdateChannelRequest) String() string {
 func (*UpdateChannelRequest) ProtoMessage() {}
 
 func (x *UpdateChannelRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_notifier_v1_admin_proto_msgTypes[13]
+	mi := &file_notifier_v1_admin_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -791,7 +1065,7 @@ func (x *UpdateChannelRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateChannelRequest.ProtoReflect.Descriptor instead.
 func (*UpdateChannelRequest) Descriptor() ([]byte, []int) {
-	return file_notifier_v1_admin_proto_rawDescGZIP(), []int{13}
+	return file_notifier_v1_admin_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *UpdateChannelRequest) GetName() string {
@@ -817,7 +1091,7 @@ type UpdateChannelResponse struct {
 
 func (x *UpdateChannelResponse) Reset() {
 	*x = UpdateChannelResponse{}
-	mi := &file_notifier_v1_admin_proto_msgTypes[14]
+	mi := &file_notifier_v1_admin_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -829,7 +1103,7 @@ func (x *UpdateChannelResponse) String() string {
 func (*UpdateChannelResponse) ProtoMessage() {}
 
 func (x *UpdateChannelResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_notifier_v1_admin_proto_msgTypes[14]
+	mi := &file_notifier_v1_admin_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -842,7 +1116,7 @@ func (x *UpdateChannelResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateChannelResponse.ProtoReflect.Descriptor instead.
 func (*UpdateChannelResponse) Descriptor() ([]byte, []int) {
-	return file_notifier_v1_admin_proto_rawDescGZIP(), []int{14}
+	return file_notifier_v1_admin_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *UpdateChannelResponse) GetChannel() *Channel {
@@ -861,7 +1135,7 @@ type DeleteChannelRequest struct {
 
 func (x *DeleteChannelRequest) Reset() {
 	*x = DeleteChannelRequest{}
-	mi := &file_notifier_v1_admin_proto_msgTypes[15]
+	mi := &file_notifier_v1_admin_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -873,7 +1147,7 @@ func (x *DeleteChannelRequest) String() string {
 func (*DeleteChannelRequest) ProtoMessage() {}
 
 func (x *DeleteChannelRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_notifier_v1_admin_proto_msgTypes[15]
+	mi := &file_notifier_v1_admin_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -886,7 +1160,7 @@ func (x *DeleteChannelRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteChannelRequest.ProtoReflect.Descriptor instead.
 func (*DeleteChannelRequest) Descriptor() ([]byte, []int) {
-	return file_notifier_v1_admin_proto_rawDescGZIP(), []int{15}
+	return file_notifier_v1_admin_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *DeleteChannelRequest) GetName() string {
@@ -904,7 +1178,7 @@ type DeleteChannelResponse struct {
 
 func (x *DeleteChannelResponse) Reset() {
 	*x = DeleteChannelResponse{}
-	mi := &file_notifier_v1_admin_proto_msgTypes[16]
+	mi := &file_notifier_v1_admin_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -916,7 +1190,7 @@ func (x *DeleteChannelResponse) String() string {
 func (*DeleteChannelResponse) ProtoMessage() {}
 
 func (x *DeleteChannelResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_notifier_v1_admin_proto_msgTypes[16]
+	mi := &file_notifier_v1_admin_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -929,7 +1203,7 @@ func (x *DeleteChannelResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteChannelResponse.ProtoReflect.Descriptor instead.
 func (*DeleteChannelResponse) Descriptor() ([]byte, []int) {
-	return file_notifier_v1_admin_proto_rawDescGZIP(), []int{16}
+	return file_notifier_v1_admin_proto_rawDescGZIP(), []int{22}
 }
 
 type ListTokensRequest struct {
@@ -940,7 +1214,7 @@ type ListTokensRequest struct {
 
 func (x *ListTokensRequest) Reset() {
 	*x = ListTokensRequest{}
-	mi := &file_notifier_v1_admin_proto_msgTypes[17]
+	mi := &file_notifier_v1_admin_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -952,7 +1226,7 @@ func (x *ListTokensRequest) String() string {
 func (*ListTokensRequest) ProtoMessage() {}
 
 func (x *ListTokensRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_notifier_v1_admin_proto_msgTypes[17]
+	mi := &file_notifier_v1_admin_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -965,7 +1239,7 @@ func (x *ListTokensRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListTokensRequest.ProtoReflect.Descriptor instead.
 func (*ListTokensRequest) Descriptor() ([]byte, []int) {
-	return file_notifier_v1_admin_proto_rawDescGZIP(), []int{17}
+	return file_notifier_v1_admin_proto_rawDescGZIP(), []int{23}
 }
 
 type ListTokensResponse struct {
@@ -977,7 +1251,7 @@ type ListTokensResponse struct {
 
 func (x *ListTokensResponse) Reset() {
 	*x = ListTokensResponse{}
-	mi := &file_notifier_v1_admin_proto_msgTypes[18]
+	mi := &file_notifier_v1_admin_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -989,7 +1263,7 @@ func (x *ListTokensResponse) String() string {
 func (*ListTokensResponse) ProtoMessage() {}
 
 func (x *ListTokensResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_notifier_v1_admin_proto_msgTypes[18]
+	mi := &file_notifier_v1_admin_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1002,7 +1276,7 @@ func (x *ListTokensResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListTokensResponse.ProtoReflect.Descriptor instead.
 func (*ListTokensResponse) Descriptor() ([]byte, []int) {
-	return file_notifier_v1_admin_proto_rawDescGZIP(), []int{18}
+	return file_notifier_v1_admin_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *ListTokensResponse) GetTokens() []*Token {
@@ -1024,7 +1298,7 @@ type CreateTokenRequest struct {
 
 func (x *CreateTokenRequest) Reset() {
 	*x = CreateTokenRequest{}
-	mi := &file_notifier_v1_admin_proto_msgTypes[19]
+	mi := &file_notifier_v1_admin_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1036,7 +1310,7 @@ func (x *CreateTokenRequest) String() string {
 func (*CreateTokenRequest) ProtoMessage() {}
 
 func (x *CreateTokenRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_notifier_v1_admin_proto_msgTypes[19]
+	mi := &file_notifier_v1_admin_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1049,7 +1323,7 @@ func (x *CreateTokenRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateTokenRequest.ProtoReflect.Descriptor instead.
 func (*CreateTokenRequest) Descriptor() ([]byte, []int) {
-	return file_notifier_v1_admin_proto_rawDescGZIP(), []int{19}
+	return file_notifier_v1_admin_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *CreateTokenRequest) GetName() string {
@@ -1091,7 +1365,7 @@ type CreateTokenResponse struct {
 
 func (x *CreateTokenResponse) Reset() {
 	*x = CreateTokenResponse{}
-	mi := &file_notifier_v1_admin_proto_msgTypes[20]
+	mi := &file_notifier_v1_admin_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1103,7 +1377,7 @@ func (x *CreateTokenResponse) String() string {
 func (*CreateTokenResponse) ProtoMessage() {}
 
 func (x *CreateTokenResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_notifier_v1_admin_proto_msgTypes[20]
+	mi := &file_notifier_v1_admin_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1116,7 +1390,7 @@ func (x *CreateTokenResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateTokenResponse.ProtoReflect.Descriptor instead.
 func (*CreateTokenResponse) Descriptor() ([]byte, []int) {
-	return file_notifier_v1_admin_proto_rawDescGZIP(), []int{20}
+	return file_notifier_v1_admin_proto_rawDescGZIP(), []int{26}
 }
 
 func (x *CreateTokenResponse) GetToken() *Token {
@@ -1146,7 +1420,7 @@ type UpdateTokenRequest struct {
 
 func (x *UpdateTokenRequest) Reset() {
 	*x = UpdateTokenRequest{}
-	mi := &file_notifier_v1_admin_proto_msgTypes[21]
+	mi := &file_notifier_v1_admin_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1158,7 +1432,7 @@ func (x *UpdateTokenRequest) String() string {
 func (*UpdateTokenRequest) ProtoMessage() {}
 
 func (x *UpdateTokenRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_notifier_v1_admin_proto_msgTypes[21]
+	mi := &file_notifier_v1_admin_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1171,7 +1445,7 @@ func (x *UpdateTokenRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateTokenRequest.ProtoReflect.Descriptor instead.
 func (*UpdateTokenRequest) Descriptor() ([]byte, []int) {
-	return file_notifier_v1_admin_proto_rawDescGZIP(), []int{21}
+	return file_notifier_v1_admin_proto_rawDescGZIP(), []int{27}
 }
 
 func (x *UpdateTokenRequest) GetName() string {
@@ -1204,7 +1478,7 @@ type UpdateTokenResponse struct {
 
 func (x *UpdateTokenResponse) Reset() {
 	*x = UpdateTokenResponse{}
-	mi := &file_notifier_v1_admin_proto_msgTypes[22]
+	mi := &file_notifier_v1_admin_proto_msgTypes[28]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1216,7 +1490,7 @@ func (x *UpdateTokenResponse) String() string {
 func (*UpdateTokenResponse) ProtoMessage() {}
 
 func (x *UpdateTokenResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_notifier_v1_admin_proto_msgTypes[22]
+	mi := &file_notifier_v1_admin_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1229,7 +1503,7 @@ func (x *UpdateTokenResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateTokenResponse.ProtoReflect.Descriptor instead.
 func (*UpdateTokenResponse) Descriptor() ([]byte, []int) {
-	return file_notifier_v1_admin_proto_rawDescGZIP(), []int{22}
+	return file_notifier_v1_admin_proto_rawDescGZIP(), []int{28}
 }
 
 func (x *UpdateTokenResponse) GetToken() *Token {
@@ -1248,7 +1522,7 @@ type DeleteTokenRequest struct {
 
 func (x *DeleteTokenRequest) Reset() {
 	*x = DeleteTokenRequest{}
-	mi := &file_notifier_v1_admin_proto_msgTypes[23]
+	mi := &file_notifier_v1_admin_proto_msgTypes[29]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1260,7 +1534,7 @@ func (x *DeleteTokenRequest) String() string {
 func (*DeleteTokenRequest) ProtoMessage() {}
 
 func (x *DeleteTokenRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_notifier_v1_admin_proto_msgTypes[23]
+	mi := &file_notifier_v1_admin_proto_msgTypes[29]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1273,7 +1547,7 @@ func (x *DeleteTokenRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteTokenRequest.ProtoReflect.Descriptor instead.
 func (*DeleteTokenRequest) Descriptor() ([]byte, []int) {
-	return file_notifier_v1_admin_proto_rawDescGZIP(), []int{23}
+	return file_notifier_v1_admin_proto_rawDescGZIP(), []int{29}
 }
 
 func (x *DeleteTokenRequest) GetName() string {
@@ -1291,7 +1565,7 @@ type DeleteTokenResponse struct {
 
 func (x *DeleteTokenResponse) Reset() {
 	*x = DeleteTokenResponse{}
-	mi := &file_notifier_v1_admin_proto_msgTypes[24]
+	mi := &file_notifier_v1_admin_proto_msgTypes[30]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1303,7 +1577,7 @@ func (x *DeleteTokenResponse) String() string {
 func (*DeleteTokenResponse) ProtoMessage() {}
 
 func (x *DeleteTokenResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_notifier_v1_admin_proto_msgTypes[24]
+	mi := &file_notifier_v1_admin_proto_msgTypes[30]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1316,7 +1590,7 @@ func (x *DeleteTokenResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteTokenResponse.ProtoReflect.Descriptor instead.
 func (*DeleteTokenResponse) Descriptor() ([]byte, []int) {
-	return file_notifier_v1_admin_proto_rawDescGZIP(), []int{24}
+	return file_notifier_v1_admin_proto_rawDescGZIP(), []int{30}
 }
 
 type SendTestNotificationRequest struct {
@@ -1328,7 +1602,7 @@ type SendTestNotificationRequest struct {
 
 func (x *SendTestNotificationRequest) Reset() {
 	*x = SendTestNotificationRequest{}
-	mi := &file_notifier_v1_admin_proto_msgTypes[25]
+	mi := &file_notifier_v1_admin_proto_msgTypes[31]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1340,7 +1614,7 @@ func (x *SendTestNotificationRequest) String() string {
 func (*SendTestNotificationRequest) ProtoMessage() {}
 
 func (x *SendTestNotificationRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_notifier_v1_admin_proto_msgTypes[25]
+	mi := &file_notifier_v1_admin_proto_msgTypes[31]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1353,7 +1627,7 @@ func (x *SendTestNotificationRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SendTestNotificationRequest.ProtoReflect.Descriptor instead.
 func (*SendTestNotificationRequest) Descriptor() ([]byte, []int) {
-	return file_notifier_v1_admin_proto_rawDescGZIP(), []int{25}
+	return file_notifier_v1_admin_proto_rawDescGZIP(), []int{31}
 }
 
 func (x *SendTestNotificationRequest) GetChannel() string {
@@ -1371,7 +1645,7 @@ type SendTestNotificationResponse struct {
 
 func (x *SendTestNotificationResponse) Reset() {
 	*x = SendTestNotificationResponse{}
-	mi := &file_notifier_v1_admin_proto_msgTypes[26]
+	mi := &file_notifier_v1_admin_proto_msgTypes[32]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1383,7 +1657,7 @@ func (x *SendTestNotificationResponse) String() string {
 func (*SendTestNotificationResponse) ProtoMessage() {}
 
 func (x *SendTestNotificationResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_notifier_v1_admin_proto_msgTypes[26]
+	mi := &file_notifier_v1_admin_proto_msgTypes[32]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1396,7 +1670,7 @@ func (x *SendTestNotificationResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SendTestNotificationResponse.ProtoReflect.Descriptor instead.
 func (*SendTestNotificationResponse) Descriptor() ([]byte, []int) {
-	return file_notifier_v1_admin_proto_rawDescGZIP(), []int{26}
+	return file_notifier_v1_admin_proto_rawDescGZIP(), []int{32}
 }
 
 type TestTokenRequest struct {
@@ -1408,7 +1682,7 @@ type TestTokenRequest struct {
 
 func (x *TestTokenRequest) Reset() {
 	*x = TestTokenRequest{}
-	mi := &file_notifier_v1_admin_proto_msgTypes[27]
+	mi := &file_notifier_v1_admin_proto_msgTypes[33]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1420,7 +1694,7 @@ func (x *TestTokenRequest) String() string {
 func (*TestTokenRequest) ProtoMessage() {}
 
 func (x *TestTokenRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_notifier_v1_admin_proto_msgTypes[27]
+	mi := &file_notifier_v1_admin_proto_msgTypes[33]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1433,7 +1707,7 @@ func (x *TestTokenRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TestTokenRequest.ProtoReflect.Descriptor instead.
 func (*TestTokenRequest) Descriptor() ([]byte, []int) {
-	return file_notifier_v1_admin_proto_rawDescGZIP(), []int{27}
+	return file_notifier_v1_admin_proto_rawDescGZIP(), []int{33}
 }
 
 func (x *TestTokenRequest) GetName() string {
@@ -1451,7 +1725,7 @@ type TestTokenResponse struct {
 
 func (x *TestTokenResponse) Reset() {
 	*x = TestTokenResponse{}
-	mi := &file_notifier_v1_admin_proto_msgTypes[28]
+	mi := &file_notifier_v1_admin_proto_msgTypes[34]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1463,7 +1737,7 @@ func (x *TestTokenResponse) String() string {
 func (*TestTokenResponse) ProtoMessage() {}
 
 func (x *TestTokenResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_notifier_v1_admin_proto_msgTypes[28]
+	mi := &file_notifier_v1_admin_proto_msgTypes[34]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1476,7 +1750,7 @@ func (x *TestTokenResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TestTokenResponse.ProtoReflect.Descriptor instead.
 func (*TestTokenResponse) Descriptor() ([]byte, []int) {
-	return file_notifier_v1_admin_proto_rawDescGZIP(), []int{28}
+	return file_notifier_v1_admin_proto_rawDescGZIP(), []int{34}
 }
 
 var File_notifier_v1_admin_proto protoreflect.FileDescriptor
@@ -1512,7 +1786,22 @@ const file_notifier_v1_admin_proto_rawDesc = "" +
 	"\x05rooms\x18\x01 \x03(\v2\x11.notifier.v1.RoomR\x05rooms\"+\n" +
 	"\x10LeaveRoomRequest\x12\x17\n" +
 	"\aroom_id\x18\x01 \x01(\tR\x06roomId\"\x13\n" +
-	"\x11LeaveRoomResponse\"\x12\n" +
+	"\x11LeaveRoomResponse\"*\n" +
+	"\fLoginRequest\x12\x1a\n" +
+	"\bpassword\x18\x01 \x01(\tR\bpassword\"`\n" +
+	"\rLoginResponse\x12\x14\n" +
+	"\x05token\x18\x01 \x01(\tR\x05token\x129\n" +
+	"\n" +
+	"expires_at\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAt\"\x0f\n" +
+	"\rLogoutRequest\"\x10\n" +
+	"\x0eLogoutResponse\"j\n" +
+	"\x1aChangeAdminPasswordRequest\x12)\n" +
+	"\x10current_password\x18\x01 \x01(\tR\x0fcurrentPassword\x12!\n" +
+	"\fnew_password\x18\x02 \x01(\tR\vnewPassword\"n\n" +
+	"\x1bChangeAdminPasswordResponse\x12\x14\n" +
+	"\x05token\x18\x01 \x01(\tR\x05token\x129\n" +
+	"\n" +
+	"expires_at\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAt\"\x12\n" +
 	"\x10GetStatusRequest\"\xb8\x02\n" +
 	"\x11GetStatusResponse\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x1b\n" +
@@ -1565,8 +1854,12 @@ const file_notifier_v1_admin_proto_rawDesc = "" +
 	"\x1cSendTestNotificationResponse\"&\n" +
 	"\x10TestTokenRequest\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\"\x13\n" +
-	"\x11TestTokenResponse2\xe7\b\n" +
-	"\fAdminService\x12L\n" +
+	"\x11TestTokenResponse2\xda\n" +
+	"\n" +
+	"\fAdminService\x12@\n" +
+	"\x05Login\x12\x19.notifier.v1.LoginRequest\x1a\x1a.notifier.v1.LoginResponse\"\x00\x12C\n" +
+	"\x06Logout\x12\x1a.notifier.v1.LogoutRequest\x1a\x1b.notifier.v1.LogoutResponse\"\x00\x12j\n" +
+	"\x13ChangeAdminPassword\x12'.notifier.v1.ChangeAdminPasswordRequest\x1a(.notifier.v1.ChangeAdminPasswordResponse\"\x00\x12L\n" +
 	"\tGetStatus\x12\x1d.notifier.v1.GetStatusRequest\x1a\x1e.notifier.v1.GetStatusResponse\"\x00\x12U\n" +
 	"\fListChannels\x12 .notifier.v1.ListChannelsRequest\x1a!.notifier.v1.ListChannelsResponse\"\x00\x12L\n" +
 	"\tListRooms\x12\x1d.notifier.v1.ListRoomsRequest\x1a\x1e.notifier.v1.ListRoomsResponse\"\x00\x12L\n" +
@@ -1594,7 +1887,7 @@ func file_notifier_v1_admin_proto_rawDescGZIP() []byte {
 	return file_notifier_v1_admin_proto_rawDescData
 }
 
-var file_notifier_v1_admin_proto_msgTypes = make([]protoimpl.MessageInfo, 29)
+var file_notifier_v1_admin_proto_msgTypes = make([]protoimpl.MessageInfo, 35)
 var file_notifier_v1_admin_proto_goTypes = []any{
 	(*Channel)(nil),                      // 0: notifier.v1.Channel
 	(*Token)(nil),                        // 1: notifier.v1.Token
@@ -1603,73 +1896,87 @@ var file_notifier_v1_admin_proto_goTypes = []any{
 	(*ListRoomsResponse)(nil),            // 4: notifier.v1.ListRoomsResponse
 	(*LeaveRoomRequest)(nil),             // 5: notifier.v1.LeaveRoomRequest
 	(*LeaveRoomResponse)(nil),            // 6: notifier.v1.LeaveRoomResponse
-	(*GetStatusRequest)(nil),             // 7: notifier.v1.GetStatusRequest
-	(*GetStatusResponse)(nil),            // 8: notifier.v1.GetStatusResponse
-	(*ListChannelsRequest)(nil),          // 9: notifier.v1.ListChannelsRequest
-	(*ListChannelsResponse)(nil),         // 10: notifier.v1.ListChannelsResponse
-	(*CreateChannelRequest)(nil),         // 11: notifier.v1.CreateChannelRequest
-	(*CreateChannelResponse)(nil),        // 12: notifier.v1.CreateChannelResponse
-	(*UpdateChannelRequest)(nil),         // 13: notifier.v1.UpdateChannelRequest
-	(*UpdateChannelResponse)(nil),        // 14: notifier.v1.UpdateChannelResponse
-	(*DeleteChannelRequest)(nil),         // 15: notifier.v1.DeleteChannelRequest
-	(*DeleteChannelResponse)(nil),        // 16: notifier.v1.DeleteChannelResponse
-	(*ListTokensRequest)(nil),            // 17: notifier.v1.ListTokensRequest
-	(*ListTokensResponse)(nil),           // 18: notifier.v1.ListTokensResponse
-	(*CreateTokenRequest)(nil),           // 19: notifier.v1.CreateTokenRequest
-	(*CreateTokenResponse)(nil),          // 20: notifier.v1.CreateTokenResponse
-	(*UpdateTokenRequest)(nil),           // 21: notifier.v1.UpdateTokenRequest
-	(*UpdateTokenResponse)(nil),          // 22: notifier.v1.UpdateTokenResponse
-	(*DeleteTokenRequest)(nil),           // 23: notifier.v1.DeleteTokenRequest
-	(*DeleteTokenResponse)(nil),          // 24: notifier.v1.DeleteTokenResponse
-	(*SendTestNotificationRequest)(nil),  // 25: notifier.v1.SendTestNotificationRequest
-	(*SendTestNotificationResponse)(nil), // 26: notifier.v1.SendTestNotificationResponse
-	(*TestTokenRequest)(nil),             // 27: notifier.v1.TestTokenRequest
-	(*TestTokenResponse)(nil),            // 28: notifier.v1.TestTokenResponse
-	(*timestamppb.Timestamp)(nil),        // 29: google.protobuf.Timestamp
+	(*LoginRequest)(nil),                 // 7: notifier.v1.LoginRequest
+	(*LoginResponse)(nil),                // 8: notifier.v1.LoginResponse
+	(*LogoutRequest)(nil),                // 9: notifier.v1.LogoutRequest
+	(*LogoutResponse)(nil),               // 10: notifier.v1.LogoutResponse
+	(*ChangeAdminPasswordRequest)(nil),   // 11: notifier.v1.ChangeAdminPasswordRequest
+	(*ChangeAdminPasswordResponse)(nil),  // 12: notifier.v1.ChangeAdminPasswordResponse
+	(*GetStatusRequest)(nil),             // 13: notifier.v1.GetStatusRequest
+	(*GetStatusResponse)(nil),            // 14: notifier.v1.GetStatusResponse
+	(*ListChannelsRequest)(nil),          // 15: notifier.v1.ListChannelsRequest
+	(*ListChannelsResponse)(nil),         // 16: notifier.v1.ListChannelsResponse
+	(*CreateChannelRequest)(nil),         // 17: notifier.v1.CreateChannelRequest
+	(*CreateChannelResponse)(nil),        // 18: notifier.v1.CreateChannelResponse
+	(*UpdateChannelRequest)(nil),         // 19: notifier.v1.UpdateChannelRequest
+	(*UpdateChannelResponse)(nil),        // 20: notifier.v1.UpdateChannelResponse
+	(*DeleteChannelRequest)(nil),         // 21: notifier.v1.DeleteChannelRequest
+	(*DeleteChannelResponse)(nil),        // 22: notifier.v1.DeleteChannelResponse
+	(*ListTokensRequest)(nil),            // 23: notifier.v1.ListTokensRequest
+	(*ListTokensResponse)(nil),           // 24: notifier.v1.ListTokensResponse
+	(*CreateTokenRequest)(nil),           // 25: notifier.v1.CreateTokenRequest
+	(*CreateTokenResponse)(nil),          // 26: notifier.v1.CreateTokenResponse
+	(*UpdateTokenRequest)(nil),           // 27: notifier.v1.UpdateTokenRequest
+	(*UpdateTokenResponse)(nil),          // 28: notifier.v1.UpdateTokenResponse
+	(*DeleteTokenRequest)(nil),           // 29: notifier.v1.DeleteTokenRequest
+	(*DeleteTokenResponse)(nil),          // 30: notifier.v1.DeleteTokenResponse
+	(*SendTestNotificationRequest)(nil),  // 31: notifier.v1.SendTestNotificationRequest
+	(*SendTestNotificationResponse)(nil), // 32: notifier.v1.SendTestNotificationResponse
+	(*TestTokenRequest)(nil),             // 33: notifier.v1.TestTokenRequest
+	(*TestTokenResponse)(nil),            // 34: notifier.v1.TestTokenResponse
+	(*timestamppb.Timestamp)(nil),        // 35: google.protobuf.Timestamp
 }
 var file_notifier_v1_admin_proto_depIdxs = []int32{
-	29, // 0: notifier.v1.Channel.created_at:type_name -> google.protobuf.Timestamp
-	29, // 1: notifier.v1.Token.created_at:type_name -> google.protobuf.Timestamp
-	29, // 2: notifier.v1.Token.last_used_at:type_name -> google.protobuf.Timestamp
+	35, // 0: notifier.v1.Channel.created_at:type_name -> google.protobuf.Timestamp
+	35, // 1: notifier.v1.Token.created_at:type_name -> google.protobuf.Timestamp
+	35, // 2: notifier.v1.Token.last_used_at:type_name -> google.protobuf.Timestamp
 	2,  // 3: notifier.v1.ListRoomsResponse.rooms:type_name -> notifier.v1.Room
-	29, // 4: notifier.v1.GetStatusResponse.last_sync:type_name -> google.protobuf.Timestamp
-	0,  // 5: notifier.v1.ListChannelsResponse.channels:type_name -> notifier.v1.Channel
-	0,  // 6: notifier.v1.CreateChannelResponse.channel:type_name -> notifier.v1.Channel
-	0,  // 7: notifier.v1.UpdateChannelResponse.channel:type_name -> notifier.v1.Channel
-	1,  // 8: notifier.v1.ListTokensResponse.tokens:type_name -> notifier.v1.Token
-	1,  // 9: notifier.v1.CreateTokenResponse.token:type_name -> notifier.v1.Token
-	1,  // 10: notifier.v1.UpdateTokenResponse.token:type_name -> notifier.v1.Token
-	7,  // 11: notifier.v1.AdminService.GetStatus:input_type -> notifier.v1.GetStatusRequest
-	9,  // 12: notifier.v1.AdminService.ListChannels:input_type -> notifier.v1.ListChannelsRequest
-	3,  // 13: notifier.v1.AdminService.ListRooms:input_type -> notifier.v1.ListRoomsRequest
-	5,  // 14: notifier.v1.AdminService.LeaveRoom:input_type -> notifier.v1.LeaveRoomRequest
-	11, // 15: notifier.v1.AdminService.CreateChannel:input_type -> notifier.v1.CreateChannelRequest
-	13, // 16: notifier.v1.AdminService.UpdateChannel:input_type -> notifier.v1.UpdateChannelRequest
-	15, // 17: notifier.v1.AdminService.DeleteChannel:input_type -> notifier.v1.DeleteChannelRequest
-	17, // 18: notifier.v1.AdminService.ListTokens:input_type -> notifier.v1.ListTokensRequest
-	19, // 19: notifier.v1.AdminService.CreateToken:input_type -> notifier.v1.CreateTokenRequest
-	21, // 20: notifier.v1.AdminService.UpdateToken:input_type -> notifier.v1.UpdateTokenRequest
-	23, // 21: notifier.v1.AdminService.DeleteToken:input_type -> notifier.v1.DeleteTokenRequest
-	25, // 22: notifier.v1.AdminService.SendTestNotification:input_type -> notifier.v1.SendTestNotificationRequest
-	27, // 23: notifier.v1.AdminService.TestToken:input_type -> notifier.v1.TestTokenRequest
-	8,  // 24: notifier.v1.AdminService.GetStatus:output_type -> notifier.v1.GetStatusResponse
-	10, // 25: notifier.v1.AdminService.ListChannels:output_type -> notifier.v1.ListChannelsResponse
-	4,  // 26: notifier.v1.AdminService.ListRooms:output_type -> notifier.v1.ListRoomsResponse
-	6,  // 27: notifier.v1.AdminService.LeaveRoom:output_type -> notifier.v1.LeaveRoomResponse
-	12, // 28: notifier.v1.AdminService.CreateChannel:output_type -> notifier.v1.CreateChannelResponse
-	14, // 29: notifier.v1.AdminService.UpdateChannel:output_type -> notifier.v1.UpdateChannelResponse
-	16, // 30: notifier.v1.AdminService.DeleteChannel:output_type -> notifier.v1.DeleteChannelResponse
-	18, // 31: notifier.v1.AdminService.ListTokens:output_type -> notifier.v1.ListTokensResponse
-	20, // 32: notifier.v1.AdminService.CreateToken:output_type -> notifier.v1.CreateTokenResponse
-	22, // 33: notifier.v1.AdminService.UpdateToken:output_type -> notifier.v1.UpdateTokenResponse
-	24, // 34: notifier.v1.AdminService.DeleteToken:output_type -> notifier.v1.DeleteTokenResponse
-	26, // 35: notifier.v1.AdminService.SendTestNotification:output_type -> notifier.v1.SendTestNotificationResponse
-	28, // 36: notifier.v1.AdminService.TestToken:output_type -> notifier.v1.TestTokenResponse
-	24, // [24:37] is the sub-list for method output_type
-	11, // [11:24] is the sub-list for method input_type
-	11, // [11:11] is the sub-list for extension type_name
-	11, // [11:11] is the sub-list for extension extendee
-	0,  // [0:11] is the sub-list for field type_name
+	35, // 4: notifier.v1.LoginResponse.expires_at:type_name -> google.protobuf.Timestamp
+	35, // 5: notifier.v1.ChangeAdminPasswordResponse.expires_at:type_name -> google.protobuf.Timestamp
+	35, // 6: notifier.v1.GetStatusResponse.last_sync:type_name -> google.protobuf.Timestamp
+	0,  // 7: notifier.v1.ListChannelsResponse.channels:type_name -> notifier.v1.Channel
+	0,  // 8: notifier.v1.CreateChannelResponse.channel:type_name -> notifier.v1.Channel
+	0,  // 9: notifier.v1.UpdateChannelResponse.channel:type_name -> notifier.v1.Channel
+	1,  // 10: notifier.v1.ListTokensResponse.tokens:type_name -> notifier.v1.Token
+	1,  // 11: notifier.v1.CreateTokenResponse.token:type_name -> notifier.v1.Token
+	1,  // 12: notifier.v1.UpdateTokenResponse.token:type_name -> notifier.v1.Token
+	7,  // 13: notifier.v1.AdminService.Login:input_type -> notifier.v1.LoginRequest
+	9,  // 14: notifier.v1.AdminService.Logout:input_type -> notifier.v1.LogoutRequest
+	11, // 15: notifier.v1.AdminService.ChangeAdminPassword:input_type -> notifier.v1.ChangeAdminPasswordRequest
+	13, // 16: notifier.v1.AdminService.GetStatus:input_type -> notifier.v1.GetStatusRequest
+	15, // 17: notifier.v1.AdminService.ListChannels:input_type -> notifier.v1.ListChannelsRequest
+	3,  // 18: notifier.v1.AdminService.ListRooms:input_type -> notifier.v1.ListRoomsRequest
+	5,  // 19: notifier.v1.AdminService.LeaveRoom:input_type -> notifier.v1.LeaveRoomRequest
+	17, // 20: notifier.v1.AdminService.CreateChannel:input_type -> notifier.v1.CreateChannelRequest
+	19, // 21: notifier.v1.AdminService.UpdateChannel:input_type -> notifier.v1.UpdateChannelRequest
+	21, // 22: notifier.v1.AdminService.DeleteChannel:input_type -> notifier.v1.DeleteChannelRequest
+	23, // 23: notifier.v1.AdminService.ListTokens:input_type -> notifier.v1.ListTokensRequest
+	25, // 24: notifier.v1.AdminService.CreateToken:input_type -> notifier.v1.CreateTokenRequest
+	27, // 25: notifier.v1.AdminService.UpdateToken:input_type -> notifier.v1.UpdateTokenRequest
+	29, // 26: notifier.v1.AdminService.DeleteToken:input_type -> notifier.v1.DeleteTokenRequest
+	31, // 27: notifier.v1.AdminService.SendTestNotification:input_type -> notifier.v1.SendTestNotificationRequest
+	33, // 28: notifier.v1.AdminService.TestToken:input_type -> notifier.v1.TestTokenRequest
+	8,  // 29: notifier.v1.AdminService.Login:output_type -> notifier.v1.LoginResponse
+	10, // 30: notifier.v1.AdminService.Logout:output_type -> notifier.v1.LogoutResponse
+	12, // 31: notifier.v1.AdminService.ChangeAdminPassword:output_type -> notifier.v1.ChangeAdminPasswordResponse
+	14, // 32: notifier.v1.AdminService.GetStatus:output_type -> notifier.v1.GetStatusResponse
+	16, // 33: notifier.v1.AdminService.ListChannels:output_type -> notifier.v1.ListChannelsResponse
+	4,  // 34: notifier.v1.AdminService.ListRooms:output_type -> notifier.v1.ListRoomsResponse
+	6,  // 35: notifier.v1.AdminService.LeaveRoom:output_type -> notifier.v1.LeaveRoomResponse
+	18, // 36: notifier.v1.AdminService.CreateChannel:output_type -> notifier.v1.CreateChannelResponse
+	20, // 37: notifier.v1.AdminService.UpdateChannel:output_type -> notifier.v1.UpdateChannelResponse
+	22, // 38: notifier.v1.AdminService.DeleteChannel:output_type -> notifier.v1.DeleteChannelResponse
+	24, // 39: notifier.v1.AdminService.ListTokens:output_type -> notifier.v1.ListTokensResponse
+	26, // 40: notifier.v1.AdminService.CreateToken:output_type -> notifier.v1.CreateTokenResponse
+	28, // 41: notifier.v1.AdminService.UpdateToken:output_type -> notifier.v1.UpdateTokenResponse
+	30, // 42: notifier.v1.AdminService.DeleteToken:output_type -> notifier.v1.DeleteTokenResponse
+	32, // 43: notifier.v1.AdminService.SendTestNotification:output_type -> notifier.v1.SendTestNotificationResponse
+	34, // 44: notifier.v1.AdminService.TestToken:output_type -> notifier.v1.TestTokenResponse
+	29, // [29:45] is the sub-list for method output_type
+	13, // [13:29] is the sub-list for method input_type
+	13, // [13:13] is the sub-list for extension type_name
+	13, // [13:13] is the sub-list for extension extendee
+	0,  // [0:13] is the sub-list for field type_name
 }
 
 func init() { file_notifier_v1_admin_proto_init() }
@@ -1683,7 +1990,7 @@ func file_notifier_v1_admin_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_notifier_v1_admin_proto_rawDesc), len(file_notifier_v1_admin_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   29,
+			NumMessages:   35,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

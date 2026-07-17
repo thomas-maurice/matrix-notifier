@@ -35,11 +35,51 @@ type Matrix interface {
 type Server struct {
 	store  *store.Store
 	bot    Matrix
+	auth   *AdminAuth
 	dbType string
 }
 
-func NewServer(st *store.Store, bot Matrix, dbType string) *Server {
-	return &Server{store: st, bot: bot, dbType: dbType}
+func NewServer(st *store.Store, bot Matrix, auth *AdminAuth, dbType string) *Server {
+	return &Server{store: st, bot: bot, auth: auth, dbType: dbType}
+}
+
+// Login exchanges the admin password for a session JWT, returned in the body
+// (for API clients) and as an httpOnly cookie (for the browser, which never
+// sees the token itself).
+func (s *Server) Login(_ context.Context, req *connect.Request[notifierv1.LoginRequest]) (*connect.Response[notifierv1.LoginResponse], error) {
+	token, expiresAt, err := s.auth.Login(req.Msg.Password)
+	if err != nil {
+		return nil, err
+	}
+	resp := connect.NewResponse(&notifierv1.LoginResponse{
+		Token:     token,
+		ExpiresAt: timestamppb.New(expiresAt),
+	})
+	resp.Header().Set("Set-Cookie", SessionCookie(token, expiresAt, req.Header()))
+	return resp, nil
+}
+
+// Logout clears the session cookie. Stateless bearer JWTs remain valid until
+// expiry; changing the password revokes them all.
+func (s *Server) Logout(_ context.Context, req *connect.Request[notifierv1.LogoutRequest]) (*connect.Response[notifierv1.LogoutResponse], error) {
+	resp := connect.NewResponse(&notifierv1.LogoutResponse{})
+	resp.Header().Set("Set-Cookie", SessionCookie("", time.Time{}, req.Header()))
+	return resp, nil
+}
+
+// ChangeAdminPassword rotates the password and the JWT secret (revoking all
+// sessions), then hands the caller a fresh token so it stays logged in.
+func (s *Server) ChangeAdminPassword(ctx context.Context, req *connect.Request[notifierv1.ChangeAdminPasswordRequest]) (*connect.Response[notifierv1.ChangeAdminPasswordResponse], error) {
+	token, expiresAt, err := s.auth.ChangePassword(ctx, req.Msg.CurrentPassword, req.Msg.NewPassword)
+	if err != nil {
+		return nil, err
+	}
+	resp := connect.NewResponse(&notifierv1.ChangeAdminPasswordResponse{
+		Token:     token,
+		ExpiresAt: timestamppb.New(expiresAt),
+	})
+	resp.Header().Set("Set-Cookie", SessionCookie(token, expiresAt, req.Header()))
+	return resp, nil
 }
 
 func (s *Server) GetStatus(ctx context.Context, _ *connect.Request[notifierv1.GetStatusRequest]) (*connect.Response[notifierv1.GetStatusResponse], error) {

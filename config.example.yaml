@@ -26,9 +26,12 @@ database:
   # uri: "postgres://user:pass@host:5432/notifier?sslmode=disable"
   uri: "./data/notifier.db"
 
-# argon2id hash of the admin API/UI token. Generate with:
-#   echo -n "your-admin-token" | matrix-notifier token hash
+# argon2id hash that SEEDS the admin password in the database on first boot.
+# Generate with:
+#   echo -n "your-admin-password" | matrix-notifier token hash
 # Prefer supplying it via MATRIX_NOTIFIER_ADMIN_TOKEN_HASH instead of the file.
+# Once seeded, the database is authoritative: change the password in the UI
+# (Settings) or via the ChangeAdminPassword RPC — editing this has no effect.
 admin_token_hash: "$argon2id$v=19$m=65536,t=1,p=..."
 
 # Optional: enables Prometheus chart rendering for alertmanager

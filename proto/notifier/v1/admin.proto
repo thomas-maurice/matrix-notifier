@@ -9,6 +9,18 @@ option go_package = "github.com/thomas-maurice/matrix-notifier/gen/notifier/v1;n
 // AdminService manages channels, ingest tokens, and exposes bot health.
 // All RPCs require the admin bearer token.
 service AdminService {
+  // Login exchanges the admin password for a JWT (7 days validity). The only
+  // RPC that does not require authentication. The token is also set as an
+  // httpOnly cookie for browser sessions.
+  rpc Login(LoginRequest) returns (LoginResponse) {}
+  // Logout clears the browser session cookie. Bearer tokens stay valid until
+  // they expire (JWTs are stateless); rotate the password to revoke them all.
+  rpc Logout(LogoutRequest) returns (LogoutResponse) {}
+  // ChangeAdminPassword rotates the admin password AND the JWT signing
+  // secret, invalidating every outstanding session. The response carries a
+  // fresh token (and cookie) so the calling session stays logged in.
+  rpc ChangeAdminPassword(ChangeAdminPasswordRequest) returns (ChangeAdminPasswordResponse) {}
+
   rpc GetStatus(GetStatusRequest) returns (GetStatusResponse) {}
 
   rpc ListChannels(ListChannelsRequest) returns (ListChannelsResponse) {}
@@ -76,6 +88,31 @@ message LeaveRoomRequest {
 }
 
 message LeaveRoomResponse {}
+
+message LoginRequest {
+  string password = 1;
+}
+
+message LoginResponse {
+  // JWT to present as "Authorization: Bearer <token>".
+  string token = 1;
+  google.protobuf.Timestamp expires_at = 2;
+}
+
+message LogoutRequest {}
+
+message LogoutResponse {}
+
+message ChangeAdminPasswordRequest {
+  string current_password = 1;
+  string new_password = 2;
+}
+
+message ChangeAdminPasswordResponse {
+  // Fresh JWT signed with the rotated secret; all previous tokens are dead.
+  string token = 1;
+  google.protobuf.Timestamp expires_at = 2;
+}
 
 message GetStatusRequest {}
 

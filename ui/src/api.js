@@ -1,19 +1,7 @@
 // Thin client for the Connect JSON protocol: every RPC is a POST of a JSON
-// body to /notifier.v1.AdminService/<Method> with the admin bearer token.
-
-const TOKEN_KEY = 'matrix-notifier-admin-token'
-
-export function getToken() {
-  return localStorage.getItem(TOKEN_KEY) || ''
-}
-
-export function setToken(token) {
-  localStorage.setItem(TOKEN_KEY, token)
-}
-
-export function clearToken() {
-  localStorage.removeItem(TOKEN_KEY)
-}
+// body to /notifier.v1.AdminService/<Method>. Authentication rides in an
+// httpOnly session cookie set by Login — the token itself is never visible
+// to (or stored by) this code.
 
 export class ApiError extends Error {
   constructor(message, code, status) {
@@ -26,10 +14,9 @@ export class ApiError extends Error {
 async function call(method, body = {}, fetchFn = fetch) {
   const res = await fetchFn(`/notifier.v1.AdminService/${method}`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${getToken()}`,
-    },
+    headers: { 'Content-Type': 'application/json' },
+    // The session cookie must ride along on every RPC.
+    credentials: 'same-origin',
     body: JSON.stringify(body),
   })
   if (!res.ok) {
@@ -48,6 +35,10 @@ async function call(method, body = {}, fetchFn = fetch) {
 }
 
 export const api = {
+  login: (password) => call('Login', { password }),
+  logout: () => call('Logout'),
+  changePassword: (currentPassword, newPassword) =>
+    call('ChangeAdminPassword', { currentPassword, newPassword }),
   getStatus: () => call('GetStatus'),
   listChannels: () => call('ListChannels'),
   listRooms: () => call('ListRooms'),

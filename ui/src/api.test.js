@@ -1,27 +1,18 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { call, setToken, ApiError } from './api.js'
-
-// localStorage shim for the node test environment.
-const storage = new Map()
-globalThis.localStorage = {
-  getItem: (k) => storage.get(k) ?? null,
-  setItem: (k, v) => storage.set(k, v),
-  removeItem: (k) => storage.delete(k),
-}
-
-beforeEach(() => storage.clear())
+import { describe, it, expect, vi } from 'vitest'
+import { call, ApiError } from './api.js'
 
 describe('call', () => {
-  it('POSTs JSON to the Connect endpoint with the bearer token', async () => {
-    setToken('sekrit')
+  it('POSTs JSON with the session cookie riding along, never a stored token', async () => {
     const fetchFn = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ ok: 1 }) })
     const resp = await call('GetStatus', { a: 1 }, fetchFn)
     expect(resp).toEqual({ ok: 1 })
     const [url, opts] = fetchFn.mock.calls[0]
     expect(url).toBe('/notifier.v1.AdminService/GetStatus')
     expect(opts.method).toBe('POST')
-    // The admin token must ride along or every RPC 401s.
-    expect(opts.headers.Authorization).toBe('Bearer sekrit')
+    // Auth lives in an httpOnly cookie: it must be sent with the request,
+    // and no Authorization header (from any client-side storage) may exist.
+    expect(opts.credentials).toBe('same-origin')
+    expect(opts.headers.Authorization).toBeUndefined()
     expect(JSON.parse(opts.body)).toEqual({ a: 1 })
   })
 

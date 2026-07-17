@@ -84,29 +84,48 @@ you for it) permanently.
 
 ## Admin API and UI
 
-Everything operational is driven over a Connect RPC service, authenticated
-with a single **admin token** checked against an argon2id hash:
+Everything operational is driven over a Connect RPC service. Authentication
+is session-based: the **`Login`** RPC exchanges the admin password for a
+**JWT valid 7 days** — every other RPC requires it. In the browser the JWT
+lives in an **httpOnly, SameSite=Strict cookie**: the UI never sees or
+stores the token (nothing in localStorage, ever). API clients present it as
+a bearer header. Login attempts are rate-limited (argon2 verification is
+expensive by design).
+
+The admin password is stored in the database as an argon2id hash. The config
+key `admin_token_hash` (or `MATRIX_NOTIFIER_ADMIN_TOKEN_HASH`) only **seeds**
+that credential on first boot:
 
 ```sh
-# mint a token however you like, then hash it for the config:
+# pick a password, hash it for the seed config:
 openssl rand -hex 24 | tee /dev/stderr | matrix-notifier token hash
 # → put the hash in admin_token_hash (or MATRIX_NOTIFIER_ADMIN_TOKEN_HASH)
 ```
 
+After the first start the database row is authoritative: change the password
+in the UI (**Settings** tab) or via `ChangeAdminPassword` — editing the
+config hash does nothing. A password change also rotates the JWT signing
+secret, which **instantly logs out every session** (browser cookies and API
+tokens alike). Locked out completely? Delete the `admin_credentials` row and
+restart: the credential re-seeds from the config hash.
+
 The web UI (Vue 3 + Bootstrap, embedded in the binary, same listener) covers
 status (sync health, verification, per-channel joined/encrypted state,
-delivery counters), channel CRUD, token CRUD (plaintext shown exactly once)
-and test notifications. Channel rooms are shown by ID with the room's
-canonical alias (`#notifs:example.org`) next to it when one is set. The API is plain Connect JSON — curl works:
+delivery counters), channel CRUD, token CRUD (plaintext shown exactly once),
+test notifications and the password change. Channel rooms are shown by ID
+with the room's canonical alias (`#notifs:example.org`) next to it when one
+is set. The API is plain Connect JSON — curl works:
 
 ```sh
+JWT=$(curl -s -X POST http://localhost:8686/notifier.v1.AdminService/Login \
+  -H 'Content-Type: application/json' -d '{"password": "<admin-password>"}' | jq -r .token)
 curl -X POST http://localhost:8686/notifier.v1.AdminService/CreateChannel \
-  -H 'Authorization: Bearer <admin-token>' -H 'Content-Type: application/json' \
+  -H "Authorization: Bearer $JWT" -H 'Content-Type: application/json' \
   -d '{"name": "infra", "roomId": "!room:example.org"}'
 ```
 
 Ingest tokens are random 256-bit values stored as SHA-256 (argon2 is
-deliberately reserved for the admin token: a KDF per alertmanager burst
+deliberately reserved for the admin password: a KDF per alertmanager burst
 would be self-inflicted DoS).
 
 ## Configuration
@@ -234,7 +253,8 @@ make dev-nuke  # full reset: containers, volumes, keys, room, bot state
 ```
 
 Dev credentials: Matrix admin `admin`/`admin` (Element + synapse-admin),
-bot admin token `dev-admin-token` (web UI at `http://localhost:8686`).
+bot admin password `dev-admin-token` (web UI at `http://localhost:8686`;
+seeded on first boot — if you change it in the UI, `dev-nuke` resets it).
 
 Send a test notification with the token `make dev-seed` printed:
 

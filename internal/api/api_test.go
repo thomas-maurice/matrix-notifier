@@ -60,6 +60,13 @@ func (f *fakeBot) LeaveRoom(_ context.Context, roomID string) error {
 }
 
 func newTestAPI(t *testing.T) (notifierv1connect.AdminServiceClient, *fakeBot) {
+	client, bot, _ := newTestServer(t)
+	return client, bot
+}
+
+// newTestServer stands up store + auth (password "test-admin-token") +
+// server and returns an unauthenticated client plus the server URL.
+func newTestServer(t *testing.T) (notifierv1connect.AdminServiceClient, *fakeBot, string) {
 	t.Helper()
 	st, err := store.Open(config.Database{Type: "sqlite", URI: ":memory:"})
 	require.NoError(t, err)
@@ -67,10 +74,11 @@ func newTestAPI(t *testing.T) (notifierv1connect.AdminServiceClient, *fakeBot) {
 
 	hash, err := argon2id.CreateHash("test-admin-token", argon2id.DefaultParams)
 	require.NoError(t, err)
-	auth := NewAdminAuth(hash)
+	auth, err := NewAdminAuth(context.Background(), st, hash)
+	require.NoError(t, err)
 
 	path, handler := notifierv1connect.NewAdminServiceHandler(
-		NewServer(st, bot, "sqlite"),
+		NewServer(st, bot, auth, "sqlite"),
 		connect.WithInterceptors(auth.Interceptor()),
 	)
 	mux := http.NewServeMux()
@@ -79,7 +87,7 @@ func newTestAPI(t *testing.T) (notifierv1connect.AdminServiceClient, *fakeBot) {
 	t.Cleanup(srv.Close)
 
 	client := notifierv1connect.NewAdminServiceClient(srv.Client(), srv.URL)
-	return client, bot
+	return client, bot, srv.URL
 }
 
 func authed(token string) connect.ClientOption {
@@ -91,22 +99,38 @@ func authed(token string) connect.ClientOption {
 	}))
 }
 
-func newAuthedClient(t *testing.T, token string) (notifierv1connect.AdminServiceClient, *fakeBot) {
+// newAuthedClient logs in with the given password and returns a client
+// carrying the session JWT. When the password is wrong (Login rejects it),
+// the raw string rides along as the bearer token instead — an invalid JWT,
+// so rejection paths stay exercised.
+func newAuthedClient(t *testing.T, password string) (notifierv1connect.AdminServiceClient, *fakeBot) {
 	t.Helper()
-	st, err := store.Open(config.Database{Type: "sqlite", URI: ":memory:"})
+	plain, bot, url := newTestServer(t)
+	bearer := password
+	resp, err := plain.Login(context.Background(), connect.NewRequest(&notifierv1.LoginRequest{Password: password}))
+	if err == nil {
+		bearer = resp.Msg.Token
+	}
+	return notifierv1connect.NewAdminServiceClient(http.DefaultClient, url, authed(bearer)), bot
+}
+
+// Browsers never see the JWT: Login must deliver it as an httpOnly cookie,
+// and Logout must clear that cookie.
+func TestLoginSetsSessionCookie(t *testing.T) {
+	client, _, _ := newTestServer(t)
+	ctx := context.Background()
+
+	resp, err := client.Login(ctx, connect.NewRequest(&notifierv1.LoginRequest{Password: "test-admin-token"}))
 	require.NoError(t, err)
-	bot := &fakeBot{}
-	hash, err := argon2id.CreateHash("test-admin-token", argon2id.DefaultParams)
+	cookie := resp.Header().Get("Set-Cookie")
+	assert.Contains(t, cookie, sessionCookie+"="+resp.Msg.Token)
+	assert.Contains(t, cookie, "HttpOnly")
+	assert.Contains(t, cookie, "SameSite=Strict")
+
+	authedClient, _ := newAuthedClient(t, "test-admin-token")
+	out, err := authedClient.Logout(ctx, connect.NewRequest(&notifierv1.LogoutRequest{}))
 	require.NoError(t, err)
-	path, handler := notifierv1connect.NewAdminServiceHandler(
-		NewServer(st, bot, "sqlite"),
-		connect.WithInterceptors(NewAdminAuth(hash).Interceptor()),
-	)
-	mux := http.NewServeMux()
-	mux.Handle(path, handler)
-	srv := httptest.NewServer(mux)
-	t.Cleanup(srv.Close)
-	return notifierv1connect.NewAdminServiceClient(srv.Client(), srv.URL, authed(token)), bot
+	assert.Contains(t, out.Header().Get("Set-Cookie"), "Max-Age=0", "logout must expire the cookie")
 }
 
 // The admin API can mint ingest tokens; without authentication it must be a

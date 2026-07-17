@@ -154,9 +154,14 @@ func run(configPath string, resetIdentity bool) error {
 	// room alias; every internal lookup is ID-keyed, so resolve them once.
 	resolveAliasChannels(ctx, log, st, bot)
 
-	auth := api.NewAdminAuth(cfg.AdminTokenHash)
+	// The config hash only seeds the credential on first boot; afterwards
+	// the database row (managed via ChangeAdminPassword) is authoritative.
+	auth, err := api.NewAdminAuth(ctx, st, cfg.AdminTokenHash)
+	if err != nil {
+		return err
+	}
 	adminPath, adminHandler := notifierv1connect.NewAdminServiceHandler(
-		api.NewServer(st, bot, cfg.Database.Type),
+		api.NewServer(st, bot, auth, cfg.Database.Type),
 		connect.WithInterceptors(auth.Interceptor()),
 	)
 

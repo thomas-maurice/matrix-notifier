@@ -1,40 +1,45 @@
 <script setup>
 import { ref, onMounted } from 'vue'
-import { api, getToken, setToken, clearToken } from './api.js'
+import { api } from './api.js'
 import StatusPanel from './components/StatusPanel.vue'
 import ChannelsPanel from './components/ChannelsPanel.vue'
 import TokensPanel from './components/TokensPanel.vue'
+import SettingsPanel from './components/SettingsPanel.vue'
 
 const authed = ref(false)
 const tab = ref('status')
-const loginToken = ref('')
+const loginPassword = ref('')
 const loginError = ref('')
 
 async function tryLogin() {
   loginError.value = ''
-  setToken(loginToken.value.trim())
   try {
-    await api.getStatus()
+    // Login sets the httpOnly session cookie; the token never touches JS.
+    await api.login(loginPassword.value)
     authed.value = true
-    loginToken.value = ''
+    loginPassword.value = ''
   } catch (e) {
-    clearToken()
-    loginError.value = e.status === 401 ? 'Invalid admin token' : `Cannot reach the bot: ${e.message}`
+    loginError.value = e.status === 401 ? 'Invalid password' : `Cannot reach the bot: ${e.message}`
   }
 }
 
-function logout() {
-  clearToken()
+async function logout() {
+  try {
+    await api.logout()
+  } catch {
+    // The cookie may already be dead; drop to the login screen regardless.
+  }
   authed.value = false
+  tab.value = 'status'
 }
 
 onMounted(async () => {
-  if (!getToken()) return
+  // An existing session cookie (7d validity) survives page reloads.
   try {
     await api.getStatus()
     authed.value = true
   } catch {
-    clearToken()
+    // no valid session; show the login form
   }
 })
 </script>
@@ -61,6 +66,11 @@ onMounted(async () => {
             <i class="fa-solid fa-key me-1"></i>Tokens
           </a>
         </li>
+        <li class="nav-item">
+          <a class="nav-link" :class="{ active: tab === 'settings' }" href="#" @click.prevent="tab = 'settings'">
+            <i class="fa-solid fa-gear me-1"></i>Settings
+          </a>
+        </li>
       </ul>
       <button v-if="authed" class="btn btn-outline-secondary btn-sm" @click="logout">
         <i class="fa-solid fa-right-from-bracket me-1"></i>Logout
@@ -77,10 +87,10 @@ onMounted(async () => {
             <form @submit.prevent="tryLogin">
               <div class="mb-3">
                 <input
-                  v-model="loginToken"
+                  v-model="loginPassword"
                   type="password"
                   class="form-control"
-                  placeholder="Admin token"
+                  placeholder="Admin password"
                   autofocus
                 />
               </div>
@@ -96,6 +106,7 @@ onMounted(async () => {
       <StatusPanel v-if="tab === 'status'" />
       <ChannelsPanel v-if="tab === 'channels'" />
       <TokensPanel v-if="tab === 'tokens'" />
+      <SettingsPanel v-if="tab === 'settings'" />
     </template>
   </div>
 </template>

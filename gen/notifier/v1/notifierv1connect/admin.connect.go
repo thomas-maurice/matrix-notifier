@@ -33,6 +33,13 @@ const (
 // reflection-formatted method names, remove the leading slash and convert the remaining slash to a
 // period.
 const (
+	// AdminServiceLoginProcedure is the fully-qualified name of the AdminService's Login RPC.
+	AdminServiceLoginProcedure = "/notifier.v1.AdminService/Login"
+	// AdminServiceLogoutProcedure is the fully-qualified name of the AdminService's Logout RPC.
+	AdminServiceLogoutProcedure = "/notifier.v1.AdminService/Logout"
+	// AdminServiceChangeAdminPasswordProcedure is the fully-qualified name of the AdminService's
+	// ChangeAdminPassword RPC.
+	AdminServiceChangeAdminPasswordProcedure = "/notifier.v1.AdminService/ChangeAdminPassword"
 	// AdminServiceGetStatusProcedure is the fully-qualified name of the AdminService's GetStatus RPC.
 	AdminServiceGetStatusProcedure = "/notifier.v1.AdminService/GetStatus"
 	// AdminServiceListChannelsProcedure is the fully-qualified name of the AdminService's ListChannels
@@ -71,6 +78,17 @@ const (
 
 // AdminServiceClient is a client for the notifier.v1.AdminService service.
 type AdminServiceClient interface {
+	// Login exchanges the admin password for a JWT (7 days validity). The only
+	// RPC that does not require authentication. The token is also set as an
+	// httpOnly cookie for browser sessions.
+	Login(context.Context, *connect.Request[v1.LoginRequest]) (*connect.Response[v1.LoginResponse], error)
+	// Logout clears the browser session cookie. Bearer tokens stay valid until
+	// they expire (JWTs are stateless); rotate the password to revoke them all.
+	Logout(context.Context, *connect.Request[v1.LogoutRequest]) (*connect.Response[v1.LogoutResponse], error)
+	// ChangeAdminPassword rotates the admin password AND the JWT signing
+	// secret, invalidating every outstanding session. The response carries a
+	// fresh token (and cookie) so the calling session stays logged in.
+	ChangeAdminPassword(context.Context, *connect.Request[v1.ChangeAdminPasswordRequest]) (*connect.Response[v1.ChangeAdminPasswordResponse], error)
 	GetStatus(context.Context, *connect.Request[v1.GetStatusRequest]) (*connect.Response[v1.GetStatusResponse], error)
 	ListChannels(context.Context, *connect.Request[v1.ListChannelsRequest]) (*connect.Response[v1.ListChannelsResponse], error)
 	ListRooms(context.Context, *connect.Request[v1.ListRoomsRequest]) (*connect.Response[v1.ListRoomsResponse], error)
@@ -101,6 +119,24 @@ func NewAdminServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 	baseURL = strings.TrimRight(baseURL, "/")
 	adminServiceMethods := v1.File_notifier_v1_admin_proto.Services().ByName("AdminService").Methods()
 	return &adminServiceClient{
+		login: connect.NewClient[v1.LoginRequest, v1.LoginResponse](
+			httpClient,
+			baseURL+AdminServiceLoginProcedure,
+			connect.WithSchema(adminServiceMethods.ByName("Login")),
+			connect.WithClientOptions(opts...),
+		),
+		logout: connect.NewClient[v1.LogoutRequest, v1.LogoutResponse](
+			httpClient,
+			baseURL+AdminServiceLogoutProcedure,
+			connect.WithSchema(adminServiceMethods.ByName("Logout")),
+			connect.WithClientOptions(opts...),
+		),
+		changeAdminPassword: connect.NewClient[v1.ChangeAdminPasswordRequest, v1.ChangeAdminPasswordResponse](
+			httpClient,
+			baseURL+AdminServiceChangeAdminPasswordProcedure,
+			connect.WithSchema(adminServiceMethods.ByName("ChangeAdminPassword")),
+			connect.WithClientOptions(opts...),
+		),
 		getStatus: connect.NewClient[v1.GetStatusRequest, v1.GetStatusResponse](
 			httpClient,
 			baseURL+AdminServiceGetStatusProcedure,
@@ -184,6 +220,9 @@ func NewAdminServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 
 // adminServiceClient implements AdminServiceClient.
 type adminServiceClient struct {
+	login                *connect.Client[v1.LoginRequest, v1.LoginResponse]
+	logout               *connect.Client[v1.LogoutRequest, v1.LogoutResponse]
+	changeAdminPassword  *connect.Client[v1.ChangeAdminPasswordRequest, v1.ChangeAdminPasswordResponse]
 	getStatus            *connect.Client[v1.GetStatusRequest, v1.GetStatusResponse]
 	listChannels         *connect.Client[v1.ListChannelsRequest, v1.ListChannelsResponse]
 	listRooms            *connect.Client[v1.ListRoomsRequest, v1.ListRoomsResponse]
@@ -197,6 +236,21 @@ type adminServiceClient struct {
 	deleteToken          *connect.Client[v1.DeleteTokenRequest, v1.DeleteTokenResponse]
 	sendTestNotification *connect.Client[v1.SendTestNotificationRequest, v1.SendTestNotificationResponse]
 	testToken            *connect.Client[v1.TestTokenRequest, v1.TestTokenResponse]
+}
+
+// Login calls notifier.v1.AdminService.Login.
+func (c *adminServiceClient) Login(ctx context.Context, req *connect.Request[v1.LoginRequest]) (*connect.Response[v1.LoginResponse], error) {
+	return c.login.CallUnary(ctx, req)
+}
+
+// Logout calls notifier.v1.AdminService.Logout.
+func (c *adminServiceClient) Logout(ctx context.Context, req *connect.Request[v1.LogoutRequest]) (*connect.Response[v1.LogoutResponse], error) {
+	return c.logout.CallUnary(ctx, req)
+}
+
+// ChangeAdminPassword calls notifier.v1.AdminService.ChangeAdminPassword.
+func (c *adminServiceClient) ChangeAdminPassword(ctx context.Context, req *connect.Request[v1.ChangeAdminPasswordRequest]) (*connect.Response[v1.ChangeAdminPasswordResponse], error) {
+	return c.changeAdminPassword.CallUnary(ctx, req)
 }
 
 // GetStatus calls notifier.v1.AdminService.GetStatus.
@@ -266,6 +320,17 @@ func (c *adminServiceClient) TestToken(ctx context.Context, req *connect.Request
 
 // AdminServiceHandler is an implementation of the notifier.v1.AdminService service.
 type AdminServiceHandler interface {
+	// Login exchanges the admin password for a JWT (7 days validity). The only
+	// RPC that does not require authentication. The token is also set as an
+	// httpOnly cookie for browser sessions.
+	Login(context.Context, *connect.Request[v1.LoginRequest]) (*connect.Response[v1.LoginResponse], error)
+	// Logout clears the browser session cookie. Bearer tokens stay valid until
+	// they expire (JWTs are stateless); rotate the password to revoke them all.
+	Logout(context.Context, *connect.Request[v1.LogoutRequest]) (*connect.Response[v1.LogoutResponse], error)
+	// ChangeAdminPassword rotates the admin password AND the JWT signing
+	// secret, invalidating every outstanding session. The response carries a
+	// fresh token (and cookie) so the calling session stays logged in.
+	ChangeAdminPassword(context.Context, *connect.Request[v1.ChangeAdminPasswordRequest]) (*connect.Response[v1.ChangeAdminPasswordResponse], error)
 	GetStatus(context.Context, *connect.Request[v1.GetStatusRequest]) (*connect.Response[v1.GetStatusResponse], error)
 	ListChannels(context.Context, *connect.Request[v1.ListChannelsRequest]) (*connect.Response[v1.ListChannelsResponse], error)
 	ListRooms(context.Context, *connect.Request[v1.ListRoomsRequest]) (*connect.Response[v1.ListRoomsResponse], error)
@@ -292,6 +357,24 @@ type AdminServiceHandler interface {
 // and JSON codecs. They also support gzip compression.
 func NewAdminServiceHandler(svc AdminServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
 	adminServiceMethods := v1.File_notifier_v1_admin_proto.Services().ByName("AdminService").Methods()
+	adminServiceLoginHandler := connect.NewUnaryHandler(
+		AdminServiceLoginProcedure,
+		svc.Login,
+		connect.WithSchema(adminServiceMethods.ByName("Login")),
+		connect.WithHandlerOptions(opts...),
+	)
+	adminServiceLogoutHandler := connect.NewUnaryHandler(
+		AdminServiceLogoutProcedure,
+		svc.Logout,
+		connect.WithSchema(adminServiceMethods.ByName("Logout")),
+		connect.WithHandlerOptions(opts...),
+	)
+	adminServiceChangeAdminPasswordHandler := connect.NewUnaryHandler(
+		AdminServiceChangeAdminPasswordProcedure,
+		svc.ChangeAdminPassword,
+		connect.WithSchema(adminServiceMethods.ByName("ChangeAdminPassword")),
+		connect.WithHandlerOptions(opts...),
+	)
 	adminServiceGetStatusHandler := connect.NewUnaryHandler(
 		AdminServiceGetStatusProcedure,
 		svc.GetStatus,
@@ -372,6 +455,12 @@ func NewAdminServiceHandler(svc AdminServiceHandler, opts ...connect.HandlerOpti
 	)
 	return "/notifier.v1.AdminService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
+		case AdminServiceLoginProcedure:
+			adminServiceLoginHandler.ServeHTTP(w, r)
+		case AdminServiceLogoutProcedure:
+			adminServiceLogoutHandler.ServeHTTP(w, r)
+		case AdminServiceChangeAdminPasswordProcedure:
+			adminServiceChangeAdminPasswordHandler.ServeHTTP(w, r)
 		case AdminServiceGetStatusProcedure:
 			adminServiceGetStatusHandler.ServeHTTP(w, r)
 		case AdminServiceListChannelsProcedure:
@@ -406,6 +495,18 @@ func NewAdminServiceHandler(svc AdminServiceHandler, opts ...connect.HandlerOpti
 
 // UnimplementedAdminServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedAdminServiceHandler struct{}
+
+func (UnimplementedAdminServiceHandler) Login(context.Context, *connect.Request[v1.LoginRequest]) (*connect.Response[v1.LoginResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("notifier.v1.AdminService.Login is not implemented"))
+}
+
+func (UnimplementedAdminServiceHandler) Logout(context.Context, *connect.Request[v1.LogoutRequest]) (*connect.Response[v1.LogoutResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("notifier.v1.AdminService.Logout is not implemented"))
+}
+
+func (UnimplementedAdminServiceHandler) ChangeAdminPassword(context.Context, *connect.Request[v1.ChangeAdminPasswordRequest]) (*connect.Response[v1.ChangeAdminPasswordResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("notifier.v1.AdminService.ChangeAdminPassword is not implemented"))
+}
 
 func (UnimplementedAdminServiceHandler) GetStatus(context.Context, *connect.Request[v1.GetStatusRequest]) (*connect.Response[v1.GetStatusResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("notifier.v1.AdminService.GetStatus is not implemented"))
