@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 // Static endpoint documentation. Keep this page in sync with the ingest
 // parsers (internal/ingest/*) and the README whenever an endpoint or its
 // configuration changes — it is part of the repo's maintenance contract.

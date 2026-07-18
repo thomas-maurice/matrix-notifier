@@ -1,56 +1,59 @@
-<script setup>
+<script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { api } from '../api.js'
-import { notifyError, notifySuccess } from '../toast.js'
+import { api, errMsg } from '../api'
+import { notifyError, notifySuccess } from '../toast'
 
 const currentPassword = ref('')
 const newPassword = ref('')
 const confirmPassword = ref('')
 
 const displayName = ref('')
-const avatarPreview = ref('') // data: URI of the current or picked avatar
-const avatarBase64 = ref('') // picked file, base64, pending upload
+const avatarPreview = ref('') // object URL of the current or picked avatar
+const avatarBytes = ref<Uint8Array | null>(null) // picked file, pending upload
 const savingProfile = ref(false)
+
+function setPreview(blob: Blob) {
+  if (avatarPreview.value) URL.revokeObjectURL(avatarPreview.value)
+  avatarPreview.value = URL.createObjectURL(blob)
+}
 
 async function loadProfile() {
   try {
-    const p = await api.getProfile()
-    displayName.value = p.displayName || ''
-    if (p.avatar) {
-      avatarPreview.value = `data:${p.avatarMime || 'image/png'};base64,${p.avatar}`
+    const p = await api.getProfile({})
+    displayName.value = p.displayName
+    if (p.avatar.length) {
+      setPreview(new Blob([p.avatar as BlobPart], { type: p.avatarMime || 'image/png' }))
     }
   } catch (e) {
-    notifyError(`Cannot load bot profile: ${e.message}`)
+    notifyError(`Cannot load bot profile: ${errMsg(e)}`)
   }
 }
 
-function pickAvatar(event) {
-  const file = event.target.files[0]
+async function pickAvatar(event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
   if (!file) return
   if (file.size > 1024 * 1024) {
     notifyError('Avatar must be under 1 MiB')
-    event.target.value = ''
+    input.value = ''
     return
   }
-  const reader = new FileReader()
-  reader.onload = () => {
-    // reader.result is "data:<mime>;base64,<data>" — keep it for the
-    // preview, send only the base64 payload.
-    avatarPreview.value = reader.result
-    avatarBase64.value = reader.result.split(',')[1]
-  }
-  reader.readAsDataURL(file)
+  avatarBytes.value = new Uint8Array(await file.arrayBuffer())
+  setPreview(file)
 }
 
 async function saveProfile() {
   savingProfile.value = true
   try {
-    await api.setProfile(displayName.value, avatarBase64.value)
-    avatarBase64.value = ''
+    await api.setProfile({
+      displayName: displayName.value,
+      avatar: avatarBytes.value ?? new Uint8Array(),
+    })
+    avatarBytes.value = null
     notifySuccess('Bot profile updated')
     await loadProfile()
   } catch (e) {
-    notifyError(e.message)
+    notifyError(errMsg(e))
   } finally {
     savingProfile.value = false
   }
@@ -66,13 +69,13 @@ async function changePassword() {
   try {
     // Rotates the JWT secret: every other session is logged out; ours is
     // kept alive by the fresh cookie the response sets.
-    await api.changePassword(currentPassword.value, newPassword.value)
+    await api.changeAdminPassword({ currentPassword: currentPassword.value, newPassword: newPassword.value })
     notifySuccess('Password changed — all other sessions have been logged out')
     currentPassword.value = ''
     newPassword.value = ''
     confirmPassword.value = ''
   } catch (e) {
-    notifyError(e.message)
+    notifyError(errMsg(e))
   }
 }
 </script>

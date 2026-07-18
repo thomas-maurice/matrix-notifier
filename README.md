@@ -340,9 +340,12 @@ workflow's `platforms` if you need it.
 ## Building
 
 mautrix-go's pure-Go olm implementation is behind a build tag; always build
-with `-tags goolm` (the Makefile does). The admin UI is built with Vite and
+with `-tags goolm` (the Makefile does). The admin UI is Vue 3 + TypeScript,
+built with Vite (`npm run build` typechecks via `vue-tsc` first) and
 embedded via `go:embed` — `make build` builds it automatically if missing;
-`make ui` rebuilds it explicitly. Regenerate the RPC stubs with `make proto`.
+`make ui` rebuilds it explicitly. `make proto` regenerates both the Go RPC
+stubs (`gen/`) and the typed TypeScript Connect client (`ui/src/gen/`,
+consumed via `@connectrpc/connect-web`); neither is ever edited by hand.
 
 ```sh
 make build && make test

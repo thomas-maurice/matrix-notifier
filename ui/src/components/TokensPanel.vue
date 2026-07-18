@@ -1,11 +1,13 @@
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { api } from '../api.js'
-import { notifyError, notifySuccess } from '../toast.js'
+import { timestampDate, type Timestamp } from '@bufbuild/protobuf/wkt'
+import { api, errMsg } from '../api'
+import { notifyError, notifySuccess } from '../toast'
+import type { Channel, CreateTokenResponse, Token } from '../gen/notifier/v1/admin_pb'
 
-const tokens = ref([])
-const channels = ref([])
-const minted = ref(null)
+const tokens = ref<Token[]>([])
+const channels = ref<Channel[]>([])
+const minted = ref<CreateTokenResponse | null>(null)
 const newName = ref('')
 const newKind = ref('any')
 const newChannel = ref('')
@@ -13,80 +15,85 @@ const newPrefix = ref('')
 
 async function refresh() {
   try {
-    const [t, c] = await Promise.all([api.listTokens(), api.listChannels()])
-    tokens.value = t.tokens || []
-    channels.value = c.channels || []
-    if (!newChannel.value && channels.value.length) newChannel.value = channels.value[0].name
+    const [t, c] = await Promise.all([api.listTokens({}), api.listChannels({})])
+    tokens.value = t.tokens
+    channels.value = c.channels
+    if (!newChannel.value && channels.value.length) newChannel.value = channels.value[0]!.name
   } catch (e) {
-    notifyError(e.message)
+    notifyError(errMsg(e))
   }
 }
 
 async function create() {
   minted.value = null
   try {
-    const resp = await api.createToken(newName.value.trim(), newKind.value, newChannel.value, newPrefix.value.trim())
+    const resp = await api.createToken({
+      name: newName.value.trim(),
+      kind: newKind.value,
+      channel: newChannel.value,
+      prefix: newPrefix.value.trim(),
+    })
     minted.value = resp
     newName.value = ''
     newPrefix.value = ''
-    notifySuccess(`Token "${resp.token.name}" created`)
+    notifySuccess(`Token "${resp.token?.name}" created`)
     await refresh()
   } catch (e) {
-    notifyError(e.message)
+    notifyError(errMsg(e))
   }
 }
 
-async function editPrefix(tok) {
+async function editPrefix(tok: Token) {
   const prefix = prompt(`Notification prefix for "${tok.name}" (emoji or short text, empty to clear):`, tok.prefix || '')
   if (prefix === null) return
   try {
     // Send the current channel so editing the prefix never reroutes the token.
-    await api.updateToken(tok.name, prefix.trim(), tok.channel)
+    await api.updateToken({ name: tok.name, prefix: prefix.trim(), channel: tok.channel })
     notifySuccess(`Prefix updated for "${tok.name}"`)
     await refresh()
   } catch (e) {
-    notifyError(e.message)
+    notifyError(errMsg(e))
   }
 }
 
-async function changeChannel(tok, event) {
-  const channel = event.target.value
+async function changeChannel(tok: Token, event: Event) {
+  const channel = (event.target as HTMLSelectElement).value
   try {
-    await api.updateToken(tok.name, tok.prefix || '', channel)
+    await api.updateToken({ name: tok.name, prefix: tok.prefix || '', channel })
     notifySuccess(`Token "${tok.name}" now routes to "${channel}"`)
     await refresh()
   } catch (e) {
-    notifyError(e.message)
+    notifyError(errMsg(e))
     await refresh()
   }
 }
 
-async function remove(name) {
+async function remove(name: string) {
   if (!confirm(`Delete token "${name}"? Producers using it will get 401s.`)) return
   try {
-    await api.deleteToken(name)
+    await api.deleteToken({ name })
     notifySuccess(`Token "${name}" deleted`)
     await refresh()
   } catch (e) {
-    notifyError(e.message)
+    notifyError(errMsg(e))
   }
 }
 
-async function test(tok) {
+async function test(tok: Token) {
   try {
-    await api.testToken(tok.name)
+    await api.testToken({ name: tok.name })
     notifySuccess(`Test notification sent via "${tok.name}" to ${tok.channel}`)
   } catch (e) {
-    notifyError(e.message)
+    notifyError(errMsg(e))
   }
 }
 
 function copyMinted() {
-  navigator.clipboard?.writeText(minted.value.plaintext)
+  if (minted.value) navigator.clipboard?.writeText(minted.value.plaintext)
 }
 
-function fmtDate(ts) {
-  return ts ? new Date(ts).toLocaleString() : '—'
+function fmtDate(ts?: Timestamp): string {
+  return ts ? timestampDate(ts).toLocaleString() : '—'
 }
 
 onMounted(refresh)

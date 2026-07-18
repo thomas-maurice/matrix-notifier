@@ -1,6 +1,6 @@
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { api } from './api.js'
+import { api, errMsg, isUnauthenticated } from './api'
 import StatusPanel from './components/StatusPanel.vue'
 import ChannelsPanel from './components/ChannelsPanel.vue'
 import TokensPanel from './components/TokensPanel.vue'
@@ -16,17 +16,17 @@ async function tryLogin() {
   loginError.value = ''
   try {
     // Login sets the httpOnly session cookie; the token never touches JS.
-    await api.login(loginPassword.value)
+    await api.login({ password: loginPassword.value })
     authed.value = true
     loginPassword.value = ''
   } catch (e) {
-    loginError.value = e.status === 401 ? 'Invalid password' : `Cannot reach the bot: ${e.message}`
+    loginError.value = isUnauthenticated(e) ? 'Invalid password' : `Cannot reach the bot: ${errMsg(e)}`
   }
 }
 
 async function logout() {
   try {
-    await api.logout()
+    await api.logout({})
   } catch {
     // The cookie may already be dead; drop to the login screen regardless.
   }
@@ -37,7 +37,7 @@ async function logout() {
 onMounted(async () => {
   // An existing session cookie (7d validity) survives page reloads.
   try {
-    await api.getStatus()
+    await api.getStatus({})
     authed.value = true
   } catch {
     // no valid session; show the login form

@@ -54,9 +54,10 @@ internal/
   notify/     Notification struct + Sender interface
 proto/notifier/v1/      admin.proto — the API source of truth
 gen/                    generated stubs — NEVER edit, `make proto` regenerates
-ui/                     Vue 3 + Vite + Bootstrap (dark); embedded via
-                        go:embed all:dist — StatusPanel/ChannelsPanel/
-                        TokensPanel/SettingsPanel/DocsPanel (endpoint docs)
+ui/                     Vue 3 + TypeScript + Vite + Bootstrap (dark);
+                        ui/src/gen = buf-generated TS client (never edit);
+                        embedded via go:embed all:dist — StatusPanel/
+                        ChannelsPanel/TokensPanel/SettingsPanel/DocsPanel
 dev/                    dev stack: docker-compose, bootstrap.sh, cmdclient
 test/integration/       testcontainers Synapse E2E (build tag `integration`)
 ```
@@ -69,8 +70,19 @@ test/integration/       testcontainers Synapse E2E (build tag `integration`)
   exists (`ui-ensure` only builds when missing). After touching `ui/src`,
   run `make ui && make build`.
 - **Proto changes**: edit `proto/notifier/v1/admin.proto`, run `make proto`
-  (buf via `go run`, no global installs). Connect JSON field names are
-  camelCase of the proto fields.
+  (buf via `go run`, no global installs). Generates Go stubs into `gen/`
+  AND the TypeScript client into `ui/src/gen/` (remote plugin
+  buf.build/bufbuild/es, needs network) — both committed, NEVER hand-edit.
+- **UI is TypeScript** (Vue 3 SFCs with `lang="ts"`): `npm run build` runs
+  `vue-tsc --noEmit` first, so type errors fail the build (and CI) without
+  a separate step; `npm run typecheck` runs it alone. The API client is the
+  buf-generated Connect client (`ui/src/api.ts` wraps createClient; errMsg/
+  isUnauthenticated helpers unwrap ConnectError for toasts). Proto int64 →
+  bigint, Timestamp → message (use `timestampDate()` from
+  @bufbuild/protobuf/wkt), bytes → Uint8Array.
+- **typescript is pinned ~5.9**: TypeScript 7 (native compiler) has no
+  `lib/tsc` and breaks vue-tsc — do not bump past 5.x until vue-tsc
+  supports it.
 
 ```sh
 make build            # ui-ensure + go build → bin/matrix-notifier

@@ -1,11 +1,12 @@
-<script setup>
+<script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { api } from '../api.js'
-import { notifyError, notifySuccess } from '../toast.js'
+import { api, errMsg } from '../api'
+import { notifyError, notifySuccess } from '../toast'
 import RoomRef from './RoomRef.vue'
+import type { Channel, Room } from '../gen/notifier/v1/admin_pb'
 
-const channels = ref([])
-const rooms = ref([])
+const channels = ref<Channel[]>([])
+const rooms = ref<Room[]>([])
 const newName = ref('')
 const newRoomId = ref('')
 const newChart = ref(false)
@@ -18,21 +19,21 @@ const dmRooms = computed(() => rooms.value.filter((r) => !r.channel && r.dmWith)
 
 async function refresh() {
   try {
-    const [ch, rm] = await Promise.all([api.listChannels(), api.listRooms()])
-    channels.value = ch.channels || []
-    rooms.value = rm.rooms || []
+    const [ch, rm] = await Promise.all([api.listChannels({}), api.listRooms({})])
+    channels.value = ch.channels
+    rooms.value = rm.rooms
   } catch (e) {
-    notifyError(e.message)
+    notifyError(errMsg(e))
   }
 }
 
-function suggestedName(room) {
+function suggestedName(room: Room): string {
   return (room.name || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
 }
 
 // One click adds the room as a channel under its suggested name; if that
 // isn't possible (no name / name taken), fall back to pre-filling the form.
-async function addRoom(room) {
+async function addRoom(room: Room) {
   const name = suggestedName(room)
   if (!name) {
     newRoomId.value = room.roomId
@@ -40,69 +41,69 @@ async function addRoom(room) {
     return
   }
   try {
-    await api.createChannel(name, room.roomId, false)
+    await api.createChannel({ name, roomId: room.roomId, chart: false })
     notifySuccess(`Channel "${name}" created for ${room.name}`)
     await refresh()
   } catch (e) {
     newRoomId.value = room.roomId
     newName.value = name
-    notifyError(`Could not auto-create "${name}" (${e.message}) — adjust and hit Create.`)
+    notifyError(`Could not auto-create "${name}" (${errMsg(e)}) — adjust and hit Create.`)
   }
 }
 
 async function create() {
   try {
-    await api.createChannel(newName.value.trim(), newRoomId.value.trim(), newChart.value)
+    await api.createChannel({ name: newName.value.trim(), roomId: newRoomId.value.trim(), chart: newChart.value })
     notifySuccess(`Channel "${newName.value.trim()}" created`)
     newName.value = ''
     newRoomId.value = ''
     newChart.value = false
     await refresh()
   } catch (e) {
-    notifyError(e.message)
+    notifyError(errMsg(e))
   }
 }
 
-async function remove(name) {
+async function remove(name: string) {
   if (!confirm(`Delete channel "${name}"?`)) return
   try {
-    await api.deleteChannel(name)
+    await api.deleteChannel({ name })
     notifySuccess(`Channel "${name}" deleted`)
     await refresh()
   } catch (e) {
-    notifyError(e.message)
+    notifyError(errMsg(e))
   }
 }
 
-async function toggleChart(ch) {
+async function toggleChart(ch: Channel) {
   try {
-    await api.updateChannel(ch.name, !ch.chart)
+    await api.updateChannel({ name: ch.name, chart: !ch.chart })
     notifySuccess(`Charts ${ch.chart ? 'disabled' : 'enabled'} for "${ch.name}"`)
     await refresh()
   } catch (e) {
-    notifyError(e.message)
+    notifyError(errMsg(e))
     await refresh() // snap the switch back to reality
   }
 }
 
-async function leave(room) {
+async function leave(room: Room) {
   const label = room.name || room.roomId
   if (!confirm(`Leave room "${label}"? Any channel mapped to it (and its tokens) will be deleted.`)) return
   try {
-    await api.leaveRoom(room.roomId)
+    await api.leaveRoom({ roomId: room.roomId })
     notifySuccess(`Left ${label}`)
     await refresh()
   } catch (e) {
-    notifyError(e.message)
+    notifyError(errMsg(e))
   }
 }
 
-async function sendTest(name) {
+async function sendTest(name: string) {
   try {
-    await api.sendTest(name)
+    await api.sendTestNotification({ channel: name })
     notifySuccess(`Test notification sent to "${name}"`)
   } catch (e) {
-    notifyError(e.message)
+    notifyError(errMsg(e))
   }
 }
 

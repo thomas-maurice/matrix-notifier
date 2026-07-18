@@ -7,3 +7,9 @@ plugins:
   - local: ["go", "run", "connectrpc.com/connect/cmd/protoc-gen-connect-go"]
     out: gen
     opt: paths=source_relative
+  # TypeScript messages + service descriptors for the UI; consumed by
+  # @connectrpc/connect-web's createClient (protoc-gen-es v2 emits the
+  # service descriptors, no separate connect plugin needed).
+  - remote: buf.build/bufbuild/es
+    out: ui/src/gen
+    opt: target=ts

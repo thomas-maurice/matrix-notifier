@@ -1,23 +1,26 @@
-<script setup>
+<script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { api } from '../api.js'
-import { notifyError } from '../toast.js'
+import { timestampDate } from '@bufbuild/protobuf/wkt'
+import { api, errMsg } from '../api'
+import { notifyError } from '../toast'
 import RoomRef from './RoomRef.vue'
+import type { Channel, GetStatusResponse } from '../gen/notifier/v1/admin_pb'
 
-const status = ref(null)
-const channels = ref([])
-let timer
+const status = ref<GetStatusResponse | null>(null)
+const channels = ref<Channel[]>([])
+let timer: ReturnType<typeof setInterval> | undefined
 // This panel polls every 10s; only toast when the error state changes so a
 // persistent outage doesn't spam a toast every tick.
 let lastError = ''
 
 const syncHealthy = computed(() => {
-  if (!status.value?.lastSync) return false
-  return Date.now() - new Date(status.value.lastSync).getTime() < 90_000
+  const ts = status.value?.lastSync
+  if (!ts) return false
+  return Date.now() - timestampDate(ts).getTime() < 90_000
 })
 
-function fmtUptime(seconds) {
-  const s = Number(seconds || 0)
+function fmtUptime(seconds: bigint): string {
+  const s = Number(seconds)
   const d = Math.floor(s / 86400)
   const h = Math.floor((s % 86400) / 3600)
   const m = Math.floor((s % 3600) / 60)
@@ -26,14 +29,15 @@ function fmtUptime(seconds) {
 
 async function refresh() {
   try {
-    const [st, ch] = await Promise.all([api.getStatus(), api.listChannels()])
+    const [st, ch] = await Promise.all([api.getStatus({}), api.listChannels({})])
     status.value = st
-    channels.value = ch.channels || []
+    channels.value = ch.channels
     lastError = ''
   } catch (e) {
-    if (e.message !== lastError) {
-      lastError = e.message
-      notifyError(e.message)
+    const msg = errMsg(e)
+    if (msg !== lastError) {
+      lastError = msg
+      notifyError(msg)
     }
   }
 }
@@ -95,7 +99,7 @@ onUnmounted(() => clearInterval(timer))
               </tr>
               <tr>
                 <th>Delivered since start</th>
-                <td>{{ status.deliveredSinceStart || 0 }}</td>
+                <td>{{ status.deliveredSinceStart }}</td>
               </tr>
               <tr>
                 <th>Database</th>
