@@ -2,8 +2,10 @@ package alertmanager
 
 import (
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -49,8 +51,10 @@ func TestParseAndFormat(t *testing.T) {
 	// The human-facing annotation must survive formatting.
 	assert.Contains(t, n.Body, "CPU above 90% for 10m")
 	assert.Contains(t, n.Body, "node1:9100")
-	// The generator URL becomes a clickable link.
-	assert.Contains(t, n.Body, "](http://prometheus/graph?g0.expr=cpu)")
+	// The generator URL becomes a clickable link, anchored to the firing
+	// window (see TestGraphURLAnchoredToFiringWindow for the details).
+	assert.Contains(t, n.Body, "](http://prometheus/graph?g0.end_input=")
+	assert.Contains(t, n.Body, "g0.expr=cpu")
 }
 
 func TestPriorityMapping(t *testing.T) {
@@ -89,4 +93,31 @@ func TestParseRejectsEmptyAlerts(t *testing.T) {
 	r := httptest.NewRequest("POST", "/alertmanager", strings.NewReader(`{"version":"4","alerts":[]}`))
 	_, err := Parse(r)
 	require.Error(t, err)
+}
+
+// Prometheus generatorURLs carry no time anchor, so the graph page opens
+// "ending now" — useless once the alert is old. The link must be pinned to
+// the alert's firing window, on the graph tab, and non-Prometheus generator
+// URLs must pass through untouched.
+func TestGraphURLAnchoredToFiringWindow(t *testing.T) {
+	starts := time.Date(2026, 7, 18, 10, 0, 0, 0, time.UTC)
+	a := Alert{
+		StartsAt:     starts,
+		GeneratorURL: "http://prom:9090/graph?g0.expr=up%3D%3D0&g0.tab=1",
+	}
+	u, err := url.Parse(graphURL(a))
+	require.NoError(t, err)
+	q := u.Query()
+	assert.Equal(t, "up==0", q.Get("g0.expr"))
+	assert.Equal(t, "0", q.Get("g0.tab"), "must open the graph tab, not the table")
+	assert.Equal(t, "1h", q.Get("g0.range_input"))
+	assert.Equal(t, "2026-07-18 10:15:00", q.Get("g0.end_input"), "window must end shortly after the onset")
+
+	// A generator URL that is not a Prometheus graph link stays untouched.
+	custom := Alert{StartsAt: starts, GeneratorURL: "https://thanos.example/alert/42"}
+	assert.Equal(t, "https://thanos.example/alert/42", graphURL(custom))
+
+	// No StartsAt: nothing sensible to anchor to; leave the URL alone.
+	noStart := Alert{GeneratorURL: "http://prom:9090/graph?g0.expr=up&g0.tab=1"}
+	assert.Equal(t, "http://prom:9090/graph?g0.expr=up&g0.tab=1", graphURL(noStart))
 }

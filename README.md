@@ -9,7 +9,9 @@ nothing needs a Matrix client:
   bodies are rendered as markdown.
 - **Prometheus Alertmanager**: `POST /alertmanager` — webhook receiver
   (payload v4), formatted with firing/resolved counts, severity, summaries
-  and generator links.
+  and generator links. The links are anchored to the alert's firing window
+  (graph tab, window ending shortly after the onset) instead of Prometheus's
+  default "ending now", so they still show the trigger when clicked late.
 - **Gitea / Forgejo**: `POST /gitea` (alias `POST /forgejo`) — webhook
   receiver for push, pull-request, issue, release and branch/tag events, plus
   the Forgejo-only (>= v12) `action_run_failure` / `action_run_recover` /

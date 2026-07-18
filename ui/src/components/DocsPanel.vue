@@ -50,7 +50,10 @@ const origin = window.location.origin
       <div class="card-body">
         <p>
           Webhook receiver (payload v4). Formats firing/resolved counts,
-          severities, summaries and generator links. Priority comes from the
+          severities, summaries and generator links — anchored to the
+          alert's firing window (graph tab, ending shortly after the onset)
+          so they still show the trigger when clicked late. Priority comes
+          from the
           firing alerts' <code>severity</code> label:
           <code>critical</code> → 8, <code>warning</code> → 5, otherwise 3.
           If the channel has charts enabled and an alert carries the

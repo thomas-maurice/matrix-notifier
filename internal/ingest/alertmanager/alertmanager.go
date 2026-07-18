@@ -6,12 +6,39 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"sort"
 	"strings"
 	"time"
 
 	"github.com/thomas-maurice/matrix-notifier/internal/notify"
 )
+
+// graphURL anchors a Prometheus generatorURL to the alert's firing window.
+// The URL Prometheus emits has no time parameters, so its graph page opens
+// "ending now" — clicked an hour after the alert fired, the interesting
+// window has scrolled out of view (and g0.tab=1 opens the table, not the
+// graph). Pin the end a bit past the onset and force the graph tab; both
+// the classic and the React UI honor range_input/end_input (UTC).
+func graphURL(a Alert) string {
+	if a.StartsAt.IsZero() {
+		return a.GeneratorURL
+	}
+	u, err := url.Parse(a.GeneratorURL)
+	if err != nil {
+		return a.GeneratorURL
+	}
+	q := u.Query()
+	if q.Get("g0.expr") == "" {
+		// Not a Prometheus graph URL (custom generator); leave it alone.
+		return a.GeneratorURL
+	}
+	q.Set("g0.tab", "0")
+	q.Set("g0.range_input", "1h")
+	q.Set("g0.end_input", a.StartsAt.UTC().Add(15*time.Minute).Format("2006-01-02 15:04:05"))
+	u.RawQuery = q.Encode()
+	return u.String()
+}
 
 type Alert struct {
 	Status       string            `json:"status"`
@@ -98,7 +125,7 @@ func formatAlert(a Alert) string {
 		name = "alert"
 	}
 	if a.GeneratorURL != "" {
-		name = fmt.Sprintf("[%s](%s)", name, a.GeneratorURL)
+		name = fmt.Sprintf("[%s](%s)", name, graphURL(a))
 	}
 
 	var sb strings.Builder
