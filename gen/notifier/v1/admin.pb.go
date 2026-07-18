@@ -210,8 +210,11 @@ type Room struct {
 	RoomId string                 `protobuf:"bytes,1,opt,name=room_id,json=roomId,proto3" json:"room_id,omitempty"`
 	Name   string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	// Name of the channel bound to this room, empty if unmapped.
-	Channel       string `protobuf:"bytes,3,opt,name=channel,proto3" json:"channel,omitempty"`
-	Encrypted     bool   `protobuf:"varint,4,opt,name=encrypted,proto3" json:"encrypted,omitempty"`
+	Channel   string `protobuf:"bytes,3,opt,name=channel,proto3" json:"channel,omitempty"`
+	Encrypted bool   `protobuf:"varint,4,opt,name=encrypted,proto3" json:"encrypted,omitempty"`
+	// MXID of the other member when the room is a direct message (nameless,
+	// two members) — e.g. the DM a client creates for user verification.
+	DmWith        string `protobuf:"bytes,5,opt,name=dm_with,json=dmWith,proto3" json:"dm_with,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -272,6 +275,13 @@ func (x *Room) GetEncrypted() bool {
 		return x.Encrypted
 	}
 	return false
+}
+
+func (x *Room) GetDmWith() string {
+	if x != nil {
+		return x.DmWith
+	}
+	return ""
 }
 
 type ListRoomsRequest struct {
@@ -1960,12 +1970,13 @@ const file_notifier_v1_admin_proto_rawDesc = "" +
 	"created_at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x12<\n" +
 	"\flast_used_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
 	"lastUsedAt\x12\x16\n" +
-	"\x06prefix\x18\x06 \x01(\tR\x06prefix\"k\n" +
+	"\x06prefix\x18\x06 \x01(\tR\x06prefix\"\x84\x01\n" +
 	"\x04Room\x12\x17\n" +
 	"\aroom_id\x18\x01 \x01(\tR\x06roomId\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x18\n" +
 	"\achannel\x18\x03 \x01(\tR\achannel\x12\x1c\n" +
-	"\tencrypted\x18\x04 \x01(\bR\tencrypted\"\x12\n" +
+	"\tencrypted\x18\x04 \x01(\bR\tencrypted\x12\x17\n" +
+	"\adm_with\x18\x05 \x01(\tR\x06dmWith\"\x12\n" +
 	"\x10ListRoomsRequest\"<\n" +
 	"\x11ListRoomsResponse\x12'\n" +
 	"\x05rooms\x18\x01 \x03(\v2\x11.notifier.v1.RoomR\x05rooms\"+\n" +

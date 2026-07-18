@@ -52,7 +52,11 @@ func (f *fakeBot) ResolveRoom(_ context.Context, room string) (string, error) {
 }
 
 func (f *fakeBot) JoinedRooms(context.Context) ([]matrix.RoomInfo, error) {
-	return []matrix.RoomInfo{{ID: "!r:x", Name: "Mapped"}, {ID: "!free:x", Name: "Unmapped"}}, nil
+	return []matrix.RoomInfo{
+		{ID: "!r:x", Name: "Mapped"},
+		{ID: "!free:x", Name: "Unmapped"},
+		{ID: "!dm:x", DMWith: "@admin:x"},
+	}, nil
 }
 
 func (f *fakeBot) LeaveRoom(_ context.Context, roomID string) error {
@@ -202,13 +206,16 @@ func TestListRoomsMarksBindings(t *testing.T) {
 
 	resp, err := client.ListRooms(ctx, connect.NewRequest(&notifierv1.ListRoomsRequest{}))
 	require.NoError(t, err)
-	require.Len(t, resp.Msg.Rooms, 2)
-	byID := map[string]string{}
+	require.Len(t, resp.Msg.Rooms, 3)
+	byID := map[string]*notifierv1.Room{}
 	for _, r := range resp.Msg.Rooms {
-		byID[r.RoomId] = r.Channel
+		byID[r.RoomId] = r
 	}
-	assert.Equal(t, "mapped", byID["!r:x"])
-	assert.Empty(t, byID["!free:x"])
+	assert.Equal(t, "mapped", byID["!r:x"].Channel)
+	assert.Empty(t, byID["!free:x"].Channel)
+	// The DM marker must survive the trip so the UI can list DMs apart
+	// from mappable rooms.
+	assert.Equal(t, "@admin:x", byID["!dm:x"].DmWith)
 }
 
 // Leaving a room must take its channels and tokens with it: after the bot

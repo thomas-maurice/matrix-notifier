@@ -152,10 +152,13 @@ See [config.example.yaml](config.example.yaml). One database (`sqlite` or
 (GORM, auto-migrated). Every key can be overridden via `MATRIX_NOTIFIER_*`
 env vars.
 
-Operational flow: create an **encrypted** room, invite the bot (it joins on
-its own), map it to a channel in the UI (joined-but-unmapped rooms are
-offered as one-click suggestions), mint a token, point your producer at the
-endpoint.
+Operational flow: create an **encrypted, named** room, invite the bot (it
+joins on its own), map it to a channel in the UI (joined-but-unmapped rooms
+are offered as one-click suggestions), mint a token, point your producer at
+the endpoint. The name is a real requirement: a nameless room with two
+members is indistinguishable from a direct message — e.g. the DM a client
+creates to verify the bot — so such rooms are listed separately as
+`DM with @user:server` and are not offered for mapping.
 
 Auto-join is gated by inviter homeserver: invites from servers outside
 `matrix.allowed_servers` (default: the bot's own homeserver) are declined

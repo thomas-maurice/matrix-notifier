@@ -291,6 +291,10 @@ func (b *Bot) Status(ctx context.Context) Status {
 type RoomInfo struct {
 	ID   string
 	Name string
+	// DMWith is the other member's MXID when the room looks like a direct
+	// message — nameless with exactly two joined members. Element creates
+	// such rooms for user verification; they are not notification targets.
+	DMWith string
 }
 
 // JoinedRooms lists the rooms the bot is currently in, with display names
@@ -305,7 +309,19 @@ func (b *Bot) JoinedRooms(ctx context.Context) ([]RoomInfo, error) {
 		var name event.RoomNameEventContent
 		// Rooms without an m.room.name simply show their ID.
 		_ = b.client.StateEvent(ctx, rid, event.StateRoomName, "", &name)
-		rooms = append(rooms, RoomInfo{ID: rid.String(), Name: name.Name})
+		info := RoomInfo{ID: rid.String(), Name: name.Name}
+		if name.Name == "" {
+			// Best effort: an unreachable members endpoint just means the
+			// room is presented as a plain unnamed room.
+			if members, err := b.client.JoinedMembers(ctx, rid); err == nil && len(members.Joined) == 2 {
+				for uid := range members.Joined {
+					if uid != b.client.UserID {
+						info.DMWith = uid.String()
+					}
+				}
+			}
+		}
+		rooms = append(rooms, info)
 	}
 	return rooms, nil
 }

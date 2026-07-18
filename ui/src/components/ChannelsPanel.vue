@@ -10,7 +10,11 @@ const newName = ref('')
 const newRoomId = ref('')
 const newChart = ref(false)
 
-const unmappedRooms = computed(() => rooms.value.filter((r) => !r.channel))
+// DMs (nameless two-member rooms, e.g. the room Element creates to verify
+// the bot) are listed apart: they are conversations, not notification
+// targets, and auto-naming a channel from them can never work.
+const unmappedRooms = computed(() => rooms.value.filter((r) => !r.channel && !r.dmWith))
+const dmRooms = computed(() => rooms.value.filter((r) => !r.channel && r.dmWith))
 
 async function refresh() {
   try {
@@ -128,7 +132,8 @@ onMounted(refresh)
         </div>
       </form>
       <div class="form-text mt-2">
-        Create an <strong>encrypted</strong> room, invite the bot, then map it here (room ID or alias). The bot joins on its own.
+        Create an <strong>encrypted, named</strong> room, invite the bot, then map it here (room ID or alias). The bot
+        joins on its own. Nameless two-member rooms are treated as direct messages and not offered below.
       </div>
       <div v-if="unmappedRooms.length" class="mt-2">
         <span class="form-text me-2">Joined rooms without a channel:</span>
@@ -193,6 +198,33 @@ onMounted(refresh)
           </tr>
         </tbody>
       </table>
+    </div>
+  </div>
+
+  <div v-if="dmRooms.length" class="card mt-4">
+    <div class="card-header"><i class="fa-solid fa-comment me-2"></i>Direct messages</div>
+    <div class="card-body p-0">
+      <table class="table mb-0 align-middle">
+        <thead>
+          <tr><th class="ps-3">User</th><th>Room</th><th>Encrypted</th><th class="text-end pe-3">Actions</th></tr>
+        </thead>
+        <tbody>
+          <tr v-for="room in dmRooms" :key="room.roomId">
+            <td class="ps-3">{{ room.dmWith }}</td>
+            <td><RoomRef :room-id="room.roomId" /></td>
+            <td><i :class="room.encrypted ? 'fa-solid fa-lock text-success' : 'fa-solid fa-lock-open text-danger'"></i></td>
+            <td class="text-end pe-3">
+              <button class="btn btn-sm btn-outline-danger" :title="`Leave ${room.roomId}`" @click="leave(room)">
+                <i class="fa-solid fa-door-open me-1"></i>Leave
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="form-text px-3 py-2 mb-0">
+        Conversations with the bot (e.g. verification), not notification targets — use
+        <code>!notify</code> commands here.
+      </div>
     </div>
   </div>
 </template>

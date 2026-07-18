@@ -12,6 +12,9 @@ const origin = window.location.origin
       Every endpoint authenticates with an <strong>ingest token</strong>
       (<code>mn_...</code>, minted on the Tokens tab). A token belongs to a
       channel — that channel's Matrix room is where the notification lands.
+      Notification rooms must be <strong>encrypted and named</strong>: a
+      nameless two-member room is indistinguishable from a direct message,
+      so it is treated as one and not offered for channel mapping.
       Tokens can be restricted to a single endpoint kind, carry an optional
       prefix prepended to every message, and are rate limited per token.
       Unless noted otherwise, the token can be presented as

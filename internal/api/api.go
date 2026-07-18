@@ -137,6 +137,7 @@ func (s *Server) ListRooms(ctx context.Context, _ *connect.Request[notifierv1.Li
 			Name:      room.Name,
 			Channel:   boundTo[room.ID],
 			Encrypted: encrypted,
+			DmWith:    room.DMWith,
 		})
 	}
 	return connect.NewResponse(resp), nil

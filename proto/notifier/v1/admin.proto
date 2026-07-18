@@ -84,6 +84,9 @@ message Room {
   // Name of the channel bound to this room, empty if unmapped.
   string channel = 3;
   bool encrypted = 4;
+  // MXID of the other member when the room is a direct message (nameless,
+  // two members) — e.g. the DM a client creates for user verification.
+  string dm_with = 5;
 }
 
 message ListRoomsRequest {}
