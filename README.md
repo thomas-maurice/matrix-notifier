@@ -358,7 +358,9 @@ route:
 
 GitHub Actions (mirroring `thomas-maurice/cortex`):
 
-- **test** — on every PR and non-master push: UI build + vitest, `go build`/`go vet`/golangci-lint/buf lint, `go test -race`.
+- **test** — on every PR and non-master push: UI build + vitest, `go build`/`go vet`/golangci-lint/buf lint, `go test -race`, and a short fuzz
+  pass over the ingest parsers (`make fuzz`, the code that chews untrusted
+  webhook bodies; `make fuzz FUZZTIME=5m` for a longer local hunt).
 - **build** — on master pushes and `v*` tags: runs the test workflow, then
   builds and pushes a multi-arch (amd64/arm64) image to
   `ghcr.io/thomas-maurice/matrix-notifier` — `:latest` + `:sha-…` on master,

@@ -58,6 +58,10 @@ jobs:
       - name: Test
         run: go test -race -tags goolm ./...
 
+      # Short smoke pass; the corpus seeds already run in the Test step.
+      - name: Fuzz ingest parsers
+        run: make fuzz
+
   # Real-Synapse E2EE regression guard (login, cross-signing, encrypted
   # send + decrypt). Separate job because it pulls a container image and is
   # the thing that catches mautrix-go version bumps.

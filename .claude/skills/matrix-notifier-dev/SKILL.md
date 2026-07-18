@@ -99,12 +99,13 @@ test/integration/       testcontainers Synapse E2E (build tag `integration`)
 make build            # ui-ensure + go build → bin/matrix-notifier
 make test             # go test -tags goolm ./...
 make test-integration # real Synapse via testcontainers (needs Docker)
+make fuzz             # FuzzParse on all 5 ingest parsers, FUZZTIME=10s each
 cd ui && npm test     # vitest
 golangci-lint run --build-tags goolm   # CI runs this; keep it at 0 issues
 ```
 
 Full CI gate = UI build + vitest, go build/vet, golangci-lint, buf lint,
-`go test -race`.
+`go test -race`, `make fuzz` (10s/parser smoke).
 
 ## Dev stack lifecycle
 

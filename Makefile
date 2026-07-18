@@ -17,6 +17,16 @@ test:
 test-integration:
 	go test -tags "$(GO_TAGS) integration" -timeout 300s ./test/integration/...
 
+# Fuzz the ingest parsers (the code parsing attacker-influenced input) for
+# FUZZTIME each. Seeds also run as plain tests in `make test`.
+FUZZTIME ?= 10s
+.PHONY: fuzz
+fuzz:
+	@for pkg in gotify alertmanager gitea slack grafana; do \
+		echo "fuzzing $$pkg"; \
+		go test -tags $(GO_TAGS) -run '^$$' -fuzz FuzzParse -fuzztime $(FUZZTIME) ./internal/ingest/$$pkg || exit 1; \
+	done
+
 # Build the admin UI into ui/dist (embedded into the binary on next build).
 ui:
 	cd ui && npm install --no-fund --no-audit && npm run build
