@@ -18,6 +18,12 @@ a config key, a troubleshooting trick — you MUST update in the same session:
 
 1. **`README.md`** — the user-facing documentation.
 2. **This skill** — the agent-facing documentation.
+3. **`ui/src/components/DocsPanel.vue`** — the in-UI "Docs" page. MANDATORY
+   whenever an ingest/webhook endpoint is added, removed, or its behavior,
+   auth, priorities, or sender-side configuration changes. It documents,
+   per endpoint: how it works, how to configure the sender, and priority
+   mapping. Remember `make ui && make build` afterwards or the embedded
+   dist ships stale.
 
 Also search cortex (`cortex_memory_search`, namespace is auto-derived from
 the git remote) at task start: this repo has a rich decision history
@@ -49,7 +55,8 @@ internal/
 proto/notifier/v1/      admin.proto — the API source of truth
 gen/                    generated stubs — NEVER edit, `make proto` regenerates
 ui/                     Vue 3 + Vite + Bootstrap (dark); embedded via
-                        go:embed all:dist — StatusPanel/ChannelsPanel/TokensPanel
+                        go:embed all:dist — StatusPanel/ChannelsPanel/
+                        TokensPanel/SettingsPanel/DocsPanel (endpoint docs)
 dev/                    dev stack: docker-compose, bootstrap.sh, cmdclient
 test/integration/       testcontainers Synapse E2E (build tag `integration`)
 ```

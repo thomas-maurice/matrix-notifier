@@ -5,6 +5,7 @@ import StatusPanel from './components/StatusPanel.vue'
 import ChannelsPanel from './components/ChannelsPanel.vue'
 import TokensPanel from './components/TokensPanel.vue'
 import SettingsPanel from './components/SettingsPanel.vue'
+import DocsPanel from './components/DocsPanel.vue'
 
 const authed = ref(false)
 const tab = ref('status')
@@ -71,6 +72,11 @@ onMounted(async () => {
             <i class="fa-solid fa-gear me-1"></i>Settings
           </a>
         </li>
+        <li class="nav-item">
+          <a class="nav-link" :class="{ active: tab === 'docs' }" href="#" @click.prevent="tab = 'docs'">
+            <i class="fa-solid fa-book me-1"></i>Docs
+          </a>
+        </li>
       </ul>
       <button v-if="authed" class="btn btn-outline-secondary btn-sm" @click="logout">
         <i class="fa-solid fa-right-from-bracket me-1"></i>Logout
@@ -107,6 +113,18 @@ onMounted(async () => {
       <ChannelsPanel v-if="tab === 'channels'" />
       <TokensPanel v-if="tab === 'tokens'" />
       <SettingsPanel v-if="tab === 'settings'" />
+      <DocsPanel v-if="tab === 'docs'" />
     </template>
   </div>
+
+  <footer class="container text-center text-secondary small border-top mt-5 py-3" style="max-width: 960px">
+    <a
+      href="https://github.com/thomas-maurice/matrix-notifier"
+      target="_blank"
+      rel="noopener"
+      class="link-secondary text-decoration-none"
+    >
+      <i class="fa-brands fa-github me-1"></i>thomas-maurice/matrix-notifier
+    </a>
+  </footer>
 </template>
