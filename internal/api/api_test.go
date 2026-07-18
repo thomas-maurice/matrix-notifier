@@ -2,8 +2,10 @@ package api
 
 import (
 	"context"
+	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -164,6 +166,34 @@ func TestRejectsBadAdminToken(t *testing.T) {
 	_, err = badClient.GetStatus(context.Background(), connect.NewRequest(&notifierv1.GetStatusRequest{}))
 	require.Error(t, err)
 	assert.Equal(t, connect.CodeUnauthenticated, connect.CodeOf(err))
+}
+
+// Login is the only procedure allowed through without a session; every other
+// RPC — including any added in the future — must be stopped by the auth
+// interceptor before its handler runs. Enumerating the service descriptor
+// keeps this exhaustive as the proto grows.
+func TestEveryRPCRequiresSession(t *testing.T) {
+	_, _, url := newTestServer(t)
+
+	svc := notifierv1.File_notifier_v1_admin_proto.Services().Get(0)
+	methods := svc.Methods()
+	require.Greater(t, methods.Len(), 1)
+	for i := 0; i < methods.Len(); i++ {
+		procedure := "/" + string(svc.FullName()) + "/" + string(methods.Get(i).Name())
+		resp, err := http.Post(url+procedure, "application/json", strings.NewReader("{}"))
+		require.NoError(t, err, procedure)
+		body, err := io.ReadAll(resp.Body)
+		require.NoError(t, err, procedure)
+		require.NoError(t, resp.Body.Close())
+		if procedure == loginProcedure {
+			assert.NotContains(t, string(body), errUnauthenticated.Error(),
+				"Login must not be blocked by the session interceptor")
+			continue
+		}
+		assert.Equal(t, http.StatusUnauthorized, resp.StatusCode, procedure)
+		assert.Contains(t, string(body), errUnauthenticated.Error(),
+			"%s must be rejected by the auth interceptor, not its handler", procedure)
+	}
 }
 
 func TestChannelAndTokenLifecycle(t *testing.T) {
