@@ -69,6 +69,38 @@ func TestIssueAndRelease(t *testing.T) {
 	assert.Contains(t, title, "release v1.2.0 published")
 }
 
+// Forgejo action_run_* payloads carry the repository inside the run object,
+// not at the top level — the title must still name the repo, and a failure
+// must outrank routine events so it stands out in the room.
+func TestActionRunFailure(t *testing.T) {
+	body := `{"action":"failure","run":{
+		"title":"fix the thing","workflow_id":"test.yml","index_in_repo":12,
+		"prettyref":"master","html_url":"http://git/me/repo/actions/runs/12",
+		"repository":{"full_name":"me/repo"},"trigger_user":{"login":"thomas"}}}`
+	r := httptest.NewRequest("POST", "/forgejo", strings.NewReader(body))
+	r.Header.Set("X-Forgejo-Event", "action_run_failure")
+	n, err := Parse(r)
+	require.NoError(t, err)
+	assert.Contains(t, n.Title, "[me/repo] CI failed: fix the thing (master)")
+	assert.Contains(t, n.Body, "test.yml run #12")
+	assert.Contains(t, n.Body, "thomas")
+	assert.Equal(t, 5, n.Priority)
+
+	r = httptest.NewRequest("POST", "/forgejo", strings.NewReader(body))
+	r.Header.Set("X-Forgejo-Event", "action_run_recover")
+	n, err = Parse(r)
+	require.NoError(t, err)
+	assert.Contains(t, n.Title, "CI recovered")
+	assert.Equal(t, 3, n.Priority, "recovery is an all-clear, it must not page like a failure")
+}
+
+// A malformed action_run payload without the run object must degrade to the
+// generic line, not panic on a nil pointer.
+func TestActionRunMissingRun(t *testing.T) {
+	title, _ := parse(t, "action_run_failure", `{"action":"failure","repository":{"full_name":"me/repo"}}`)
+	assert.Contains(t, title, "action_run_failure")
+}
+
 func TestUnknownEventStillNotifies(t *testing.T) {
 	// An unhandled event must produce something, not silently drop.
 	title, _ := parse(t, "repository", `{"action":"created","repository":{"full_name":"me/repo"}}`)

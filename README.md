@@ -11,9 +11,14 @@ nothing needs a Matrix client:
   (payload v4), formatted with firing/resolved counts, severity, summaries
   and generator links.
 - **Gitea / Forgejo**: `POST /gitea` (alias `POST /forgejo`) — webhook
-  receiver for push, pull-request, issue, release and branch/tag events. The
-  event type is read from the `X-Gitea-Event` / `X-Forgejo-Event` header;
-  pass the token as `?token=`.
+  receiver for push, pull-request, issue, release and branch/tag events, plus
+  the Forgejo-only (>= v12) `action_run_failure` / `action_run_recover` /
+  `action_run_success` CI events. The event type is read from the
+  `X-Gitea-Event` / `X-Forgejo-Event` header; pass the token as `?token=` or
+  set the webhook's Authorization Header field to `Bearer mn_...`. For
+  CI-failure notifications, pick "Custom Events" in the Forgejo webhook
+  config and tick only Action Run Failure (and Recover for the all-clear);
+  the webhook's Secret field is unused — auth is the ingest token.
 
 Each ingest token can carry a **prefix** (e.g. an emoji) prepended to its
 notifications, so `sonarr 📺` / `radarr 🎬` / `gitea 🐙` are distinguishable

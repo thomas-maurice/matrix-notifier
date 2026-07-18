@@ -59,6 +59,18 @@ type payload struct {
 		HTMLURL string `json:"html_url"`
 		Author  user   `json:"author"`
 	} `json:"release"`
+
+	// Forgejo action_run_* events (Forgejo >= v12; not emitted by Gitea).
+	// The repository lives inside the run, not at the top level.
+	Run *struct {
+		Title       string `json:"title"`
+		WorkflowID  string `json:"workflow_id"`
+		Index       int64  `json:"index_in_repo"`
+		PrettyRef   string `json:"prettyref"`
+		HTMLURL     string `json:"html_url"`
+		Repo        repo   `json:"repository"`
+		TriggerUser user   `json:"trigger_user"`
+	} `json:"run"`
 }
 
 // Parse reads a Gitea/Forgejo webhook from an HTTP request.
@@ -90,6 +102,8 @@ func format(event string, p *payload) notify.Notification {
 		return releaseNotification(p, repo)
 	case "create", "delete":
 		return refNotification(event, p, repo)
+	case "action_run_failure", "action_run_success", "action_run_recover":
+		return actionRunNotification(event, p)
 	default:
 		// Unknown/unhandled event: a minimal but honest line rather than a
 		// dropped notification.
@@ -151,6 +165,25 @@ func releaseNotification(p *payload, repo string) notify.Notification {
 	title := fmt.Sprintf("[%s] release %s %s", repo, p.Release.TagName, p.Action)
 	body := fmt.Sprintf("[%s](%s) by %s", name, p.Release.HTMLURL, p.Release.Author.Login)
 	return notify.Notification{Title: title, Body: body, Priority: 4}
+}
+
+func actionRunNotification(event string, p *payload) notify.Notification {
+	if p.Run == nil {
+		return generic(p.Repo.FullName, event, p.Action)
+	}
+	verb, prio := "failed", 5
+	switch event {
+	case "action_run_success":
+		verb, prio = "succeeded", 3
+	case "action_run_recover":
+		verb, prio = "recovered", 3
+	}
+	title := fmt.Sprintf("[%s] CI %s: %s (%s)",
+		p.Run.Repo.FullName, verb, firstNonEmpty(p.Run.Title, p.Run.WorkflowID), p.Run.PrettyRef)
+	body := fmt.Sprintf("[%s run #%d](%s) triggered by %s",
+		p.Run.WorkflowID, p.Run.Index, p.Run.HTMLURL,
+		firstNonEmpty(p.Run.TriggerUser.Login, p.Run.TriggerUser.Name))
+	return notify.Notification{Title: title, Body: body, Priority: prio}
 }
 
 func refNotification(event string, p *payload, repo string) notify.Notification {
