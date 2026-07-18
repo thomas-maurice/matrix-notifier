@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { timestampDate, type Timestamp } from '@bufbuild/protobuf/wkt'
+import { timestampDate, timestampFromDate, type Timestamp } from '@bufbuild/protobuf/wkt'
 import { api, errMsg } from '../api'
 import { notifyError, notifySuccess } from '../toast'
 import type { Channel, CreateTokenResponse, Token } from '../gen/notifier/v1/admin_pb'
@@ -12,6 +12,8 @@ const newName = ref('')
 const newKind = ref('any')
 const newChannel = ref('')
 const newPrefix = ref('')
+// Days until expiry; 0 mints a token that never expires.
+const newExpiryDays = ref(0)
 
 async function refresh() {
   try {
@@ -32,6 +34,9 @@ async function create() {
       kind: newKind.value,
       channel: newChannel.value,
       prefix: newPrefix.value.trim(),
+      ...(newExpiryDays.value > 0 && {
+        expiresAt: timestampFromDate(new Date(Date.now() + newExpiryDays.value * 86_400_000)),
+      }),
     })
     minted.value = resp
     newName.value = ''
@@ -68,6 +73,32 @@ async function changeChannel(tok: Token, event: Event) {
   }
 }
 
+async function editExpiry(tok: Token) {
+  const current = tok.expiresAt ? `expires ${fmtDate(tok.expiresAt)}` : 'never expires'
+  const answer = prompt(`Days until "${tok.name}" expires, counted from now (currently ${current}; 0 = never expires):`)
+  if (answer === null) return
+  const days = Number(answer.trim())
+  if (!Number.isFinite(days) || days < 0) {
+    notifyError('Enter a number of days (0 = never expires)')
+    return
+  }
+  try {
+    // Prefix and channel ride along unchanged, same as the other edits.
+    await api.updateToken({
+      name: tok.name,
+      prefix: tok.prefix || '',
+      channel: tok.channel,
+      ...(days === 0
+        ? { clearExpiry: true }
+        : { expiresAt: timestampFromDate(new Date(Date.now() + days * 86_400_000)) }),
+    })
+    notifySuccess(days === 0 ? `"${tok.name}" never expires` : `"${tok.name}" now expires in ${days} day(s)`)
+    await refresh()
+  } catch (e) {
+    notifyError(errMsg(e))
+  }
+}
+
 async function remove(name: string) {
   if (!confirm(`Delete token "${name}"? Producers using it will get 401s.`)) return
   try {
@@ -96,6 +127,10 @@ function fmtDate(ts?: Timestamp): string {
   return ts ? timestampDate(ts).toLocaleString() : '—'
 }
 
+function isExpired(ts?: Timestamp): boolean {
+  return !!ts && timestampDate(ts).getTime() < Date.now()
+}
+
 onMounted(refresh)
 </script>
 
@@ -112,10 +147,10 @@ onMounted(refresh)
     <div class="card-header"><i class="fa-solid fa-plus me-2"></i>New token</div>
     <div class="card-body">
       <form class="row g-2" @submit.prevent="create">
-        <div class="col-md-3">
+        <div class="col-md-2">
           <input v-model="newName" class="form-control" placeholder="name (e.g. sonarr)" required />
         </div>
-        <div class="col-md-3">
+        <div class="col-md-2">
           <select v-model="newKind" class="form-select">
             <option value="any">any endpoint</option>
             <option value="gotify">gotify only</option>
@@ -134,6 +169,15 @@ onMounted(refresh)
           <input v-model="newPrefix" class="form-control" placeholder="prefix (optional)" title="Prepended to notification titles" />
         </div>
         <div class="col-md-2">
+          <select v-model.number="newExpiryDays" class="form-select" title="The token stops authenticating past this — rotation means minting a new one">
+            <option :value="0">never expires</option>
+            <option :value="7">expires in 7 days</option>
+            <option :value="30">expires in 30 days</option>
+            <option :value="90">expires in 90 days</option>
+            <option :value="365">expires in 1 year</option>
+          </select>
+        </div>
+        <div class="col-md-2">
           <button class="btn btn-primary w-100" type="submit" :disabled="!channels.length">Create</button>
         </div>
       </form>
@@ -146,7 +190,7 @@ onMounted(refresh)
     <div class="card-body p-0">
       <table class="table mb-0 align-middle">
         <thead>
-          <tr><th class="ps-3">Name</th><th>Kind</th><th>Channel</th><th>Prefix</th><th>Created</th><th>Last used</th><th class="text-end pe-3"></th></tr>
+          <tr><th class="ps-3">Name</th><th>Kind</th><th>Channel</th><th>Prefix</th><th>Created</th><th>Last used</th><th>Expires</th><th class="text-end pe-3"></th></tr>
         </thead>
         <tbody>
           <tr v-for="tok in tokens" :key="tok.name">
@@ -164,6 +208,18 @@ onMounted(refresh)
             </td>
             <td class="text-secondary">{{ fmtDate(tok.createdAt) }}</td>
             <td class="text-secondary">{{ fmtDate(tok.lastUsedAt) }}</td>
+            <td>
+              <button
+                class="btn btn-sm"
+                :class="isExpired(tok.expiresAt) ? 'btn-outline-danger' : 'btn-outline-secondary'"
+                title="Change expiry"
+                @click="editExpiry(tok)"
+              >
+                <span v-if="isExpired(tok.expiresAt)" class="me-1">expired {{ fmtDate(tok.expiresAt) }}</span>
+                <template v-else>{{ fmtDate(tok.expiresAt) }}</template>
+                <i class="fa-solid fa-pen ms-1 small"></i>
+              </button>
+            </td>
             <td class="text-end pe-3">
               <button class="btn btn-sm btn-outline-info me-2" title="Send a test notification through this token" @click="test(tok)">
                 <i class="fa-solid fa-paper-plane"></i>
@@ -174,7 +230,7 @@ onMounted(refresh)
             </td>
           </tr>
           <tr v-if="!tokens.length">
-            <td colspan="7" class="text-center text-secondary py-3">No tokens yet</td>
+            <td colspan="8" class="text-center text-secondary py-3">No tokens yet</td>
           </tr>
         </tbody>
       </table>

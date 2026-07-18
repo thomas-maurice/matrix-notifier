@@ -46,9 +46,9 @@ func newTestServer(t *testing.T) (*recordingQueue, *store.Store, http.Handler, s
 	require.NoError(t, err)
 	_, err = st.CreateChannel(context.Background(), "alerts", "!room:example.org", false)
 	require.NoError(t, err)
-	gotifyToken, _, err := st.CreateToken(context.Background(), "gotify-only", store.KindGotify, "alerts", "")
+	gotifyToken, _, err := st.CreateToken(context.Background(), "gotify-only", store.KindGotify, "alerts", "", nil)
 	require.NoError(t, err)
-	anyToken, _, err := st.CreateToken(context.Background(), "any-kind", store.KindAny, "alerts", "")
+	anyToken, _, err := st.CreateToken(context.Background(), "any-kind", store.KindAny, "alerts", "", nil)
 	require.NoError(t, err)
 	q := &recordingQueue{}
 	return q, st, New(slog.New(slog.DiscardHandler), &fakeHealth{healthy: true}, st, q, nil), gotifyToken, anyToken

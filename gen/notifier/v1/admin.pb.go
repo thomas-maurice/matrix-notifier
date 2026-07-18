@@ -127,7 +127,9 @@ type Token struct {
 	CreatedAt  *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	LastUsedAt *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=last_used_at,json=lastUsedAt,proto3" json:"last_used_at,omitempty"`
 	// Prepended to notification titles (e.g. an emoji per producer).
-	Prefix        string `protobuf:"bytes,6,opt,name=prefix,proto3" json:"prefix,omitempty"`
+	Prefix string `protobuf:"bytes,6,opt,name=prefix,proto3" json:"prefix,omitempty"`
+	// When set, the token stops authenticating past this instant.
+	ExpiresAt     *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -202,6 +204,13 @@ func (x *Token) GetPrefix() string {
 		return x.Prefix
 	}
 	return ""
+}
+
+func (x *Token) GetExpiresAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.ExpiresAt
+	}
+	return nil
 }
 
 // Room is a room the bot has joined, whether or not a channel maps to it.
@@ -1297,11 +1306,14 @@ func (x *ListTokensResponse) GetTokens() []*Token {
 }
 
 type CreateTokenRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Kind          string                 `protobuf:"bytes,2,opt,name=kind,proto3" json:"kind,omitempty"`
-	Channel       string                 `protobuf:"bytes,3,opt,name=channel,proto3" json:"channel,omitempty"`
-	Prefix        string                 `protobuf:"bytes,4,opt,name=prefix,proto3" json:"prefix,omitempty"`
+	state   protoimpl.MessageState `protogen:"open.v1"`
+	Name    string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Kind    string                 `protobuf:"bytes,2,opt,name=kind,proto3" json:"kind,omitempty"`
+	Channel string                 `protobuf:"bytes,3,opt,name=channel,proto3" json:"channel,omitempty"`
+	Prefix  string                 `protobuf:"bytes,4,opt,name=prefix,proto3" json:"prefix,omitempty"`
+	// Optional expiry; unset mints a token that never expires. Can be
+	// changed later via UpdateToken.
+	ExpiresAt     *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1364,6 +1376,13 @@ func (x *CreateTokenRequest) GetPrefix() string {
 	return ""
 }
 
+func (x *CreateTokenRequest) GetExpiresAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.ExpiresAt
+	}
+	return nil
+}
+
 type CreateTokenResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Token *Token                 `protobuf:"bytes,1,opt,name=token,proto3" json:"token,omitempty"`
@@ -1423,7 +1442,12 @@ type UpdateTokenRequest struct {
 	Prefix string                 `protobuf:"bytes,2,opt,name=prefix,proto3" json:"prefix,omitempty"`
 	// Reassign the token to another channel (and room). Empty leaves it
 	// unchanged.
-	Channel       string `protobuf:"bytes,3,opt,name=channel,proto3" json:"channel,omitempty"`
+	Channel string `protobuf:"bytes,3,opt,name=channel,proto3" json:"channel,omitempty"`
+	// New expiry; unset leaves the current expiry unchanged.
+	ExpiresAt *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
+	// Remove the expiry entirely (the token never expires). Wins over
+	// expires_at.
+	ClearExpiry   bool `protobuf:"varint,5,opt,name=clear_expiry,json=clearExpiry,proto3" json:"clear_expiry,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1477,6 +1501,20 @@ func (x *UpdateTokenRequest) GetChannel() string {
 		return x.Channel
 	}
 	return ""
+}
+
+func (x *UpdateTokenRequest) GetExpiresAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.ExpiresAt
+	}
+	return nil
+}
+
+func (x *UpdateTokenRequest) GetClearExpiry() bool {
+	if x != nil {
+		return x.ClearExpiry
+	}
+	return false
 }
 
 type UpdateTokenResponse struct {
@@ -2267,7 +2305,7 @@ const file_notifier_v1_admin_proto_rawDesc = "" +
 	"\x06joined\x18\x04 \x01(\bR\x06joined\x12\x1c\n" +
 	"\tencrypted\x18\x05 \x01(\bR\tencrypted\x12\x14\n" +
 	"\x05chart\x18\x06 \x01(\bR\x05chart\x12\x14\n" +
-	"\x05alias\x18\a \x01(\tR\x05alias\"\xda\x01\n" +
+	"\x05alias\x18\a \x01(\tR\x05alias\"\x95\x02\n" +
 	"\x05Token\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x12\n" +
 	"\x04kind\x18\x02 \x01(\tR\x04kind\x12\x18\n" +
@@ -2276,7 +2314,9 @@ const file_notifier_v1_admin_proto_rawDesc = "" +
 	"created_at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x12<\n" +
 	"\flast_used_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
 	"lastUsedAt\x12\x16\n" +
-	"\x06prefix\x18\x06 \x01(\tR\x06prefix\"\x84\x01\n" +
+	"\x06prefix\x18\x06 \x01(\tR\x06prefix\x129\n" +
+	"\n" +
+	"expires_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAt\"\x84\x01\n" +
 	"\x04Room\x12\x17\n" +
 	"\aroom_id\x18\x01 \x01(\tR\x06roomId\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x18\n" +
@@ -2333,19 +2373,24 @@ const file_notifier_v1_admin_proto_rawDesc = "" +
 	"\x15DeleteChannelResponse\"\x13\n" +
 	"\x11ListTokensRequest\"@\n" +
 	"\x12ListTokensResponse\x12*\n" +
-	"\x06tokens\x18\x01 \x03(\v2\x12.notifier.v1.TokenR\x06tokens\"n\n" +
+	"\x06tokens\x18\x01 \x03(\v2\x12.notifier.v1.TokenR\x06tokens\"\xa9\x01\n" +
 	"\x12CreateTokenRequest\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x12\n" +
 	"\x04kind\x18\x02 \x01(\tR\x04kind\x12\x18\n" +
 	"\achannel\x18\x03 \x01(\tR\achannel\x12\x16\n" +
-	"\x06prefix\x18\x04 \x01(\tR\x06prefix\"]\n" +
+	"\x06prefix\x18\x04 \x01(\tR\x06prefix\x129\n" +
+	"\n" +
+	"expires_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAt\"]\n" +
 	"\x13CreateTokenResponse\x12(\n" +
 	"\x05token\x18\x01 \x01(\v2\x12.notifier.v1.TokenR\x05token\x12\x1c\n" +
-	"\tplaintext\x18\x02 \x01(\tR\tplaintext\"Z\n" +
+	"\tplaintext\x18\x02 \x01(\tR\tplaintext\"\xb8\x01\n" +
 	"\x12UpdateTokenRequest\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x16\n" +
 	"\x06prefix\x18\x02 \x01(\tR\x06prefix\x12\x18\n" +
-	"\achannel\x18\x03 \x01(\tR\achannel\"?\n" +
+	"\achannel\x18\x03 \x01(\tR\achannel\x129\n" +
+	"\n" +
+	"expires_at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAt\x12!\n" +
+	"\fclear_expiry\x18\x05 \x01(\bR\vclearExpiry\"?\n" +
 	"\x13UpdateTokenResponse\x12(\n" +
 	"\x05token\x18\x01 \x01(\v2\x12.notifier.v1.TokenR\x05token\"(\n" +
 	"\x12DeleteTokenRequest\x12\x12\n" +
@@ -2481,64 +2526,67 @@ var file_notifier_v1_admin_proto_depIdxs = []int32{
 	44, // 0: notifier.v1.Channel.created_at:type_name -> google.protobuf.Timestamp
 	44, // 1: notifier.v1.Token.created_at:type_name -> google.protobuf.Timestamp
 	44, // 2: notifier.v1.Token.last_used_at:type_name -> google.protobuf.Timestamp
-	2,  // 3: notifier.v1.ListRoomsResponse.rooms:type_name -> notifier.v1.Room
-	44, // 4: notifier.v1.LoginResponse.expires_at:type_name -> google.protobuf.Timestamp
-	44, // 5: notifier.v1.ChangeAdminPasswordResponse.expires_at:type_name -> google.protobuf.Timestamp
-	44, // 6: notifier.v1.GetStatusResponse.last_sync:type_name -> google.protobuf.Timestamp
-	0,  // 7: notifier.v1.ListChannelsResponse.channels:type_name -> notifier.v1.Channel
-	0,  // 8: notifier.v1.CreateChannelResponse.channel:type_name -> notifier.v1.Channel
-	0,  // 9: notifier.v1.UpdateChannelResponse.channel:type_name -> notifier.v1.Channel
-	1,  // 10: notifier.v1.ListTokensResponse.tokens:type_name -> notifier.v1.Token
-	1,  // 11: notifier.v1.CreateTokenResponse.token:type_name -> notifier.v1.Token
-	1,  // 12: notifier.v1.UpdateTokenResponse.token:type_name -> notifier.v1.Token
-	44, // 13: notifier.v1.Delivery.created_at:type_name -> google.protobuf.Timestamp
-	44, // 14: notifier.v1.Delivery.delivered_at:type_name -> google.protobuf.Timestamp
-	31, // 15: notifier.v1.ListDeliveriesResponse.deliveries:type_name -> notifier.v1.Delivery
-	7,  // 16: notifier.v1.AdminService.Login:input_type -> notifier.v1.LoginRequest
-	9,  // 17: notifier.v1.AdminService.Logout:input_type -> notifier.v1.LogoutRequest
-	11, // 18: notifier.v1.AdminService.ChangeAdminPassword:input_type -> notifier.v1.ChangeAdminPasswordRequest
-	13, // 19: notifier.v1.AdminService.GetStatus:input_type -> notifier.v1.GetStatusRequest
-	15, // 20: notifier.v1.AdminService.ListChannels:input_type -> notifier.v1.ListChannelsRequest
-	3,  // 21: notifier.v1.AdminService.ListRooms:input_type -> notifier.v1.ListRoomsRequest
-	5,  // 22: notifier.v1.AdminService.LeaveRoom:input_type -> notifier.v1.LeaveRoomRequest
-	17, // 23: notifier.v1.AdminService.CreateChannel:input_type -> notifier.v1.CreateChannelRequest
-	19, // 24: notifier.v1.AdminService.UpdateChannel:input_type -> notifier.v1.UpdateChannelRequest
-	21, // 25: notifier.v1.AdminService.DeleteChannel:input_type -> notifier.v1.DeleteChannelRequest
-	23, // 26: notifier.v1.AdminService.ListTokens:input_type -> notifier.v1.ListTokensRequest
-	25, // 27: notifier.v1.AdminService.CreateToken:input_type -> notifier.v1.CreateTokenRequest
-	27, // 28: notifier.v1.AdminService.UpdateToken:input_type -> notifier.v1.UpdateTokenRequest
-	29, // 29: notifier.v1.AdminService.DeleteToken:input_type -> notifier.v1.DeleteTokenRequest
-	32, // 30: notifier.v1.AdminService.ListDeliveries:input_type -> notifier.v1.ListDeliveriesRequest
-	34, // 31: notifier.v1.AdminService.RetryDelivery:input_type -> notifier.v1.RetryDeliveryRequest
-	36, // 32: notifier.v1.AdminService.SendTestNotification:input_type -> notifier.v1.SendTestNotificationRequest
-	38, // 33: notifier.v1.AdminService.TestToken:input_type -> notifier.v1.TestTokenRequest
-	40, // 34: notifier.v1.AdminService.GetProfile:input_type -> notifier.v1.GetProfileRequest
-	42, // 35: notifier.v1.AdminService.SetProfile:input_type -> notifier.v1.SetProfileRequest
-	8,  // 36: notifier.v1.AdminService.Login:output_type -> notifier.v1.LoginResponse
-	10, // 37: notifier.v1.AdminService.Logout:output_type -> notifier.v1.LogoutResponse
-	12, // 38: notifier.v1.AdminService.ChangeAdminPassword:output_type -> notifier.v1.ChangeAdminPasswordResponse
-	14, // 39: notifier.v1.AdminService.GetStatus:output_type -> notifier.v1.GetStatusResponse
-	16, // 40: notifier.v1.AdminService.ListChannels:output_type -> notifier.v1.ListChannelsResponse
-	4,  // 41: notifier.v1.AdminService.ListRooms:output_type -> notifier.v1.ListRoomsResponse
-	6,  // 42: notifier.v1.AdminService.LeaveRoom:output_type -> notifier.v1.LeaveRoomResponse
-	18, // 43: notifier.v1.AdminService.CreateChannel:output_type -> notifier.v1.CreateChannelResponse
-	20, // 44: notifier.v1.AdminService.UpdateChannel:output_type -> notifier.v1.UpdateChannelResponse
-	22, // 45: notifier.v1.AdminService.DeleteChannel:output_type -> notifier.v1.DeleteChannelResponse
-	24, // 46: notifier.v1.AdminService.ListTokens:output_type -> notifier.v1.ListTokensResponse
-	26, // 47: notifier.v1.AdminService.CreateToken:output_type -> notifier.v1.CreateTokenResponse
-	28, // 48: notifier.v1.AdminService.UpdateToken:output_type -> notifier.v1.UpdateTokenResponse
-	30, // 49: notifier.v1.AdminService.DeleteToken:output_type -> notifier.v1.DeleteTokenResponse
-	33, // 50: notifier.v1.AdminService.ListDeliveries:output_type -> notifier.v1.ListDeliveriesResponse
-	35, // 51: notifier.v1.AdminService.RetryDelivery:output_type -> notifier.v1.RetryDeliveryResponse
-	37, // 52: notifier.v1.AdminService.SendTestNotification:output_type -> notifier.v1.SendTestNotificationResponse
-	39, // 53: notifier.v1.AdminService.TestToken:output_type -> notifier.v1.TestTokenResponse
-	41, // 54: notifier.v1.AdminService.GetProfile:output_type -> notifier.v1.GetProfileResponse
-	43, // 55: notifier.v1.AdminService.SetProfile:output_type -> notifier.v1.SetProfileResponse
-	36, // [36:56] is the sub-list for method output_type
-	16, // [16:36] is the sub-list for method input_type
-	16, // [16:16] is the sub-list for extension type_name
-	16, // [16:16] is the sub-list for extension extendee
-	0,  // [0:16] is the sub-list for field type_name
+	44, // 3: notifier.v1.Token.expires_at:type_name -> google.protobuf.Timestamp
+	2,  // 4: notifier.v1.ListRoomsResponse.rooms:type_name -> notifier.v1.Room
+	44, // 5: notifier.v1.LoginResponse.expires_at:type_name -> google.protobuf.Timestamp
+	44, // 6: notifier.v1.ChangeAdminPasswordResponse.expires_at:type_name -> google.protobuf.Timestamp
+	44, // 7: notifier.v1.GetStatusResponse.last_sync:type_name -> google.protobuf.Timestamp
+	0,  // 8: notifier.v1.ListChannelsResponse.channels:type_name -> notifier.v1.Channel
+	0,  // 9: notifier.v1.CreateChannelResponse.channel:type_name -> notifier.v1.Channel
+	0,  // 10: notifier.v1.UpdateChannelResponse.channel:type_name -> notifier.v1.Channel
+	1,  // 11: notifier.v1.ListTokensResponse.tokens:type_name -> notifier.v1.Token
+	44, // 12: notifier.v1.CreateTokenRequest.expires_at:type_name -> google.protobuf.Timestamp
+	1,  // 13: notifier.v1.CreateTokenResponse.token:type_name -> notifier.v1.Token
+	44, // 14: notifier.v1.UpdateTokenRequest.expires_at:type_name -> google.protobuf.Timestamp
+	1,  // 15: notifier.v1.UpdateTokenResponse.token:type_name -> notifier.v1.Token
+	44, // 16: notifier.v1.Delivery.created_at:type_name -> google.protobuf.Timestamp
+	44, // 17: notifier.v1.Delivery.delivered_at:type_name -> google.protobuf.Timestamp
+	31, // 18: notifier.v1.ListDeliveriesResponse.deliveries:type_name -> notifier.v1.Delivery
+	7,  // 19: notifier.v1.AdminService.Login:input_type -> notifier.v1.LoginRequest
+	9,  // 20: notifier.v1.AdminService.Logout:input_type -> notifier.v1.LogoutRequest
+	11, // 21: notifier.v1.AdminService.ChangeAdminPassword:input_type -> notifier.v1.ChangeAdminPasswordRequest
+	13, // 22: notifier.v1.AdminService.GetStatus:input_type -> notifier.v1.GetStatusRequest
+	15, // 23: notifier.v1.AdminService.ListChannels:input_type -> notifier.v1.ListChannelsRequest
+	3,  // 24: notifier.v1.AdminService.ListRooms:input_type -> notifier.v1.ListRoomsRequest
+	5,  // 25: notifier.v1.AdminService.LeaveRoom:input_type -> notifier.v1.LeaveRoomRequest
+	17, // 26: notifier.v1.AdminService.CreateChannel:input_type -> notifier.v1.CreateChannelRequest
+	19, // 27: notifier.v1.AdminService.UpdateChannel:input_type -> notifier.v1.UpdateChannelRequest
+	21, // 28: notifier.v1.AdminService.DeleteChannel:input_type -> notifier.v1.DeleteChannelRequest
+	23, // 29: notifier.v1.AdminService.ListTokens:input_type -> notifier.v1.ListTokensRequest
+	25, // 30: notifier.v1.AdminService.CreateToken:input_type -> notifier.v1.CreateTokenRequest
+	27, // 31: notifier.v1.AdminService.UpdateToken:input_type -> notifier.v1.UpdateTokenRequest
+	29, // 32: notifier.v1.AdminService.DeleteToken:input_type -> notifier.v1.DeleteTokenRequest
+	32, // 33: notifier.v1.AdminService.ListDeliveries:input_type -> notifier.v1.ListDeliveriesRequest
+	34, // 34: notifier.v1.AdminService.RetryDelivery:input_type -> notifier.v1.RetryDeliveryRequest
+	36, // 35: notifier.v1.AdminService.SendTestNotification:input_type -> notifier.v1.SendTestNotificationRequest
+	38, // 36: notifier.v1.AdminService.TestToken:input_type -> notifier.v1.TestTokenRequest
+	40, // 37: notifier.v1.AdminService.GetProfile:input_type -> notifier.v1.GetProfileRequest
+	42, // 38: notifier.v1.AdminService.SetProfile:input_type -> notifier.v1.SetProfileRequest
+	8,  // 39: notifier.v1.AdminService.Login:output_type -> notifier.v1.LoginResponse
+	10, // 40: notifier.v1.AdminService.Logout:output_type -> notifier.v1.LogoutResponse
+	12, // 41: notifier.v1.AdminService.ChangeAdminPassword:output_type -> notifier.v1.ChangeAdminPasswordResponse
+	14, // 42: notifier.v1.AdminService.GetStatus:output_type -> notifier.v1.GetStatusResponse
+	16, // 43: notifier.v1.AdminService.ListChannels:output_type -> notifier.v1.ListChannelsResponse
+	4,  // 44: notifier.v1.AdminService.ListRooms:output_type -> notifier.v1.ListRoomsResponse
+	6,  // 45: notifier.v1.AdminService.LeaveRoom:output_type -> notifier.v1.LeaveRoomResponse
+	18, // 46: notifier.v1.AdminService.CreateChannel:output_type -> notifier.v1.CreateChannelResponse
+	20, // 47: notifier.v1.AdminService.UpdateChannel:output_type -> notifier.v1.UpdateChannelResponse
+	22, // 48: notifier.v1.AdminService.DeleteChannel:output_type -> notifier.v1.DeleteChannelResponse
+	24, // 49: notifier.v1.AdminService.ListTokens:output_type -> notifier.v1.ListTokensResponse
+	26, // 50: notifier.v1.AdminService.CreateToken:output_type -> notifier.v1.CreateTokenResponse
+	28, // 51: notifier.v1.AdminService.UpdateToken:output_type -> notifier.v1.UpdateTokenResponse
+	30, // 52: notifier.v1.AdminService.DeleteToken:output_type -> notifier.v1.DeleteTokenResponse
+	33, // 53: notifier.v1.AdminService.ListDeliveries:output_type -> notifier.v1.ListDeliveriesResponse
+	35, // 54: notifier.v1.AdminService.RetryDelivery:output_type -> notifier.v1.RetryDeliveryResponse
+	37, // 55: notifier.v1.AdminService.SendTestNotification:output_type -> notifier.v1.SendTestNotificationResponse
+	39, // 56: notifier.v1.AdminService.TestToken:output_type -> notifier.v1.TestTokenResponse
+	41, // 57: notifier.v1.AdminService.GetProfile:output_type -> notifier.v1.GetProfileResponse
+	43, // 58: notifier.v1.AdminService.SetProfile:output_type -> notifier.v1.SetProfileResponse
+	39, // [39:59] is the sub-list for method output_type
+	19, // [19:39] is the sub-list for method input_type
+	19, // [19:19] is the sub-list for extension type_name
+	19, // [19:19] is the sub-list for extension extendee
+	0,  // [0:19] is the sub-list for field type_name
 }
 
 func init() { file_notifier_v1_admin_proto_init() }

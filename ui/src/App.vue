@@ -48,7 +48,7 @@ onMounted(async () => {
 
 <template>
   <nav class="navbar navbar-expand border-bottom mb-4">
-    <div class="container">
+    <div class="container-fluid px-4">
       <span class="navbar-brand">
         <i class="fa-solid fa-bell me-2 text-primary"></i>matrix-notifier
       </span>
@@ -90,7 +90,7 @@ onMounted(async () => {
     </div>
   </nav>
 
-  <div class="container" style="max-width: 960px">
+  <div class="container-fluid px-4">
     <div v-if="!authed" class="row justify-content-center mt-5">
       <div class="col-md-6">
         <div class="card">
@@ -124,7 +124,7 @@ onMounted(async () => {
     </template>
   </div>
 
-  <footer class="container text-center text-secondary small border-top mt-5 py-3" style="max-width: 960px">
+  <footer class="container-fluid px-4 text-center text-secondary small border-top mt-5 py-3">
     <a
       href="https://github.com/thomas-maurice/matrix-notifier"
       target="_blank"

@@ -58,7 +58,7 @@ func newChartServer(t *testing.T) (*recordingQueue, http.Handler, string) {
 	require.NoError(t, err)
 	_, err = st.CreateChannel(context.Background(), "charty", "!chart:x", true)
 	require.NoError(t, err)
-	tok, _, err := st.CreateToken(context.Background(), "t", store.KindAlertmanager, "charty", "")
+	tok, _, err := st.CreateToken(context.Background(), "t", store.KindAlertmanager, "charty", "", nil)
 	require.NoError(t, err)
 	q := &recordingQueue{}
 	return q, New(slog.New(slog.DiscardHandler), &fakeHealth{healthy: true}, st, q, nil), tok
@@ -107,7 +107,7 @@ func TestTokenPrefixApplied(t *testing.T) {
 	require.NoError(t, err)
 	_, err = st.CreateChannel(context.Background(), "c", "!r:x", false)
 	require.NoError(t, err)
-	tok, _, err := st.CreateToken(context.Background(), "sonarr", store.KindGotify, "c", "📺")
+	tok, _, err := st.CreateToken(context.Background(), "sonarr", store.KindGotify, "c", "📺", nil)
 	require.NoError(t, err)
 	q := &recordingQueue{}
 	h := New(slog.New(slog.DiscardHandler), &fakeHealth{healthy: true}, st, q, nil)
@@ -137,7 +137,7 @@ func TestRateLimitReturns429(t *testing.T) {
 	require.NoError(t, err)
 	_, err = st.CreateChannel(context.Background(), "c", "!r:x", false)
 	require.NoError(t, err)
-	tok, _, err := st.CreateToken(context.Background(), "flood", store.KindGotify, "c", "")
+	tok, _, err := st.CreateToken(context.Background(), "flood", store.KindGotify, "c", "", nil)
 	require.NoError(t, err)
 	q := &recordingQueue{}
 	h := New(slog.New(slog.DiscardHandler), &fakeHealth{healthy: true}, st, q, NewLimiters(0.0001, 1))

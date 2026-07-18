@@ -215,7 +215,10 @@ curl -s -X POST http://localhost:8686/notifier.v1.AdminService/ListChannels \
   -H "Authorization: Bearer $JWT" -H 'Content-Type: application/json' -d '{}' | jq .
 # Other RPCs: GetStatus, ListRooms, CreateChannel {name, roomId, chart},
 # UpdateChannel, DeleteChannel, LeaveRoom, ListTokens, CreateToken
-# {name, kind, channel, prefix}, UpdateToken, DeleteToken,
+# {name, kind, channel, prefix, expiresAt?} (expired tokens 401 like wrong
+# ones), UpdateToken {name, prefix, channel?, expiresAt?, clearExpiry?}
+# (expiry editable in place; clearExpiry revives an expired token),
+# DeleteToken,
 # ListDeliveries {channel?, limit?} (outbox history, newest first),
 # RetryDelivery {id} (failed entries only — re-queues immediately),
 # SendTestNotification {channel}, TestToken {name}, Logout,
@@ -311,4 +314,6 @@ Prod runs at https://notifier.lil.maurice.fr (`@notifier:matrix.maurice.fr`),
 deployed from `~/git/ansible-basics` (role `matrix_notifier`, host
 synapse.lil.maurice.fr) with secrets in Vault `prod/kv/matrix-notifier`.
 Image: `ghcr.io/thomas-maurice/matrix-notifier:latest` (GHA on master push,
-linux/amd64 only). Ask before doing anything prod-facing.
+linux/amd64 + linux/arm64, arm64 built under qemu). Weekly dependabot PRs
+(gomod grouped minor/patch, npm in ui/ with TS major pinned out, actions,
+docker). Ask before doing anything prod-facing.

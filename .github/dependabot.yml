@@ -1,0 +1,34 @@
+version: 2
+updates:
+  # Go deps — mautrix bumps are the interesting ones; the testcontainers
+  # Synapse E2E job is the regression guard that makes merging these safe.
+  - package-ecosystem: gomod
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      go-minor-patch:
+        update-types: [minor, patch]
+
+  - package-ecosystem: npm
+    directory: /ui
+    schedule:
+      interval: weekly
+    groups:
+      npm-minor-patch:
+        update-types: [minor, patch]
+    ignore:
+      # vue-tsc breaks on the TS 7 native compiler; stay on 5.x until it
+      # catches up (see the repo skill / package.json pin).
+      - dependency-name: typescript
+        update-types: [version-update:semver-major]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly

@@ -221,7 +221,15 @@ func (s *Server) CreateToken(ctx context.Context, req *connect.Request[notifierv
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
-	plaintext, tok, err := s.store.CreateToken(ctx, req.Msg.Name, kind, req.Msg.Channel, req.Msg.Prefix)
+	var expiresAt *time.Time
+	if req.Msg.ExpiresAt != nil {
+		t := req.Msg.ExpiresAt.AsTime()
+		if t.Before(time.Now()) {
+			return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("expires_at is in the past"))
+		}
+		expiresAt = &t
+	}
+	plaintext, tok, err := s.store.CreateToken(ctx, req.Msg.Name, kind, req.Msg.Channel, req.Msg.Prefix, expiresAt)
 	if err != nil {
 		return nil, storeError(err)
 	}
@@ -231,13 +239,21 @@ func (s *Server) CreateToken(ctx context.Context, req *connect.Request[notifierv
 	}), nil
 }
 
-// UpdateToken changes a token's prefix and/or channel without re-minting the
-// credential producers already hold.
+// UpdateToken changes a token's prefix, channel and/or expiry without
+// re-minting the credential producers already hold.
 func (s *Server) UpdateToken(ctx context.Context, req *connect.Request[notifierv1.UpdateTokenRequest]) (*connect.Response[notifierv1.UpdateTokenResponse], error) {
 	if req.Msg.Name == "" {
 		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("name is required"))
 	}
-	tok, err := s.store.UpdateToken(ctx, req.Msg.Name, req.Msg.Prefix, req.Msg.Channel)
+	var expiresAt *time.Time
+	if !req.Msg.ClearExpiry && req.Msg.ExpiresAt != nil {
+		t := req.Msg.ExpiresAt.AsTime()
+		if t.Before(time.Now()) {
+			return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("expires_at is in the past"))
+		}
+		expiresAt = &t
+	}
+	tok, err := s.store.UpdateToken(ctx, req.Msg.Name, req.Msg.Prefix, req.Msg.Channel, expiresAt, req.Msg.ClearExpiry)
 	if err != nil {
 		return nil, storeError(err)
 	}
@@ -418,6 +434,9 @@ func protoToken(tok store.IngestToken) *notifierv1.Token {
 	}
 	if tok.LastUsedAt != nil {
 		p.LastUsedAt = timestamppb.New(*tok.LastUsedAt)
+	}
+	if tok.ExpiresAt != nil {
+		p.ExpiresAt = timestamppb.New(*tok.ExpiresAt)
 	}
 	return p
 }

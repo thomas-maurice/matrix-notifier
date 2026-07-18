@@ -23,7 +23,7 @@ func TestAnyKindTokenWorksOnBothEndpoints(t *testing.T) {
 	ctx := context.Background()
 	_, err := st.CreateChannel(ctx, "c", "!r:x", false)
 	require.NoError(t, err)
-	tok, _, err := st.CreateToken(ctx, "t", KindAny, "c", "")
+	tok, _, err := st.CreateToken(ctx, "t", KindAny, "c", "", nil)
 	require.NoError(t, err)
 
 	for _, kind := range []TokenKind{KindGotify, KindAlertmanager} {
@@ -58,9 +58,9 @@ func TestDeleteChannelsForRoom(t *testing.T) {
 	require.NoError(t, err)
 	_, err = st.CreateChannel(ctx, "survivor", "!alive:x", false)
 	require.NoError(t, err)
-	_, _, err = st.CreateToken(ctx, "doomed-tok", KindAny, "doomed-a", "")
+	_, _, err = st.CreateToken(ctx, "doomed-tok", KindAny, "doomed-a", "", nil)
 	require.NoError(t, err)
-	surviving, _, err := st.CreateToken(ctx, "survivor-tok", KindAny, "survivor", "")
+	surviving, _, err := st.CreateToken(ctx, "survivor-tok", KindAny, "survivor", "", nil)
 	require.NoError(t, err)
 
 	deleted, err := st.DeleteChannelsForRoom(ctx, "!dead:x")
@@ -125,7 +125,7 @@ func TestTokenPrefix(t *testing.T) {
 	ctx := context.Background()
 	_, err := st.CreateChannel(ctx, "c", "!r:x", false)
 	require.NoError(t, err)
-	plaintext, tok, err := st.CreateToken(ctx, "sonarr", KindGotify, "c", "📺")
+	plaintext, tok, err := st.CreateToken(ctx, "sonarr", KindGotify, "c", "📺", nil)
 	require.NoError(t, err)
 	assert.Equal(t, "📺", tok.Prefix)
 
@@ -133,11 +133,11 @@ func TestTokenPrefix(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "📺", resolved.Prefix)
 
-	updated, err := st.UpdateToken(ctx, "sonarr", "🎬", "")
+	updated, err := st.UpdateToken(ctx, "sonarr", "🎬", "", nil, false)
 	require.NoError(t, err)
 	assert.Equal(t, "🎬", updated.Prefix)
 	assert.Equal(t, "c", updated.Channel.Name) // empty channel leaves it unchanged
-	_, err = st.UpdateToken(ctx, "ghost", "x", "")
+	_, err = st.UpdateToken(ctx, "ghost", "x", "", nil, false)
 	assert.ErrorIs(t, err, ErrNotFound)
 }
 
@@ -150,10 +150,10 @@ func TestUpdateTokenChannel(t *testing.T) {
 	require.NoError(t, err)
 	_, err = st.CreateChannel(ctx, "new", "!new:x", false)
 	require.NoError(t, err)
-	plaintext, _, err := st.CreateToken(ctx, "prom", KindAlertmanager, "old", "🔥")
+	plaintext, _, err := st.CreateToken(ctx, "prom", KindAlertmanager, "old", "🔥", nil)
 	require.NoError(t, err)
 
-	updated, err := st.UpdateToken(ctx, "prom", "🔥", "new")
+	updated, err := st.UpdateToken(ctx, "prom", "🔥", "new", nil, false)
 	require.NoError(t, err)
 	assert.Equal(t, "new", updated.Channel.Name)
 	assert.Equal(t, "🔥", updated.Prefix) // prefix preserved
@@ -164,7 +164,7 @@ func TestUpdateTokenChannel(t *testing.T) {
 	assert.Equal(t, "!new:x", resolved.Channel.RoomID)
 
 	// Reassigning to a non-existent channel is a clean not-found, no partial write.
-	_, err = st.UpdateToken(ctx, "prom", "🔥", "ghost")
+	_, err = st.UpdateToken(ctx, "prom", "🔥", "ghost", nil, false)
 	assert.ErrorIs(t, err, ErrNotFound)
 	resolved, _ = st.ResolveToken(ctx, plaintext, KindAlertmanager)
 	assert.Equal(t, "!new:x", resolved.Channel.RoomID) // unchanged after the failed update

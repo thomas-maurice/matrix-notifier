@@ -67,6 +67,9 @@ type IngestToken struct {
 	ChannelID  uint    `gorm:"not null"`
 	Channel    Channel `gorm:"constraint:OnDelete:RESTRICT"`
 	LastUsedAt *time.Time
+	// ExpiresAt makes the token stop authenticating past that instant
+	// (nil = never expires).
+	ExpiresAt *time.Time
 }
 
 var (
@@ -216,8 +219,9 @@ func (s *Store) GetChannel(ctx context.Context, name string) (*Channel, error) {
 }
 
 // CreateToken mints a new random ingest token for a channel and returns the
-// plaintext exactly once; only its hash is stored.
-func (s *Store) CreateToken(ctx context.Context, name string, kind TokenKind, channelName, prefix string) (string, *IngestToken, error) {
+// plaintext exactly once; only its hash is stored. expiresAt nil means the
+// token never expires.
+func (s *Store) CreateToken(ctx context.Context, name string, kind TokenKind, channelName, prefix string, expiresAt *time.Time) (string, *IngestToken, error) {
 	ch, err := s.GetChannel(ctx, channelName)
 	if err != nil {
 		return "", nil, err
@@ -234,6 +238,7 @@ func (s *Store) CreateToken(ctx context.Context, name string, kind TokenKind, ch
 		Prefix:    prefix,
 		ChannelID: ch.ID,
 		Channel:   *ch,
+		ExpiresAt: expiresAt,
 	}
 	if err := s.db.WithContext(ctx).Create(&tok).Error; err != nil {
 		if errors.Is(err, gorm.ErrDuplicatedKey) || isUniqueViolation(err) {
@@ -277,16 +282,22 @@ func (s *Store) ResolveToken(ctx context.Context, plaintext string, endpoint Tok
 	if tok.Kind != KindAny && tok.Kind != endpoint {
 		return nil, ErrNotFound
 	}
+	// An expired token is indistinguishable from a wrong one on purpose:
+	// producers get a plain 401, no oracle about why.
+	if tok.ExpiresAt != nil && time.Now().After(*tok.ExpiresAt) {
+		return nil, ErrNotFound
+	}
 	now := time.Now()
 	s.db.WithContext(ctx).Model(&IngestToken{}).Where("id = ?", tok.ID).Update("last_used_at", now)
 	return &tok, nil
 }
 
-// UpdateToken changes a token's prefix and, when channelName is non-empty,
-// reassigns it to another channel (and thus another room) — all in place, so
-// producers keep their credentials. The prefix is always set (empty clears
-// it); the channel is left unchanged when channelName is empty.
-func (s *Store) UpdateToken(ctx context.Context, name, prefix, channelName string) (*IngestToken, error) {
+// UpdateToken changes a token's prefix, channel and/or expiry — all in
+// place, so producers keep their credentials. The prefix is always set
+// (empty clears it); the channel is left unchanged when channelName is
+// empty. Expiry: clearExpiry removes it (never expires again), otherwise a
+// non-nil expiresAt replaces it, and nil leaves it untouched.
+func (s *Store) UpdateToken(ctx context.Context, name, prefix, channelName string, expiresAt *time.Time, clearExpiry bool) (*IngestToken, error) {
 	err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		var tok IngestToken
 		if err := tx.Where("name = ?", name).First(&tok).Error; err != nil {
@@ -305,6 +316,11 @@ func (s *Store) UpdateToken(ctx context.Context, name, prefix, channelName strin
 				return err
 			}
 			updates["channel_id"] = ch.ID
+		}
+		if clearExpiry {
+			updates["expires_at"] = nil
+		} else if expiresAt != nil {
+			updates["expires_at"] = *expiresAt
 		}
 		return tx.Model(&IngestToken{}).Where("id = ?", tok.ID).Updates(updates).Error
 	})

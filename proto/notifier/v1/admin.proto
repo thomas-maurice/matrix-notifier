@@ -82,6 +82,8 @@ message Token {
   google.protobuf.Timestamp last_used_at = 5;
   // Prepended to notification titles (e.g. an emoji per producer).
   string prefix = 6;
+  // When set, the token stops authenticating past this instant.
+  google.protobuf.Timestamp expires_at = 7;
 }
 
 // Room is a room the bot has joined, whether or not a channel maps to it.
@@ -190,6 +192,9 @@ message CreateTokenRequest {
   string kind = 2;
   string channel = 3;
   string prefix = 4;
+  // Optional expiry; unset mints a token that never expires. Can be
+  // changed later via UpdateToken.
+  google.protobuf.Timestamp expires_at = 5;
 }
 
 message CreateTokenResponse {
@@ -204,6 +209,11 @@ message UpdateTokenRequest {
   // Reassign the token to another channel (and room). Empty leaves it
   // unchanged.
   string channel = 3;
+  // New expiry; unset leaves the current expiry unchanged.
+  google.protobuf.Timestamp expires_at = 4;
+  // Remove the expiry entirely (the token never expires). Wins over
+  // expires_at.
+  bool clear_expiry = 5;
 }
 
 message UpdateTokenResponse {

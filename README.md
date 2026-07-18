@@ -47,8 +47,12 @@ notifications, so `sonarr 📺` / `radarr 🎬` / `gitea 🐙` are distinguishab
 even in a shared room. A token's **prefix and target channel/room can be
 changed in place** (UI or `UpdateToken`) without re-minting the credential a
 producer already holds. Tokens are optionally restricted to one endpoint
-kind. Per-token **rate limiting** (token bucket, generous default) returns
-429 to a runaway producer instead of flooding a room.
+kind, and can carry an **expiry** — settable at creation and editable in
+place afterwards (extend, shorten, or clear back to never-expires); an
+expired token gets the same 401 as a wrong one. The UI shows created /
+last-used / expires per token. Per-token **rate
+limiting** (token bucket, generous default) returns 429 to a runaway
+producer instead of flooding a room.
 
 ## Observability
 
@@ -359,6 +363,9 @@ GitHub Actions (mirroring `thomas-maurice/cortex`):
   builds and pushes a multi-arch (amd64/arm64) image to
   `ghcr.io/thomas-maurice/matrix-notifier` — `:latest` + `:sha-…` on master,
   `:X.Y.Z`/`:X.Y` on tags.
+- **dependabot** — weekly grouped dependency PRs (Go modules, ui npm,
+  actions, Dockerfile images); the testcontainers Synapse E2E job is what
+  makes merging mautrix bumps safe.
 
 The Docker image runs as a non-root user with `/data` as the volume for
 `data_dir`; mount your config at `/config/config.yaml` (or override the
