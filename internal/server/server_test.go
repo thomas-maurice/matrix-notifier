@@ -140,6 +140,24 @@ func TestAlertmanagerEndpoint(t *testing.T) {
 	assert.Contains(t, sender.Sent()[0].n.Body, "it broke")
 }
 
+// Slack-webhook senders can't set headers, so ?token= must carry auth, and
+// some check for Slack's literal "ok" body — anything else reads as failure.
+func TestSlackEndpoint(t *testing.T) {
+	sender, _, h, _, anyToken := newTestServer(t)
+	req := httptest.NewRequest("POST", "/slack?token="+anyToken,
+		strings.NewReader(`{"text":"pool degraded","username":"TrueNAS"}`))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, req)
+
+	require.Equal(t, http.StatusOK, w.Code)
+	assert.Equal(t, "ok", w.Body.String())
+	require.Len(t, sender.Sent(), 1)
+	assert.Equal(t, "!room:example.org", sender.Sent()[0].room)
+	assert.Equal(t, "pool degraded", sender.Sent()[0].n.Body)
+	assert.Equal(t, "TrueNAS", sender.Sent()[0].n.Title)
+}
+
 func TestHealthIsUnauthenticated(t *testing.T) {
 	_, _, h, _, _ := newTestServer(t)
 	w := httptest.NewRecorder()

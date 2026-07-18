@@ -28,16 +28,17 @@ const (
 	KindGotify       TokenKind = "gotify"
 	KindAlertmanager TokenKind = "alertmanager"
 	KindGitea        TokenKind = "gitea"
+	KindSlack        TokenKind = "slack"
 )
 
 func ParseKind(s string) (TokenKind, error) {
 	switch TokenKind(s) {
-	case KindAny, KindGotify, KindAlertmanager, KindGitea:
+	case KindAny, KindGotify, KindAlertmanager, KindGitea, KindSlack:
 		return TokenKind(s), nil
 	case "":
 		return KindAny, nil
 	default:
-		return "", fmt.Errorf("invalid token kind %q (want any, gotify, alertmanager or gitea)", s)
+		return "", fmt.Errorf("invalid token kind %q (want any, gotify, alertmanager, gitea or slack)", s)
 	}
 }
 

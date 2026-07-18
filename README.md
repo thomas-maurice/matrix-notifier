@@ -19,6 +19,15 @@ nothing needs a Matrix client:
   CI-failure notifications, pick "Custom Events" in the Forgejo webhook
   config and tick only Action Run Failure (and Recover for the all-clear);
   the webhook's Secret field is unused — auth is the ingest token.
+- **Slack incoming webhook**: `POST /slack?token=mn_...` — for tools that
+  only speak Slack webhooks (TrueNAS SCALE alert services, Uptime Kuma, ...).
+  Accepts a JSON body or the legacy `payload=` form field; reads `text`,
+  `blocks` (header/section) and `attachments` (title/text/fallback).
+  mrkdwn labeled links (`<url|label>`) and Slack's escaped entities are
+  converted to markdown; `username` becomes the notification title; an
+  attachment color of `danger`/`warning` raises the priority to 5/4.
+  Responds with Slack's literal `ok`. The token goes in the URL because
+  Slack-webhook senders can't set headers.
 
 Each ingest token can carry a **prefix** (e.g. an emoji) prepended to its
 notifications, so `sonarr 📺` / `radarr 🎬` / `gitea 🐙` are distinguishable

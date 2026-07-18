@@ -17,6 +17,7 @@ import (
 	"github.com/thomas-maurice/matrix-notifier/internal/ingest/alertmanager"
 	"github.com/thomas-maurice/matrix-notifier/internal/ingest/gitea"
 	"github.com/thomas-maurice/matrix-notifier/internal/ingest/gotify"
+	"github.com/thomas-maurice/matrix-notifier/internal/ingest/slack"
 	"github.com/thomas-maurice/matrix-notifier/internal/logging"
 	"github.com/thomas-maurice/matrix-notifier/internal/metrics"
 	"github.com/thomas-maurice/matrix-notifier/internal/notify"
@@ -36,6 +37,8 @@ type Sender interface {
 //
 //	POST /message       Gotify-compatible (X-Gotify-Key / ?token= / Bearer)
 //	POST /alertmanager  Prometheus Alertmanager webhook receiver
+//	POST /slack         Slack incoming-webhook compatible (?token= — Slack
+//	                    senders can't set headers)
 //	GET  /health        liveness check reflecting Matrix sync state
 //	GET  /metrics       Prometheus metrics
 //	GET  /version       Gotify-compatible version probe
@@ -65,6 +68,7 @@ func New(log *slog.Logger, sender Sender, st *store.Store, charts *chart.Client,
 	giteaHandler := handleIngest(st, store.KindGitea, gitea.Parse, sender, nil, rl)
 	r.POST("/gitea", giteaHandler)
 	r.POST("/forgejo", giteaHandler)
+	r.POST("/slack", handleIngest(st, store.KindSlack, slack.Parse, sender, slackResponse, rl))
 
 	return r
 }
@@ -238,6 +242,11 @@ func gotifyResponse(c *gin.Context, n notify.Notification) {
 		"priority": n.Priority,
 		"date":     time.Now().Format(time.RFC3339),
 	})
+}
+
+// slackResponse mimics Slack's literal "ok" body — some senders check for it.
+func slackResponse(c *gin.Context, _ notify.Notification) {
+	c.String(http.StatusOK, "ok")
 }
 
 // presentedToken extracts the ingest token from anywhere Gotify accepts it:

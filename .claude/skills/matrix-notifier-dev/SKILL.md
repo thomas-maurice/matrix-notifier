@@ -6,7 +6,7 @@ description: How to work on the matrix-notifier repo — layout, dev stack lifec
 # Working on matrix-notifier
 
 Go Matrix notification gateway: HTTP ingest endpoints (Gotify, Alertmanager,
-Gitea/Forgejo) → end-to-end-encrypted Matrix rooms. Routing is **channels**
+Gitea/Forgejo, Slack-compatible) → end-to-end-encrypted Matrix rooms. Routing is **channels**
 (name → room ID) with **ingest tokens** belonging to channels; both live in
 the DB and are managed via a Connect RPC admin API + embedded Vue UI, never
 in the config file.
@@ -40,7 +40,7 @@ internal/
   store/      GORM store (channels + ingest tokens + admin credential),
               shares the DB with the mautrix crypto store; ingest tokens
               stored as SHA-256, admin password as argon2id
-  ingest/     gotify/, alertmanager/, gitea/ payload parsing + formatting
+  ingest/     gotify/, alertmanager/, gitea/, slack/ payload parsing + formatting
   chart/      Prometheus range-query → PNG chart rendering (go-charts v2)
   config/     viper config, MATRIX_NOTIFIER_* env overrides
   logging/    slog + charmbracelet handler, logger-in-context
@@ -124,6 +124,21 @@ curl -X POST 'http://localhost:8686/message?token=mn_...' \
   -F title='Hello' -F message='**It works!**' -F priority=5
 # also: POST /alertmanager?token=..., POST /gitea?token=... (X-Gitea-Event header)
 ```
+
+**GOTCHA — adding a new ingest endpoint takes TWO registrations:** the gin
+route in `internal/server/server.go` AND the path whitelist in
+`cmd/matrix-notifier/main.go` (the outer mux that splits admin API / ingest /
+embedded UI). Miss the second and the route silently falls through to the
+SPA handler: 200 + index.html, no delivery. Server-level tests exercise
+server.New directly and CANNOT catch this — verify new endpoints against
+the running dev-stack binary.
+
+`POST /slack?token=...` is Slack-incoming-webhook compatible (token kind
+`slack`): JSON body or legacy `payload=` form field; `text` + `blocks`
+(header/section) + `attachments`; `username` → title; attachment color
+danger/warning → priority 5/4; mrkdwn links/entities converted to markdown;
+responds with Slack's literal `ok`. Built for TrueNAS SCALE alert services
+and friends, which can't set headers — hence token-in-URL.
 
 Gitea/Forgejo ingest auth: token via `?token=`, `X-Gotify-Key`, or
 `Authorization: Bearer` (Forgejo's webhook "Authorization Header" field);
