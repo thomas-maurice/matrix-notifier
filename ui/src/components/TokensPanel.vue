@@ -122,6 +122,7 @@ onMounted(refresh)
             <option value="alertmanager">alertmanager only</option>
             <option value="gitea">gitea/forgejo only</option>
             <option value="slack">slack only</option>
+            <option value="grafana">grafana only</option>
           </select>
         </div>
         <div class="col-md-2">

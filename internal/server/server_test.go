@@ -139,6 +139,25 @@ func TestSlackEndpoint(t *testing.T) {
 	assert.Equal(t, "TrueNAS", q.entries[0].Title)
 }
 
+// Grafana's unified-alerting webhook must queue through /grafana with the
+// alert's severity mapped to priority.
+func TestGrafanaEndpoint(t *testing.T) {
+	q, _, h, _, anyToken := newTestServer(t)
+	payload := `{"receiver":"matrix","status":"firing","groupLabels":{"alertname":"SensorOffline"},
+		"alerts":[{"status":"firing","labels":{"alertname":"SensorOffline","severity":"critical"},
+		           "annotations":{"summary":"no data"},"panelURL":"http://g/d/iot?viewPanel=2"}]}`
+	req := httptest.NewRequest("POST", "/grafana?token="+anyToken, strings.NewReader(payload))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, req)
+
+	require.Equal(t, http.StatusOK, w.Code)
+	require.Len(t, q.entries, 1)
+	assert.Equal(t, "grafana", q.entries[0].Kind)
+	assert.Contains(t, q.entries[0].Title, "FIRING:1")
+	assert.Equal(t, 8, q.entries[0].Priority)
+}
+
 func TestHealthIsUnauthenticated(t *testing.T) {
 	_, _, h, _, _ := newTestServer(t)
 	w := httptest.NewRecorder()

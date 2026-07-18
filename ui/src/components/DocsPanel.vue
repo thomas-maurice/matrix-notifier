@@ -149,6 +149,47 @@ const origin = window.location.origin
       </div>
     </div>
 
+    <div class="card mb-3">
+      <div class="card-header">
+        <i class="fa-solid fa-chart-line me-2"></i><strong>Grafana alerting</strong>
+        — <code>POST /grafana</code>
+        <span class="badge text-bg-secondary ms-2">kind: grafana</span>
+      </div>
+      <div class="card-body">
+        <p>
+          Receiver for Grafana's unified-alerting <em>webhook</em> contact
+          point. Alerts are formatted one line per alert like the
+          Alertmanager receiver: firing/resolved counts in the title, the
+          alert name linked to the Grafana rule, severity label shown and
+          mapped to priority (<code>critical</code> → 8,
+          <code>warning</code> → 5, otherwise 3), and a 📈 link to the
+          panel/dashboard when the alert rule is linked to one.
+        </p>
+        <p>
+          Configure in Grafana: <em>Alerting → Contact points → New contact
+          point</em>, integration <em>Webhook</em>, URL
+          <code>{{ origin }}/grafana?token=mn_...</code> (Grafana sends no
+          custom headers, so the token rides in the URL). Route alerts to it
+          via your notification policy.
+        </p>
+        <p>
+          <strong>Author rules for good notifications:</strong> the message
+          text is taken from the alert's annotations —
+          <code>summary</code>, falling back to <code>description</code>,
+          then <code>message</code> — and the priority from its
+          <code>severity</code> label (<code>critical</code> → 8,
+          <code>warning</code> → 5, anything else → 3). A rule without
+          them still delivers, but shows up as a bare alert name at
+          priority 3.
+        </p>
+        <pre class="bg-body-tertiary p-2 rounded mb-0"><code>curl -X POST '{{ origin }}/grafana?token=mn_...' \
+  -H 'Content-Type: application/json' \
+  -d '{"status":"firing","alerts":[{"status":"firing",
+       "labels":{"alertname":"SensorOffline","severity":"warning"},
+       "annotations":{"summary":"no data for 5m"}}]}'</code></pre>
+      </div>
+    </div>
+
     <h4 class="mb-3 mt-4"><i class="fa-solid fa-clock-rotate-left me-2"></i>Room retention (purging old notifications)</h4>
     <div class="card mb-3">
       <div class="card-body">

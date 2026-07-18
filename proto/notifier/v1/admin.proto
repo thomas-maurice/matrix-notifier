@@ -75,7 +75,7 @@ message Channel {
 
 message Token {
   string name = 1;
-  // any | gotify | alertmanager
+  // any | gotify | alertmanager | gitea | slack | grafana
   string kind = 2;
   string channel = 3;
   google.protobuf.Timestamp created_at = 4;

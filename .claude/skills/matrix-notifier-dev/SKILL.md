@@ -115,6 +115,7 @@ Requires Docker, jq, Go, Node. Everything on localhost:
 | Synapse       | http://localhost:8008   | server_name `localhost`  |
 | Element Web   | http://localhost:8009   | `admin` / `admin`        |
 | synapse-admin | http://localhost:8010   | `admin` / `admin`        |
+| Grafana       | http://localhost:8011   | `admin` / `admin`        |
 | Prometheus    | http://localhost:9090   | —                        |
 | Postgres      | localhost:5432          | `synapse`                |
 | Bot UI/API    | http://localhost:8686   | password `dev-admin-token` |
@@ -169,6 +170,29 @@ the running dev-stack binary.
 danger/warning → priority 5/4; mrkdwn links/entities converted to markdown;
 responds with Slack's literal `ok`. Built for TrueNAS SCALE alert services
 and friends, which can't set headers — hence token-in-URL.
+
+`POST /grafana?token=...` receives Grafana unified-alerting **webhook
+contact points** (token kind `grafana`). Formatting mirrors alertmanager
+(severity → priority: critical 8, warning 5), plus a 📈 panel/dashboard
+link when the rule is bound to one; with no group labels the title falls
+back to the first alert's alertname (Grafana's receiver name is just the
+contact-point name — never title on it). Dev Grafana (port 8011) has the
+dev Prometheus provisioned as datasource `dev-prometheus`
+(`dev/grafana/provisioning/`); alerting config is NOT provisioned (it needs
+a runtime-minted token) — recreate after a nuke via the API:
+
+```sh
+# contact point → bot on the host; policy → route + fast grouping; rule: vector(1)>0
+curl -su admin:admin -X POST localhost:8011/api/v1/provisioning/contact-points \
+  -H 'Content-Type: application/json' \
+  -d "{\"name\":\"matrix-notifier\",\"type\":\"webhook\",\"settings\":{\"url\":\"http://host.docker.internal:8686/grafana?token=$GTOKEN\"}}"
+curl -su admin:admin -X PUT localhost:8011/api/v1/provisioning/policies \
+  -H 'Content-Type: application/json' \
+  -d '{"receiver":"matrix-notifier","group_by":["grafana_folder","alertname"],"group_wait":"5s","group_interval":"10s","repeat_interval":"4h"}'
+# then create a folder (POST /api/folders) and an alert-rule
+# (POST /api/v1/provisioning/alert-rules, datasourceUid dev-prometheus,
+# expr vector(1), threshold C > 0) — fires within ~1 min.
+```
 
 Gitea/Forgejo ingest auth: token via `?token=`, `X-Gotify-Key`, or
 `Authorization: Bearer` (Forgejo's webhook "Authorization Header" field);

@@ -180,7 +180,7 @@ func run(configPath string, resetIdentity bool) error {
 	ingest := server.New(log, bot, st, dispatcher, rl)
 	mux := http.NewServeMux()
 	mux.Handle(adminPath, adminHandler)
-	for _, p := range []string{"/message", "/alertmanager", "/gitea", "/forgejo", "/slack", "/health", "/version", "/metrics"} {
+	for _, p := range []string{"/message", "/alertmanager", "/gitea", "/forgejo", "/slack", "/grafana", "/health", "/version", "/metrics"} {
 		mux.Handle(p, ingest)
 	}
 	mux.Handle("/", ui.Handler())

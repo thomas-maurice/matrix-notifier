@@ -30,6 +30,17 @@ nothing needs a Matrix client:
   attachment color of `danger`/`warning` raises the priority to 5/4.
   Responds with Slack's literal `ok`. The token goes in the URL because
   Slack-webhook senders can't set headers.
+- **Grafana alerting**: `POST /grafana` — receiver for Grafana's
+  unified-alerting **webhook contact point**. Formatted like the
+  Alertmanager receiver (one line per alert, firing/resolved counts,
+  severity mapped to priority: `critical` → 8, `warning` → 5), with the
+  alert name linked to the Grafana rule and a 📈 link to the panel/dashboard
+  when the rule is bound to one. Configure: Alerting → Contact points →
+  Webhook, URL `https://notifier.example.com/grafana?token=mn_...`.
+  **Author rules for good notifications**: the message text comes from the
+  alert's annotations (`summary`, falling back to `description`, then
+  `message`) and the priority from its `severity` label — a rule with
+  neither still delivers, but as a bare alert name at priority 3.
 
 Each ingest token can carry a **prefix** (e.g. an emoji) prepended to its
 notifications, so `sonarr 📺` / `radarr 🎬` / `gitea 🐙` are distinguishable

@@ -15,6 +15,7 @@ import (
 	"github.com/thomas-maurice/matrix-notifier/internal/ingest/alertmanager"
 	"github.com/thomas-maurice/matrix-notifier/internal/ingest/gitea"
 	"github.com/thomas-maurice/matrix-notifier/internal/ingest/gotify"
+	"github.com/thomas-maurice/matrix-notifier/internal/ingest/grafana"
 	"github.com/thomas-maurice/matrix-notifier/internal/ingest/slack"
 	"github.com/thomas-maurice/matrix-notifier/internal/logging"
 	"github.com/thomas-maurice/matrix-notifier/internal/metrics"
@@ -69,6 +70,7 @@ func New(log *slog.Logger, health Health, st *store.Store, q Queue, rl *limiters
 	r.POST("/gitea", giteaHandler)
 	r.POST("/forgejo", giteaHandler)
 	r.POST("/slack", handleIngest(st, store.KindSlack, slack.Parse, q, slackResponse, rl))
+	r.POST("/grafana", handleIngest(st, store.KindGrafana, grafana.Parse, q, nil, rl))
 
 	return r
 }

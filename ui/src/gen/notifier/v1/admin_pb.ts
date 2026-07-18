@@ -78,7 +78,7 @@ export type Token = Message<"notifier.v1.Token"> & {
   name: string;
 
   /**
-   * any | gotify | alertmanager
+   * any | gotify | alertmanager | gitea | slack | grafana
    *
    * @generated from field: string kind = 2;
    */

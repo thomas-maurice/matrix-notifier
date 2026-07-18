@@ -121,7 +121,7 @@ func (x *Channel) GetAlias() string {
 type Token struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Name  string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	// any | gotify | alertmanager
+	// any | gotify | alertmanager | gitea | slack | grafana
 	Kind       string                 `protobuf:"bytes,2,opt,name=kind,proto3" json:"kind,omitempty"`
 	Channel    string                 `protobuf:"bytes,3,opt,name=channel,proto3" json:"channel,omitempty"`
 	CreatedAt  *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`

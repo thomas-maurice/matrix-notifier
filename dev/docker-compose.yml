@@ -44,6 +44,22 @@ services:
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
 
+  grafana:
+    image: grafana/grafana-oss:latest
+    ports:
+      - "127.0.0.1:8011:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      # So alert links in notifications point at the published port.
+      GF_SERVER_ROOT_URL: http://localhost:8011
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - grafana-data:/var/lib/grafana
+    # Lets contact points reach the bot running on the host (:8686).
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
   element:
     image: vectorim/element-web:latest
     ports:
@@ -60,3 +76,4 @@ services:
 
 volumes:
   pgdata:
+  grafana-data:
