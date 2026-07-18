@@ -26,6 +26,7 @@ import (
 	"github.com/thomas-maurice/matrix-notifier/internal/config"
 	"github.com/thomas-maurice/matrix-notifier/internal/logging"
 	"github.com/thomas-maurice/matrix-notifier/internal/matrix"
+	"github.com/thomas-maurice/matrix-notifier/internal/outbox"
 	"github.com/thomas-maurice/matrix-notifier/internal/server"
 	"github.com/thomas-maurice/matrix-notifier/internal/store"
 	"github.com/thomas-maurice/matrix-notifier/ui"
@@ -160,18 +161,23 @@ func run(configPath string, resetIdentity bool) error {
 	if err != nil {
 		return err
 	}
-	adminPath, adminHandler := notifierv1connect.NewAdminServiceHandler(
-		api.NewServer(st, bot, auth, cfg.Database.Type),
-		connect.WithInterceptors(auth.Interceptor()),
-	)
-
 	var charts *chart.Client
 	if cfg.PrometheusURL != "" {
 		charts = chart.New(cfg.PrometheusURL)
 		log.Info("chart rendering enabled", "prometheus_url", cfg.PrometheusURL)
 	}
+	// The dispatcher drains the durable outbox: ingest handlers only queue,
+	// so webhooks answer fast and nothing is lost while Matrix is down.
+	dispatcher := outbox.New(log, st, bot, charts, time.Duration(cfg.OutboxRetentionHours)*time.Hour)
+	go dispatcher.Run(ctx)
+
+	adminPath, adminHandler := notifierv1connect.NewAdminServiceHandler(
+		api.NewServer(st, bot, auth, cfg.Database.Type, dispatcher.Kick),
+		connect.WithInterceptors(auth.Interceptor()),
+	)
+
 	rl := server.NewLimiters(cfg.RateLimitPerSecond, cfg.RateLimitBurst)
-	ingest := server.New(log, bot, st, charts, rl)
+	ingest := server.New(log, bot, st, dispatcher, rl)
 	mux := http.NewServeMux()
 	mux.Handle(adminPath, adminHandler)
 	for _, p := range []string{"/message", "/alertmanager", "/gitea", "/forgejo", "/slack", "/health", "/version", "/metrics"} {

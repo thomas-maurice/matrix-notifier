@@ -3,7 +3,6 @@ package server
 import (
 	"context"
 	"errors"
-	"fmt"
 	"log/slog"
 	"net/http"
 	"strings"
@@ -13,7 +12,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
-	"github.com/thomas-maurice/matrix-notifier/internal/chart"
 	"github.com/thomas-maurice/matrix-notifier/internal/ingest/alertmanager"
 	"github.com/thomas-maurice/matrix-notifier/internal/ingest/gitea"
 	"github.com/thomas-maurice/matrix-notifier/internal/ingest/gotify"
@@ -24,13 +22,16 @@ import (
 	"github.com/thomas-maurice/matrix-notifier/internal/store"
 )
 
-// Sender is what the ingest endpoints need from the bot: text notifications,
-// notification-with-chart messages (image + caption in one event), and a
-// health check.
-type Sender interface {
-	notify.Sender
-	SendWithImage(ctx context.Context, roomID string, n notify.Notification, filename string, png []byte) error
+// Health reports whether the bot can deliver (used by /health).
+type Health interface {
 	Healthy() (bool, string)
+}
+
+// Queue is where accepted notifications go: the durable outbox. The
+// dispatcher delivers them asynchronously — a 200 from an ingest endpoint
+// means "accepted", not "delivered".
+type Queue interface {
+	Enqueue(ctx context.Context, e *store.OutboxEntry) error
 }
 
 // New builds the HTTP handler exposing the ingest endpoints:
@@ -44,15 +45,14 @@ type Sender interface {
 //	GET  /version       Gotify-compatible version probe
 //
 // Ingest tokens are resolved through the store; each token routes to its
-// channel's room. charts may be nil (chart rendering disabled). rl may be
-// nil (rate limiting disabled).
-func New(log *slog.Logger, sender Sender, st *store.Store, charts *chart.Client, rl *limiters) http.Handler {
+// channel's room. rl may be nil (rate limiting disabled).
+func New(log *slog.Logger, health Health, st *store.Store, q Queue, rl *limiters) http.Handler {
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.New()
 	r.Use(gin.Recovery(), requestLogger(log))
 
 	r.GET("/health", func(c *gin.Context) {
-		if ok, reason := sender.Healthy(); ok {
+		if ok, reason := health.Healthy(); ok {
 			c.JSON(http.StatusOK, gin.H{"health": "green"})
 		} else {
 			c.JSON(http.StatusServiceUnavailable, gin.H{"health": "red", "reason": reason})
@@ -63,22 +63,21 @@ func New(log *slog.Logger, sender Sender, st *store.Store, charts *chart.Client,
 	})
 	r.GET("/metrics", gin.WrapH(promhttp.Handler()))
 
-	r.POST("/message", handleIngest(st, store.KindGotify, gotify.Parse, sender, gotifyResponse, rl))
-	r.POST("/alertmanager", handleAlertmanager(st, sender, charts, rl))
-	giteaHandler := handleIngest(st, store.KindGitea, gitea.Parse, sender, nil, rl)
+	r.POST("/message", handleIngest(st, store.KindGotify, gotify.Parse, q, gotifyResponse, rl))
+	r.POST("/alertmanager", handleAlertmanager(st, q, rl))
+	giteaHandler := handleIngest(st, store.KindGitea, gitea.Parse, q, nil, rl)
 	r.POST("/gitea", giteaHandler)
 	r.POST("/forgejo", giteaHandler)
-	r.POST("/slack", handleIngest(st, store.KindSlack, slack.Parse, sender, slackResponse, rl))
+	r.POST("/slack", handleIngest(st, store.KindSlack, slack.Parse, q, slackResponse, rl))
 
 	return r
 }
 
-// handleAlertmanager delivers the formatted notification. When the channel
+// handleAlertmanager queues the formatted notification. When the channel
 // has charts enabled AND an alert opted in (annotation `chart: true`), the
-// notification is delivered asynchronously as a single image-with-caption
-// message; if the chart cannot be rendered it degrades to plain text. The
-// chart is best-effort: its failure must never fail the webhook.
-func handleAlertmanager(st *store.Store, sender Sender, charts *chart.Client, rl *limiters) gin.HandlerFunc {
+// chart target rides along on the entry and the dispatcher renders it at
+// send time — best effort, a chart failure degrades to plain text.
+func handleAlertmanager(st *store.Store, q Queue, rl *limiters) gin.HandlerFunc {
 	const kind = "alertmanager"
 	return func(c *gin.Context) {
 		token, err := st.ResolveToken(c.Request.Context(), presentedToken(c), store.KindAlertmanager)
@@ -102,26 +101,44 @@ func handleAlertmanager(st *store.Store, sender Sender, charts *chart.Client, rl
 		n := alertmanager.Format(payload)
 		applyPrefix(&n, token.Prefix)
 
-		if channel.Chart && charts != nil {
+		e := queueEntry(channel, kind, n)
+		if channel.Chart {
 			if target := alertmanager.ChartTarget(payload); target != nil {
-				// Detached from the request context: the webhook gets its
-				// response now, the combined message follows when Prometheus
-				// answers.
-				go sendWithChart(logging.From(c.Request.Context()), sender, charts, channel, n, target)
-				c.JSON(http.StatusOK, gin.H{"status": "ok"})
-				return
+				startsAt := target.StartsAt
+				e.ChartGeneratorURL = target.GeneratorURL
+				e.ChartStartsAt = &startsAt
+				e.ChartAlertName = target.Labels["alertname"]
 			}
 		}
-
-		if err := sender.Send(c.Request.Context(), channel.RoomID, n); err != nil {
-			metrics.NotificationsFailed.WithLabelValues(channel.Name, kind).Inc()
-			logging.From(c.Request.Context()).Error("failed to deliver notification", "channel", channel.Name, "error", err)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error", "errorCode": 500, "errorDescription": err.Error()})
+		if !enqueue(c, q, e) {
 			return
 		}
-		metrics.NotificationsDelivered.WithLabelValues(channel.Name, kind).Inc()
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
 	}
+}
+
+func queueEntry(channel *store.Channel, kind string, n notify.Notification) *store.OutboxEntry {
+	return &store.OutboxEntry{
+		Channel:  channel.Name,
+		RoomID:   channel.RoomID,
+		Kind:     kind,
+		Title:    n.Title,
+		Body:     n.Body,
+		Priority: n.Priority,
+	}
+}
+
+// enqueue queues the entry, writing the error response itself when the
+// database refuses — the one case where an authenticated ingest request
+// still fails.
+func enqueue(c *gin.Context, q Queue, e *store.OutboxEntry) bool {
+	if err := q.Enqueue(c.Request.Context(), e); err != nil {
+		metrics.IngestRejected.WithLabelValues(e.Kind, "enqueue").Inc()
+		logging.From(c.Request.Context()).Error("failed to queue notification", "channel", e.Channel, "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error", "errorCode": 500, "errorDescription": err.Error()})
+		return false
+	}
+	return true
 }
 
 // applyPrefix prepends the token's prefix to the notification title, or to
@@ -135,39 +152,6 @@ func applyPrefix(n *notify.Notification, prefix string) {
 	} else {
 		n.Body = prefix + " " + n.Body
 	}
-}
-
-func sendWithChart(log *slog.Logger, sender Sender, charts *chart.Client, channel *store.Channel, n notify.Notification, target *alertmanager.Alert) {
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-	ctx = logging.Into(ctx, log)
-
-	start := time.Now()
-	png, expr, err := charts.ChartForAlert(ctx, target.GeneratorURL, target.StartsAt)
-	metrics.ChartDuration.Observe(time.Since(start).Seconds())
-	if err != nil {
-		metrics.ChartRenders.WithLabelValues("failure").Inc()
-		log.Warn("chart rendering failed, delivering text only", "channel", channel.Name, "error", err)
-		if err := sender.Send(ctx, channel.RoomID, n); err != nil {
-			metrics.NotificationsFailed.WithLabelValues(channel.Name, "alertmanager").Inc()
-			log.Error("failed to deliver notification", "channel", channel.Name, "error", err)
-			return
-		}
-		metrics.NotificationsDelivered.WithLabelValues(channel.Name, "alertmanager").Inc()
-		return
-	}
-	metrics.ChartRenders.WithLabelValues("success").Inc()
-	name := target.Labels["alertname"]
-	if name == "" {
-		name = "alert"
-	}
-	if err := sender.SendWithImage(ctx, channel.RoomID, n, fmt.Sprintf("%s.png", name), png); err != nil {
-		metrics.NotificationsFailed.WithLabelValues(channel.Name, "alertmanager").Inc()
-		log.Error("failed to send chart notification", "channel", channel.Name, "error", err)
-		return
-	}
-	metrics.NotificationsDelivered.WithLabelValues(channel.Name, "alertmanager").Inc()
-	log.Info("notification delivered with chart", "channel", channel.Name, "expr", expr)
 }
 
 func writeTokenError(c *gin.Context, err error) {
@@ -194,7 +178,7 @@ func rateLimited(c *gin.Context, token string) {
 type parseFunc func(*http.Request) (notify.Notification, error)
 type responseFunc func(*gin.Context, notify.Notification)
 
-func handleIngest(st *store.Store, kind store.TokenKind, parse parseFunc, sender notify.Sender, respond responseFunc, rl *limiters) gin.HandlerFunc {
+func handleIngest(st *store.Store, kind store.TokenKind, parse parseFunc, q Queue, respond responseFunc, rl *limiters) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		token, err := st.ResolveToken(c.Request.Context(), presentedToken(c), kind)
 		if err != nil {
@@ -214,13 +198,9 @@ func handleIngest(st *store.Store, kind store.TokenKind, parse parseFunc, sender
 			return
 		}
 		applyPrefix(&n, token.Prefix)
-		if err := sender.Send(c.Request.Context(), token.Channel.RoomID, n); err != nil {
-			metrics.NotificationsFailed.WithLabelValues(token.Channel.Name, string(kind)).Inc()
-			logging.From(c.Request.Context()).Error("failed to deliver notification", "channel", token.Channel.Name, "error", err)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error", "errorCode": 500, "errorDescription": err.Error()})
+		if !enqueue(c, q, queueEntry(&token.Channel, string(kind), n)) {
 			return
 		}
-		metrics.NotificationsDelivered.WithLabelValues(token.Channel.Name, string(kind)).Inc()
 		if respond != nil {
 			respond(c, n)
 		} else {

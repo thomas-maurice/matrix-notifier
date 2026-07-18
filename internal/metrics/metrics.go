@@ -62,6 +62,13 @@ var (
 		Help: "Seconds since the last successful Matrix sync.",
 	})
 
+	// OutboxPending is the number of notifications queued for delivery. A
+	// rising value means Matrix sends are failing — alert on it.
+	OutboxPending = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "matrix_notifier_outbox_pending",
+		Help: "Notifications queued and awaiting delivery.",
+	})
+
 	// Verified reports whether the bot's device is cross-signed (1) or not.
 	Verified = promauto.NewGauge(prometheus.GaugeOpts{
 		Name: "matrix_notifier_device_verified",

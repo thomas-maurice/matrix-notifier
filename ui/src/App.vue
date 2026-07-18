@@ -4,6 +4,7 @@ import { api, errMsg, isUnauthenticated } from './api'
 import StatusPanel from './components/StatusPanel.vue'
 import ChannelsPanel from './components/ChannelsPanel.vue'
 import TokensPanel from './components/TokensPanel.vue'
+import HistoryPanel from './components/HistoryPanel.vue'
 import SettingsPanel from './components/SettingsPanel.vue'
 import DocsPanel from './components/DocsPanel.vue'
 
@@ -68,6 +69,11 @@ onMounted(async () => {
           </a>
         </li>
         <li class="nav-item">
+          <a class="nav-link" :class="{ active: tab === 'history' }" href="#" @click.prevent="tab = 'history'">
+            <i class="fa-solid fa-clock-rotate-left me-1"></i>History
+          </a>
+        </li>
+        <li class="nav-item">
           <a class="nav-link" :class="{ active: tab === 'settings' }" href="#" @click.prevent="tab = 'settings'">
             <i class="fa-solid fa-gear me-1"></i>Settings
           </a>
@@ -112,6 +118,7 @@ onMounted(async () => {
       <StatusPanel v-if="tab === 'status'" />
       <ChannelsPanel v-if="tab === 'channels'" />
       <TokensPanel v-if="tab === 'tokens'" />
+      <HistoryPanel v-if="tab === 'history'" />
       <SettingsPanel v-if="tab === 'settings'" />
       <DocsPanel v-if="tab === 'docs'" />
     </template>

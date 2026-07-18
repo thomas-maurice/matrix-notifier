@@ -26,9 +26,13 @@ type fakeBot struct {
 	sent    []string
 	left    []string
 	profile matrix.Profile
+	sendErr error
 }
 
 func (f *fakeBot) Send(_ context.Context, roomID string, _ notify.Notification) error {
+	if f.sendErr != nil {
+		return f.sendErr
+	}
 	f.sent = append(f.sent, roomID)
 	return nil
 }
@@ -99,7 +103,7 @@ func newTestServer(t *testing.T) (notifierv1connect.AdminServiceClient, *fakeBot
 	require.NoError(t, err)
 
 	path, handler := notifierv1connect.NewAdminServiceHandler(
-		NewServer(st, bot, auth, "sqlite"),
+		NewServer(st, bot, auth, "sqlite", nil),
 		connect.WithInterceptors(auth.Interceptor()),
 	)
 	mux := http.NewServeMux()

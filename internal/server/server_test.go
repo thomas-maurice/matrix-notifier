@@ -6,62 +6,41 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
-	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/thomas-maurice/matrix-notifier/internal/config"
-	"github.com/thomas-maurice/matrix-notifier/internal/notify"
 	"github.com/thomas-maurice/matrix-notifier/internal/store"
 )
 
-type sent struct {
-	room string
-	n    notify.Notification
+// recordingQueue captures what the ingest endpoints enqueue; delivery itself
+// is the dispatcher's job (tested in internal/outbox).
+type recordingQueue struct {
+	entries []*store.OutboxEntry
+	err     error
 }
 
-// recordingSender is written to by the async chart goroutine and read by
-// tests: it must be locked or the race detector rightly complains.
-type recordingSender struct {
-	mu     sync.Mutex
-	sent   []sent
-	images []string
-}
-
-func (r *recordingSender) Send(_ context.Context, roomID string, n notify.Notification) error {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	r.sent = append(r.sent, sent{room: roomID, n: n})
+func (q *recordingQueue) Enqueue(_ context.Context, e *store.OutboxEntry) error {
+	if q.err != nil {
+		return q.err
+	}
+	q.entries = append(q.entries, e)
 	return nil
 }
 
-func (r *recordingSender) SendWithImage(_ context.Context, roomID string, _ notify.Notification, _ string, _ []byte) error {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	r.images = append(r.images, roomID)
-	return nil
+type fakeHealth struct {
+	healthy bool
+	reason  string
 }
 
-func (r *recordingSender) Sent() []sent {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	return append([]sent(nil), r.sent...)
-}
-
-func (r *recordingSender) Images() []string {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	return append([]string(nil), r.images...)
-}
-
-func (r *recordingSender) Healthy() (bool, string) { return true, "ok" }
+func (f *fakeHealth) Healthy() (bool, string) { return f.healthy, f.reason }
 
 // newTestServer builds a server backed by a real in-memory store with one
-// channel ("alerts" → !room:x) and one gotify-kind token plus one any-kind
-// token.
-func newTestServer(t *testing.T) (*recordingSender, *store.Store, http.Handler, string, string) {
+// channel ("alerts" → !room:example.org) and one gotify-kind token plus one
+// any-kind token.
+func newTestServer(t *testing.T) (*recordingQueue, *store.Store, http.Handler, string, string) {
 	t.Helper()
 	st, err := store.Open(config.Database{Type: "sqlite", URI: ":memory:"})
 	require.NoError(t, err)
@@ -71,14 +50,14 @@ func newTestServer(t *testing.T) (*recordingSender, *store.Store, http.Handler, 
 	require.NoError(t, err)
 	anyToken, _, err := st.CreateToken(context.Background(), "any-kind", store.KindAny, "alerts", "")
 	require.NoError(t, err)
-	sender := &recordingSender{}
-	return sender, st, New(slog.New(slog.DiscardHandler), sender, st, nil, nil), gotifyToken, anyToken
+	q := &recordingQueue{}
+	return q, st, New(slog.New(slog.DiscardHandler), &fakeHealth{healthy: true}, st, q, nil), gotifyToken, anyToken
 }
 
 // Every ingest endpoint is a write path into the user's Matrix rooms; an
-// unauthenticated request must never result in a delivered message.
+// unauthenticated request must never result in a queued message.
 func TestRejectsMissingOrWrongToken(t *testing.T) {
-	sender, _, h, _, _ := newTestServer(t)
+	q, _, h, _, _ := newTestServer(t)
 	for _, target := range []string{"/message", "/alertmanager", "/message?token=mn_wrong"} {
 		req := httptest.NewRequest("POST", target, strings.NewReader(`{"message":"x"}`))
 		req.Header.Set("Content-Type", "application/json")
@@ -86,23 +65,23 @@ func TestRejectsMissingOrWrongToken(t *testing.T) {
 		h.ServeHTTP(w, req)
 		assert.Equal(t, http.StatusUnauthorized, w.Code, target)
 	}
-	assert.Empty(t, sender.Sent())
+	assert.Empty(t, q.entries)
 }
 
 // A token restricted to one endpoint kind must not open the other endpoint.
 func TestTokenKindIsEnforced(t *testing.T) {
-	sender, _, h, gotifyToken, _ := newTestServer(t)
+	q, _, h, gotifyToken, _ := newTestServer(t)
 	payload := `{"version":"4","alerts":[{"status":"firing","labels":{"alertname":"X"}}]}`
 	req := httptest.NewRequest("POST", "/alertmanager", strings.NewReader(payload))
 	req.Header.Set("Authorization", "Bearer "+gotifyToken)
 	w := httptest.NewRecorder()
 	h.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusUnauthorized, w.Code)
-	assert.Empty(t, sender.Sent())
+	assert.Empty(t, q.entries)
 }
 
 func TestGotifyEndpointRoutesToChannelRoom(t *testing.T) {
-	sender, _, h, gotifyToken, _ := newTestServer(t)
+	q, _, h, gotifyToken, _ := newTestServer(t)
 	set := []func(r *http.Request){
 		func(r *http.Request) { r.Header.Set("X-Gotify-Key", gotifyToken) },
 		func(r *http.Request) { r.Header.Set("Authorization", "Bearer "+gotifyToken) },
@@ -118,14 +97,16 @@ func TestGotifyEndpointRoutesToChannelRoom(t *testing.T) {
 		// Gotify clients check for a message object with an id.
 		assert.Contains(t, w.Body.String(), `"id"`)
 	}
-	require.Len(t, sender.Sent(), 3)
-	// The notification must land in the room the token's channel maps to.
-	assert.Equal(t, "!room:example.org", sender.Sent()[0].room)
-	assert.Equal(t, "hello", sender.Sent()[0].n.Body)
+	require.Len(t, q.entries, 3)
+	// The notification must be queued for the room the token's channel maps to.
+	assert.Equal(t, "!room:example.org", q.entries[0].RoomID)
+	assert.Equal(t, "alerts", q.entries[0].Channel)
+	assert.Equal(t, "hello", q.entries[0].Body)
+	assert.Equal(t, "gotify", q.entries[0].Kind)
 }
 
 func TestAlertmanagerEndpoint(t *testing.T) {
-	sender, _, h, _, anyToken := newTestServer(t)
+	q, _, h, _, anyToken := newTestServer(t)
 	payload := `{"version":"4","status":"firing","groupLabels":{"alertname":"Down"},
 		"alerts":[{"status":"firing","labels":{"alertname":"Down","severity":"critical"},"annotations":{"summary":"it broke"}}]}`
 	req := httptest.NewRequest("POST", "/alertmanager", strings.NewReader(payload))
@@ -134,16 +115,16 @@ func TestAlertmanagerEndpoint(t *testing.T) {
 	h.ServeHTTP(w, req)
 
 	require.Equal(t, http.StatusOK, w.Code)
-	require.Len(t, sender.Sent(), 1)
-	assert.Equal(t, "!room:example.org", sender.Sent()[0].room)
-	assert.Contains(t, sender.Sent()[0].n.Title, "FIRING:1")
-	assert.Contains(t, sender.Sent()[0].n.Body, "it broke")
+	require.Len(t, q.entries, 1)
+	assert.Equal(t, "!room:example.org", q.entries[0].RoomID)
+	assert.Contains(t, q.entries[0].Title, "FIRING:1")
+	assert.Contains(t, q.entries[0].Body, "it broke")
 }
 
 // Slack-webhook senders can't set headers, so ?token= must carry auth, and
 // some check for Slack's literal "ok" body — anything else reads as failure.
 func TestSlackEndpoint(t *testing.T) {
-	sender, _, h, _, anyToken := newTestServer(t)
+	q, _, h, _, anyToken := newTestServer(t)
 	req := httptest.NewRequest("POST", "/slack?token="+anyToken,
 		strings.NewReader(`{"text":"pool degraded","username":"TrueNAS"}`))
 	req.Header.Set("Content-Type", "application/json")
@@ -152,10 +133,10 @@ func TestSlackEndpoint(t *testing.T) {
 
 	require.Equal(t, http.StatusOK, w.Code)
 	assert.Equal(t, "ok", w.Body.String())
-	require.Len(t, sender.Sent(), 1)
-	assert.Equal(t, "!room:example.org", sender.Sent()[0].room)
-	assert.Equal(t, "pool degraded", sender.Sent()[0].n.Body)
-	assert.Equal(t, "TrueNAS", sender.Sent()[0].n.Title)
+	require.Len(t, q.entries, 1)
+	assert.Equal(t, "!room:example.org", q.entries[0].RoomID)
+	assert.Equal(t, "pool degraded", q.entries[0].Body)
+	assert.Equal(t, "TrueNAS", q.entries[0].Title)
 }
 
 func TestHealthIsUnauthenticated(t *testing.T) {

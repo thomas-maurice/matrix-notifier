@@ -19,6 +19,26 @@ describe('api', () => {
     expect(resp.channels[0]!.roomId).toBe('!r:x')
   })
 
+  // Delivery ids are proto int64 → bigint on the wire; the History panel's
+  // retry button must round-trip them without precision loss.
+  it('round-trips delivery history with bigint ids', async () => {
+    const transport = createRouterTransport(({ service }) => {
+      service(AdminService, {
+        listDeliveries: () => ({
+          deliveries: [{ id: 42n, channel: 'infra', kind: 'gotify', status: 'failed', lastError: 'boom' }],
+        }),
+        retryDelivery: (req) => {
+          expect(req.id).toBe(42n)
+          return {}
+        },
+      })
+    })
+    const api = makeApi(transport)
+    const resp = await api.listDeliveries({ channel: 'infra' })
+    expect(resp.deliveries[0]!.status).toBe('failed')
+    await api.retryDelivery({ id: resp.deliveries[0]!.id })
+  })
+
   // Toasts must show real causes ("invalid password"), not Connect's
   // "[unauthenticated] invalid password" wire format — and the login form
   // needs to distinguish 401 from the server being unreachable.

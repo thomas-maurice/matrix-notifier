@@ -43,13 +43,29 @@ kind. Per-token **rate limiting** (token bucket, generous default) returns
 
 - `GET /metrics` — Prometheus metrics: notifications delivered/failed
   (by channel and kind), ingest rejections (by reason), send retries and
-  latency, chart render outcomes and duration, **sync age**, and device
-  verification status. Scrape it and alert on `matrix_notifier_sync_age_seconds`.
+  latency, chart render outcomes and duration, **sync age**, queued
+  deliveries (`matrix_notifier_outbox_pending`), and device verification
+  status. Scrape it and alert on `matrix_notifier_sync_age_seconds`.
 - `GET /health` — reflects real Matrix state: 200 when logged in and syncing
   recently, 503 (with a reason) when the sync has stalled, so traefik and
   docker detect a zombie the fatal-exit path wouldn't catch.
-- Sends are retried a few times over ~30s to ride out a homeserver restart;
-  refusal to send to an unencrypted room is never retried.
+
+### Durable delivery
+
+Accepted notifications are written to a **persistent outbox** in the
+database before the ingest endpoint answers `200` — so a `200` means
+*accepted*, not yet delivered, and webhook senders get their response
+immediately instead of waiting on Matrix. A dispatcher drains the queue and
+retries failures with exponential backoff (10s doubling, capped at 10m) for
+up to 24 hours before marking the delivery **failed**; a homeserver outage
+or a bot restart therefore loses nothing. Alertmanager charts are rendered
+at send time, so a delayed delivery still charts the alert's window.
+
+The **History** tab in the UI (or `ListDeliveries`) shows every delivery —
+pending, delivered, failed — with attempt counts and the last error; failed
+entries can be re-queued from there (`RetryDelivery`). Terminal entries are
+pruned after `outbox_retention_hours` (default 168 = 7 days). Refusal to
+send to an unencrypted room is still refused permanently, not retried.
 
 Notifications are routed by **channels**: a channel maps a name to a Matrix
 room (ID or `#alias`, resolved at creation), and every ingest token belongs

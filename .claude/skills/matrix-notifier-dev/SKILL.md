@@ -11,6 +11,15 @@ Gitea/Forgejo, Slack-compatible) → end-to-end-encrypted Matrix rooms. Routing 
 the DB and are managed via a Connect RPC admin API + embedded Vue UI, never
 in the config file.
 
+**Delivery is asynchronous through a durable outbox** (`outbox_entries`
+table, `internal/outbox` dispatcher): ingest handlers only enqueue — a 200
+means *accepted*, not delivered. The dispatcher retries with exponential
+backoff (10s→10m cap) for 24h, then marks the entry failed; terminal rows
+are the History shown in the UI, pruned after `outbox_retention_hours`
+(default 168). Don't assert "curl 200 ⇒ message in room" — check the room,
+the UI History tab, `ListDeliveries`, or `matrix_notifier_outbox_pending`.
+Alertmanager charts are rendered by the dispatcher at send time.
+
 ## Maintenance contract (non-negotiable)
 
 When you add or change **anything** — a feature, a procedure, a Make target,
@@ -41,11 +50,13 @@ internal/
               verification, key backup, !notify commands, room helpers
   api/        Connect RPC AdminService (channels/tokens/status/rooms) +
               auth.go: JWT session auth (Login/Logout/ChangeAdminPassword)
-  server/     gin HTTP server: ingest routes, /health, /metrics, per-token
-              rate limiting, serves the embedded UI
-  store/      GORM store (channels + ingest tokens + admin credential),
-              shares the DB with the mautrix crypto store; ingest tokens
-              stored as SHA-256, admin password as argon2id
+  server/     gin HTTP server: ingest routes (enqueue-only), /health,
+              /metrics, per-token rate limiting, serves the embedded UI
+  outbox/     delivery dispatcher: drains the outbox with backoff, renders
+              alertmanager charts at send time, prunes history
+  store/      GORM store (channels + ingest tokens + admin credential +
+              outbox entries), shares the DB with the mautrix crypto store;
+              ingest tokens stored as SHA-256, admin password as argon2id
   ingest/     gotify/, alertmanager/, gitea/, slack/ payload parsing + formatting
   chart/      Prometheus range-query → PNG chart rendering (go-charts v2)
   config/     viper config, MATRIX_NOTIFIER_* env overrides
@@ -181,6 +192,8 @@ curl -s -X POST http://localhost:8686/notifier.v1.AdminService/ListChannels \
 # Other RPCs: GetStatus, ListRooms, CreateChannel {name, roomId, chart},
 # UpdateChannel, DeleteChannel, LeaveRoom, ListTokens, CreateToken
 # {name, kind, channel, prefix}, UpdateToken, DeleteToken,
+# ListDeliveries {channel?, limit?} (outbox history, newest first),
+# RetryDelivery {id} (failed entries only — re-queues immediately),
 # SendTestNotification {channel}, TestToken {name}, Logout,
 # GetProfile, SetProfile {displayName, avatar (base64 bytes)},
 # ChangeAdminPassword {currentPassword, newPassword} (rotates the JWT

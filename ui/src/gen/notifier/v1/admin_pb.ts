@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file notifier/v1/admin.proto.
  */
 export const file_notifier_v1_admin: GenFile = /*@__PURE__*/
-  fileDesc("Chdub3RpZmllci92MS9hZG1pbi5wcm90bxILbm90aWZpZXIudjEimQEKB0NoYW5uZWwSDAoEbmFtZRgBIAEoCRIPCgdyb29tX2lkGAIgASgJEi4KCmNyZWF0ZWRfYXQYAyABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEg4KBmpvaW5lZBgEIAEoCBIRCgllbmNyeXB0ZWQYBSABKAgSDQoFY2hhcnQYBiABKAgSDQoFYWxpYXMYByABKAkipgEKBVRva2VuEgwKBG5hbWUYASABKAkSDAoEa2luZBgCIAEoCRIPCgdjaGFubmVsGAMgASgJEi4KCmNyZWF0ZWRfYXQYBCABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEjAKDGxhc3RfdXNlZF9hdBgFIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASDgoGcHJlZml4GAYgASgJIloKBFJvb20SDwoHcm9vbV9pZBgBIAEoCRIMCgRuYW1lGAIgASgJEg8KB2NoYW5uZWwYAyABKAkSEQoJZW5jcnlwdGVkGAQgASgIEg8KB2RtX3dpdGgYBSABKAkiEgoQTGlzdFJvb21zUmVxdWVzdCI1ChFMaXN0Um9vbXNSZXNwb25zZRIgCgVyb29tcxgBIAMoCzIRLm5vdGlmaWVyLnYxLlJvb20iIwoQTGVhdmVSb29tUmVxdWVzdBIPCgdyb29tX2lkGAEgASgJIhMKEUxlYXZlUm9vbVJlc3BvbnNlIiAKDExvZ2luUmVxdWVzdBIQCghwYXNzd29yZBgBIAEoCSJOCg1Mb2dpblJlc3BvbnNlEg0KBXRva2VuGAEgASgJEi4KCmV4cGlyZXNfYXQYAiABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wIg8KDUxvZ291dFJlcXVlc3QiEAoOTG9nb3V0UmVzcG9uc2UiTAoaQ2hhbmdlQWRtaW5QYXNzd29yZFJlcXVlc3QSGAoQY3VycmVudF9wYXNzd29yZBgBIAEoCRIUCgxuZXdfcGFzc3dvcmQYAiABKAkiXAobQ2hhbmdlQWRtaW5QYXNzd29yZFJlc3BvbnNlEg0KBXRva2VuGAEgASgJEi4KCmV4cGlyZXNfYXQYAiABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wIhIKEEdldFN0YXR1c1JlcXVlc3Qi1wEKEUdldFN0YXR1c1Jlc3BvbnNlEg8KB3VzZXJfaWQYASABKAkSEQoJZGV2aWNlX2lkGAIgASgJEhAKCHZlcmlmaWVkGAMgASgIEi0KCWxhc3Rfc3luYxgEIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASHQoVZGVsaXZlcmVkX3NpbmNlX3N0YXJ0GAUgASgDEhYKDnVwdGltZV9zZWNvbmRzGAYgASgDEg8KB3ZlcnNpb24YByABKAkSFQoNZGF0YWJhc2VfdHlwZRgIIAEoCSIVChNMaXN0Q2hhbm5lbHNSZXF1ZXN0Ij4KFExpc3RDaGFubmVsc1Jlc3BvbnNlEiYKCGNoYW5uZWxzGAEgAygLMhQubm90aWZpZXIudjEuQ2hhbm5lbCJEChRDcmVhdGVDaGFubmVsUmVxdWVzdBIMCgRuYW1lGAEgASgJEg8KB3Jvb21faWQYAiABKAkSDQoFY2hhcnQYAyABKAgiPgoVQ3JlYXRlQ2hhbm5lbFJlc3BvbnNlEiUKB2NoYW5uZWwYASABKAsyFC5ub3RpZmllci52MS5DaGFubmVsIjMKFFVwZGF0ZUNoYW5uZWxSZXF1ZXN0EgwKBG5hbWUYASABKAkSDQoFY2hhcnQYAiABKAgiPgoVVXBkYXRlQ2hhbm5lbFJlc3BvbnNlEiUKB2NoYW5uZWwYASABKAsyFC5ub3RpZmllci52MS5DaGFubmVsIiQKFERlbGV0ZUNoYW5uZWxSZXF1ZXN0EgwKBG5hbWUYASABKAkiFwoVRGVsZXRlQ2hhbm5lbFJlc3BvbnNlIhMKEUxpc3RUb2tlbnNSZXF1ZXN0IjgKEkxpc3RUb2tlbnNSZXNwb25zZRIiCgZ0b2tlbnMYASADKAsyEi5ub3RpZmllci52MS5Ub2tlbiJRChJDcmVhdGVUb2tlblJlcXVlc3QSDAoEbmFtZRgBIAEoCRIMCgRraW5kGAIgASgJEg8KB2NoYW5uZWwYAyABKAkSDgoGcHJlZml4GAQgASgJIksKE0NyZWF0ZVRva2VuUmVzcG9uc2USIQoFdG9rZW4YASABKAsyEi5ub3RpZmllci52MS5Ub2tlbhIRCglwbGFpbnRleHQYAiABKAkiQwoSVXBkYXRlVG9rZW5SZXF1ZXN0EgwKBG5hbWUYASABKAkSDgoGcHJlZml4GAIgASgJEg8KB2NoYW5uZWwYAyABKAkiOAoTVXBkYXRlVG9rZW5SZXNwb25zZRIhCgV0b2tlbhgBIAEoCzISLm5vdGlmaWVyLnYxLlRva2VuIiIKEkRlbGV0ZVRva2VuUmVxdWVzdBIMCgRuYW1lGAEgASgJIhUKE0RlbGV0ZVRva2VuUmVzcG9uc2UiLgobU2VuZFRlc3ROb3RpZmljYXRpb25SZXF1ZXN0Eg8KB2NoYW5uZWwYASABKAkiHgocU2VuZFRlc3ROb3RpZmljYXRpb25SZXNwb25zZSIgChBUZXN0VG9rZW5SZXF1ZXN0EgwKBG5hbWUYASABKAkiEwoRVGVzdFRva2VuUmVzcG9uc2UiEwoRR2V0UHJvZmlsZVJlcXVlc3QiTwoSR2V0UHJvZmlsZVJlc3BvbnNlEhQKDGRpc3BsYXlfbmFtZRgBIAEoCRIOCgZhdmF0YXIYAiABKAwSEwoLYXZhdGFyX21pbWUYAyABKAkiOQoRU2V0UHJvZmlsZVJlcXVlc3QSFAoMZGlzcGxheV9uYW1lGAEgASgJEg4KBmF2YXRhchgCIAEoDCIUChJTZXRQcm9maWxlUmVzcG9uc2Uy/AsKDEFkbWluU2VydmljZRJACgVMb2dpbhIZLm5vdGlmaWVyLnYxLkxvZ2luUmVxdWVzdBoaLm5vdGlmaWVyLnYxLkxvZ2luUmVzcG9uc2UiABJDCgZMb2dvdXQSGi5ub3RpZmllci52MS5Mb2dvdXRSZXF1ZXN0Ghsubm90aWZpZXIudjEuTG9nb3V0UmVzcG9uc2UiABJqChNDaGFuZ2VBZG1pblBhc3N3b3JkEicubm90aWZpZXIudjEuQ2hhbmdlQWRtaW5QYXNzd29yZFJlcXVlc3QaKC5ub3RpZmllci52MS5DaGFuZ2VBZG1pblBhc3N3b3JkUmVzcG9uc2UiABJMCglHZXRTdGF0dXMSHS5ub3RpZmllci52MS5HZXRTdGF0dXNSZXF1ZXN0Gh4ubm90aWZpZXIudjEuR2V0U3RhdHVzUmVzcG9uc2UiABJVCgxMaXN0Q2hhbm5lbHMSIC5ub3RpZmllci52MS5MaXN0Q2hhbm5lbHNSZXF1ZXN0GiEubm90aWZpZXIudjEuTGlzdENoYW5uZWxzUmVzcG9uc2UiABJMCglMaXN0Um9vbXMSHS5ub3RpZmllci52MS5MaXN0Um9vbXNSZXF1ZXN0Gh4ubm90aWZpZXIudjEuTGlzdFJvb21zUmVzcG9uc2UiABJMCglMZWF2ZVJvb20SHS5ub3RpZmllci52MS5MZWF2ZVJvb21SZXF1ZXN0Gh4ubm90aWZpZXIudjEuTGVhdmVSb29tUmVzcG9uc2UiABJYCg1DcmVhdGVDaGFubmVsEiEubm90aWZpZXIudjEuQ3JlYXRlQ2hhbm5lbFJlcXVlc3QaIi5ub3RpZmllci52MS5DcmVhdGVDaGFubmVsUmVzcG9uc2UiABJYCg1VcGRhdGVDaGFubmVsEiEubm90aWZpZXIudjEuVXBkYXRlQ2hhbm5lbFJlcXVlc3QaIi5ub3RpZmllci52MS5VcGRhdGVDaGFubmVsUmVzcG9uc2UiABJYCg1EZWxldGVDaGFubmVsEiEubm90aWZpZXIudjEuRGVsZXRlQ2hhbm5lbFJlcXVlc3QaIi5ub3RpZmllci52MS5EZWxldGVDaGFubmVsUmVzcG9uc2UiABJPCgpMaXN0VG9rZW5zEh4ubm90aWZpZXIudjEuTGlzdFRva2Vuc1JlcXVlc3QaHy5ub3RpZmllci52MS5MaXN0VG9rZW5zUmVzcG9uc2UiABJSCgtDcmVhdGVUb2tlbhIfLm5vdGlmaWVyLnYxLkNyZWF0ZVRva2VuUmVxdWVzdBogLm5vdGlmaWVyLnYxLkNyZWF0ZVRva2VuUmVzcG9uc2UiABJSCgtVcGRhdGVUb2tlbhIfLm5vdGlmaWVyLnYxLlVwZGF0ZVRva2VuUmVxdWVzdBogLm5vdGlmaWVyLnYxLlVwZGF0ZVRva2VuUmVzcG9uc2UiABJSCgtEZWxldGVUb2tlbhIfLm5vdGlmaWVyLnYxLkRlbGV0ZVRva2VuUmVxdWVzdBogLm5vdGlmaWVyLnYxLkRlbGV0ZVRva2VuUmVzcG9uc2UiABJtChRTZW5kVGVzdE5vdGlmaWNhdGlvbhIoLm5vdGlmaWVyLnYxLlNlbmRUZXN0Tm90aWZpY2F0aW9uUmVxdWVzdBopLm5vdGlmaWVyLnYxLlNlbmRUZXN0Tm90aWZpY2F0aW9uUmVzcG9uc2UiABJMCglUZXN0VG9rZW4SHS5ub3RpZmllci52MS5UZXN0VG9rZW5SZXF1ZXN0Gh4ubm90aWZpZXIudjEuVGVzdFRva2VuUmVzcG9uc2UiABJPCgpHZXRQcm9maWxlEh4ubm90aWZpZXIudjEuR2V0UHJvZmlsZVJlcXVlc3QaHy5ub3RpZmllci52MS5HZXRQcm9maWxlUmVzcG9uc2UiABJPCgpTZXRQcm9maWxlEh4ubm90aWZpZXIudjEuU2V0UHJvZmlsZVJlcXVlc3QaHy5ub3RpZmllci52MS5TZXRQcm9maWxlUmVzcG9uc2UiAEJGWkRnaXRodWIuY29tL3Rob21hcy1tYXVyaWNlL21hdHJpeC1ub3RpZmllci9nZW4vbm90aWZpZXIvdjE7bm90aWZpZXJ2MWIGcHJvdG8z", [file_google_protobuf_timestamp]);
+  fileDesc("Chdub3RpZmllci92MS9hZG1pbi5wcm90bxILbm90aWZpZXIudjEimQEKB0NoYW5uZWwSDAoEbmFtZRgBIAEoCRIPCgdyb29tX2lkGAIgASgJEi4KCmNyZWF0ZWRfYXQYAyABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEg4KBmpvaW5lZBgEIAEoCBIRCgllbmNyeXB0ZWQYBSABKAgSDQoFY2hhcnQYBiABKAgSDQoFYWxpYXMYByABKAkipgEKBVRva2VuEgwKBG5hbWUYASABKAkSDAoEa2luZBgCIAEoCRIPCgdjaGFubmVsGAMgASgJEi4KCmNyZWF0ZWRfYXQYBCABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEjAKDGxhc3RfdXNlZF9hdBgFIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASDgoGcHJlZml4GAYgASgJIloKBFJvb20SDwoHcm9vbV9pZBgBIAEoCRIMCgRuYW1lGAIgASgJEg8KB2NoYW5uZWwYAyABKAkSEQoJZW5jcnlwdGVkGAQgASgIEg8KB2RtX3dpdGgYBSABKAkiEgoQTGlzdFJvb21zUmVxdWVzdCI1ChFMaXN0Um9vbXNSZXNwb25zZRIgCgVyb29tcxgBIAMoCzIRLm5vdGlmaWVyLnYxLlJvb20iIwoQTGVhdmVSb29tUmVxdWVzdBIPCgdyb29tX2lkGAEgASgJIhMKEUxlYXZlUm9vbVJlc3BvbnNlIiAKDExvZ2luUmVxdWVzdBIQCghwYXNzd29yZBgBIAEoCSJOCg1Mb2dpblJlc3BvbnNlEg0KBXRva2VuGAEgASgJEi4KCmV4cGlyZXNfYXQYAiABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wIg8KDUxvZ291dFJlcXVlc3QiEAoOTG9nb3V0UmVzcG9uc2UiTAoaQ2hhbmdlQWRtaW5QYXNzd29yZFJlcXVlc3QSGAoQY3VycmVudF9wYXNzd29yZBgBIAEoCRIUCgxuZXdfcGFzc3dvcmQYAiABKAkiXAobQ2hhbmdlQWRtaW5QYXNzd29yZFJlc3BvbnNlEg0KBXRva2VuGAEgASgJEi4KCmV4cGlyZXNfYXQYAiABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wIhIKEEdldFN0YXR1c1JlcXVlc3Qi1wEKEUdldFN0YXR1c1Jlc3BvbnNlEg8KB3VzZXJfaWQYASABKAkSEQoJZGV2aWNlX2lkGAIgASgJEhAKCHZlcmlmaWVkGAMgASgIEi0KCWxhc3Rfc3luYxgEIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASHQoVZGVsaXZlcmVkX3NpbmNlX3N0YXJ0GAUgASgDEhYKDnVwdGltZV9zZWNvbmRzGAYgASgDEg8KB3ZlcnNpb24YByABKAkSFQoNZGF0YWJhc2VfdHlwZRgIIAEoCSIVChNMaXN0Q2hhbm5lbHNSZXF1ZXN0Ij4KFExpc3RDaGFubmVsc1Jlc3BvbnNlEiYKCGNoYW5uZWxzGAEgAygLMhQubm90aWZpZXIudjEuQ2hhbm5lbCJEChRDcmVhdGVDaGFubmVsUmVxdWVzdBIMCgRuYW1lGAEgASgJEg8KB3Jvb21faWQYAiABKAkSDQoFY2hhcnQYAyABKAgiPgoVQ3JlYXRlQ2hhbm5lbFJlc3BvbnNlEiUKB2NoYW5uZWwYASABKAsyFC5ub3RpZmllci52MS5DaGFubmVsIjMKFFVwZGF0ZUNoYW5uZWxSZXF1ZXN0EgwKBG5hbWUYASABKAkSDQoFY2hhcnQYAiABKAgiPgoVVXBkYXRlQ2hhbm5lbFJlc3BvbnNlEiUKB2NoYW5uZWwYASABKAsyFC5ub3RpZmllci52MS5DaGFubmVsIiQKFERlbGV0ZUNoYW5uZWxSZXF1ZXN0EgwKBG5hbWUYASABKAkiFwoVRGVsZXRlQ2hhbm5lbFJlc3BvbnNlIhMKEUxpc3RUb2tlbnNSZXF1ZXN0IjgKEkxpc3RUb2tlbnNSZXNwb25zZRIiCgZ0b2tlbnMYASADKAsyEi5ub3RpZmllci52MS5Ub2tlbiJRChJDcmVhdGVUb2tlblJlcXVlc3QSDAoEbmFtZRgBIAEoCRIMCgRraW5kGAIgASgJEg8KB2NoYW5uZWwYAyABKAkSDgoGcHJlZml4GAQgASgJIksKE0NyZWF0ZVRva2VuUmVzcG9uc2USIQoFdG9rZW4YASABKAsyEi5ub3RpZmllci52MS5Ub2tlbhIRCglwbGFpbnRleHQYAiABKAkiQwoSVXBkYXRlVG9rZW5SZXF1ZXN0EgwKBG5hbWUYASABKAkSDgoGcHJlZml4GAIgASgJEg8KB2NoYW5uZWwYAyABKAkiOAoTVXBkYXRlVG9rZW5SZXNwb25zZRIhCgV0b2tlbhgBIAEoCzISLm5vdGlmaWVyLnYxLlRva2VuIiIKEkRlbGV0ZVRva2VuUmVxdWVzdBIMCgRuYW1lGAEgASgJIhUKE0RlbGV0ZVRva2VuUmVzcG9uc2Ui/AEKCERlbGl2ZXJ5EgoKAmlkGAEgASgDEi4KCmNyZWF0ZWRfYXQYAiABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEg8KB2NoYW5uZWwYAyABKAkSDAoEa2luZBgEIAEoCRINCgV0aXRsZRgFIAEoCRIMCgRib2R5GAYgASgJEhAKCHByaW9yaXR5GAcgASgFEg4KBnN0YXR1cxgIIAEoCRIQCghhdHRlbXB0cxgJIAEoBRISCgpsYXN0X2Vycm9yGAogASgJEjAKDGRlbGl2ZXJlZF9hdBgLIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXAiNwoVTGlzdERlbGl2ZXJpZXNSZXF1ZXN0Eg8KB2NoYW5uZWwYASABKAkSDQoFbGltaXQYAiABKAUiQwoWTGlzdERlbGl2ZXJpZXNSZXNwb25zZRIpCgpkZWxpdmVyaWVzGAEgAygLMhUubm90aWZpZXIudjEuRGVsaXZlcnkiIgoUUmV0cnlEZWxpdmVyeVJlcXVlc3QSCgoCaWQYASABKAMiFwoVUmV0cnlEZWxpdmVyeVJlc3BvbnNlIi4KG1NlbmRUZXN0Tm90aWZpY2F0aW9uUmVxdWVzdBIPCgdjaGFubmVsGAEgASgJIh4KHFNlbmRUZXN0Tm90aWZpY2F0aW9uUmVzcG9uc2UiIAoQVGVzdFRva2VuUmVxdWVzdBIMCgRuYW1lGAEgASgJIhMKEVRlc3RUb2tlblJlc3BvbnNlIhMKEUdldFByb2ZpbGVSZXF1ZXN0Ik8KEkdldFByb2ZpbGVSZXNwb25zZRIUCgxkaXNwbGF5X25hbWUYASABKAkSDgoGYXZhdGFyGAIgASgMEhMKC2F2YXRhcl9taW1lGAMgASgJIjkKEVNldFByb2ZpbGVSZXF1ZXN0EhQKDGRpc3BsYXlfbmFtZRgBIAEoCRIOCgZhdmF0YXIYAiABKAwiFAoSU2V0UHJvZmlsZVJlc3BvbnNlMrMNCgxBZG1pblNlcnZpY2USQAoFTG9naW4SGS5ub3RpZmllci52MS5Mb2dpblJlcXVlc3QaGi5ub3RpZmllci52MS5Mb2dpblJlc3BvbnNlIgASQwoGTG9nb3V0Ehoubm90aWZpZXIudjEuTG9nb3V0UmVxdWVzdBobLm5vdGlmaWVyLnYxLkxvZ291dFJlc3BvbnNlIgASagoTQ2hhbmdlQWRtaW5QYXNzd29yZBInLm5vdGlmaWVyLnYxLkNoYW5nZUFkbWluUGFzc3dvcmRSZXF1ZXN0Gigubm90aWZpZXIudjEuQ2hhbmdlQWRtaW5QYXNzd29yZFJlc3BvbnNlIgASTAoJR2V0U3RhdHVzEh0ubm90aWZpZXIudjEuR2V0U3RhdHVzUmVxdWVzdBoeLm5vdGlmaWVyLnYxLkdldFN0YXR1c1Jlc3BvbnNlIgASVQoMTGlzdENoYW5uZWxzEiAubm90aWZpZXIudjEuTGlzdENoYW5uZWxzUmVxdWVzdBohLm5vdGlmaWVyLnYxLkxpc3RDaGFubmVsc1Jlc3BvbnNlIgASTAoJTGlzdFJvb21zEh0ubm90aWZpZXIudjEuTGlzdFJvb21zUmVxdWVzdBoeLm5vdGlmaWVyLnYxLkxpc3RSb29tc1Jlc3BvbnNlIgASTAoJTGVhdmVSb29tEh0ubm90aWZpZXIudjEuTGVhdmVSb29tUmVxdWVzdBoeLm5vdGlmaWVyLnYxLkxlYXZlUm9vbVJlc3BvbnNlIgASWAoNQ3JlYXRlQ2hhbm5lbBIhLm5vdGlmaWVyLnYxLkNyZWF0ZUNoYW5uZWxSZXF1ZXN0GiIubm90aWZpZXIudjEuQ3JlYXRlQ2hhbm5lbFJlc3BvbnNlIgASWAoNVXBkYXRlQ2hhbm5lbBIhLm5vdGlmaWVyLnYxLlVwZGF0ZUNoYW5uZWxSZXF1ZXN0GiIubm90aWZpZXIudjEuVXBkYXRlQ2hhbm5lbFJlc3BvbnNlIgASWAoNRGVsZXRlQ2hhbm5lbBIhLm5vdGlmaWVyLnYxLkRlbGV0ZUNoYW5uZWxSZXF1ZXN0GiIubm90aWZpZXIudjEuRGVsZXRlQ2hhbm5lbFJlc3BvbnNlIgASTwoKTGlzdFRva2VucxIeLm5vdGlmaWVyLnYxLkxpc3RUb2tlbnNSZXF1ZXN0Gh8ubm90aWZpZXIudjEuTGlzdFRva2Vuc1Jlc3BvbnNlIgASUgoLQ3JlYXRlVG9rZW4SHy5ub3RpZmllci52MS5DcmVhdGVUb2tlblJlcXVlc3QaIC5ub3RpZmllci52MS5DcmVhdGVUb2tlblJlc3BvbnNlIgASUgoLVXBkYXRlVG9rZW4SHy5ub3RpZmllci52MS5VcGRhdGVUb2tlblJlcXVlc3QaIC5ub3RpZmllci52MS5VcGRhdGVUb2tlblJlc3BvbnNlIgASUgoLRGVsZXRlVG9rZW4SHy5ub3RpZmllci52MS5EZWxldGVUb2tlblJlcXVlc3QaIC5ub3RpZmllci52MS5EZWxldGVUb2tlblJlc3BvbnNlIgASWwoOTGlzdERlbGl2ZXJpZXMSIi5ub3RpZmllci52MS5MaXN0RGVsaXZlcmllc1JlcXVlc3QaIy5ub3RpZmllci52MS5MaXN0RGVsaXZlcmllc1Jlc3BvbnNlIgASWAoNUmV0cnlEZWxpdmVyeRIhLm5vdGlmaWVyLnYxLlJldHJ5RGVsaXZlcnlSZXF1ZXN0GiIubm90aWZpZXIudjEuUmV0cnlEZWxpdmVyeVJlc3BvbnNlIgASbQoUU2VuZFRlc3ROb3RpZmljYXRpb24SKC5ub3RpZmllci52MS5TZW5kVGVzdE5vdGlmaWNhdGlvblJlcXVlc3QaKS5ub3RpZmllci52MS5TZW5kVGVzdE5vdGlmaWNhdGlvblJlc3BvbnNlIgASTAoJVGVzdFRva2VuEh0ubm90aWZpZXIudjEuVGVzdFRva2VuUmVxdWVzdBoeLm5vdGlmaWVyLnYxLlRlc3RUb2tlblJlc3BvbnNlIgASTwoKR2V0UHJvZmlsZRIeLm5vdGlmaWVyLnYxLkdldFByb2ZpbGVSZXF1ZXN0Gh8ubm90aWZpZXIudjEuR2V0UHJvZmlsZVJlc3BvbnNlIgASTwoKU2V0UHJvZmlsZRIeLm5vdGlmaWVyLnYxLlNldFByb2ZpbGVSZXF1ZXN0Gh8ubm90aWZpZXIudjEuU2V0UHJvZmlsZVJlc3BvbnNlIgBCRlpEZ2l0aHViLmNvbS90aG9tYXMtbWF1cmljZS9tYXRyaXgtbm90aWZpZXIvZ2VuL25vdGlmaWVyL3YxO25vdGlmaWVydjFiBnByb3RvMw", [file_google_protobuf_timestamp]);
 
 /**
  * @generated from message notifier.v1.Channel
@@ -707,6 +707,153 @@ export const DeleteTokenResponseSchema: GenMessage<DeleteTokenResponse> = /*@__P
   messageDesc(file_notifier_v1_admin, 30);
 
 /**
+ * Delivery is one notification's trip through the outbox: pending entries
+ * are still being retried, delivered/failed are history.
+ *
+ * @generated from message notifier.v1.Delivery
+ */
+export type Delivery = Message<"notifier.v1.Delivery"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+
+  /**
+   * @generated from field: google.protobuf.Timestamp created_at = 2;
+   */
+  createdAt?: Timestamp | undefined;
+
+  /**
+   * @generated from field: string channel = 3;
+   */
+  channel: string;
+
+  /**
+   * @generated from field: string kind = 4;
+   */
+  kind: string;
+
+  /**
+   * @generated from field: string title = 5;
+   */
+  title: string;
+
+  /**
+   * @generated from field: string body = 6;
+   */
+  body: string;
+
+  /**
+   * @generated from field: int32 priority = 7;
+   */
+  priority: number;
+
+  /**
+   * pending | delivered | failed
+   *
+   * @generated from field: string status = 8;
+   */
+  status: string;
+
+  /**
+   * @generated from field: int32 attempts = 9;
+   */
+  attempts: number;
+
+  /**
+   * Last send error, empty once delivered.
+   *
+   * @generated from field: string last_error = 10;
+   */
+  lastError: string;
+
+  /**
+   * @generated from field: google.protobuf.Timestamp delivered_at = 11;
+   */
+  deliveredAt?: Timestamp | undefined;
+};
+
+/**
+ * Describes the message notifier.v1.Delivery.
+ * Use `create(DeliverySchema)` to create a new message.
+ */
+export const DeliverySchema: GenMessage<Delivery> = /*@__PURE__*/
+  messageDesc(file_notifier_v1_admin, 31);
+
+/**
+ * @generated from message notifier.v1.ListDeliveriesRequest
+ */
+export type ListDeliveriesRequest = Message<"notifier.v1.ListDeliveriesRequest"> & {
+  /**
+   * Filter by channel name; empty returns all channels.
+   *
+   * @generated from field: string channel = 1;
+   */
+  channel: string;
+
+  /**
+   * Maximum entries to return; 0 means the server default (100), capped at 500.
+   *
+   * @generated from field: int32 limit = 2;
+   */
+  limit: number;
+};
+
+/**
+ * Describes the message notifier.v1.ListDeliveriesRequest.
+ * Use `create(ListDeliveriesRequestSchema)` to create a new message.
+ */
+export const ListDeliveriesRequestSchema: GenMessage<ListDeliveriesRequest> = /*@__PURE__*/
+  messageDesc(file_notifier_v1_admin, 32);
+
+/**
+ * @generated from message notifier.v1.ListDeliveriesResponse
+ */
+export type ListDeliveriesResponse = Message<"notifier.v1.ListDeliveriesResponse"> & {
+  /**
+   * @generated from field: repeated notifier.v1.Delivery deliveries = 1;
+   */
+  deliveries: Delivery[];
+};
+
+/**
+ * Describes the message notifier.v1.ListDeliveriesResponse.
+ * Use `create(ListDeliveriesResponseSchema)` to create a new message.
+ */
+export const ListDeliveriesResponseSchema: GenMessage<ListDeliveriesResponse> = /*@__PURE__*/
+  messageDesc(file_notifier_v1_admin, 33);
+
+/**
+ * @generated from message notifier.v1.RetryDeliveryRequest
+ */
+export type RetryDeliveryRequest = Message<"notifier.v1.RetryDeliveryRequest"> & {
+  /**
+   * @generated from field: int64 id = 1;
+   */
+  id: bigint;
+};
+
+/**
+ * Describes the message notifier.v1.RetryDeliveryRequest.
+ * Use `create(RetryDeliveryRequestSchema)` to create a new message.
+ */
+export const RetryDeliveryRequestSchema: GenMessage<RetryDeliveryRequest> = /*@__PURE__*/
+  messageDesc(file_notifier_v1_admin, 34);
+
+/**
+ * @generated from message notifier.v1.RetryDeliveryResponse
+ */
+export type RetryDeliveryResponse = Message<"notifier.v1.RetryDeliveryResponse"> & {
+};
+
+/**
+ * Describes the message notifier.v1.RetryDeliveryResponse.
+ * Use `create(RetryDeliveryResponseSchema)` to create a new message.
+ */
+export const RetryDeliveryResponseSchema: GenMessage<RetryDeliveryResponse> = /*@__PURE__*/
+  messageDesc(file_notifier_v1_admin, 35);
+
+/**
  * @generated from message notifier.v1.SendTestNotificationRequest
  */
 export type SendTestNotificationRequest = Message<"notifier.v1.SendTestNotificationRequest"> & {
@@ -721,7 +868,7 @@ export type SendTestNotificationRequest = Message<"notifier.v1.SendTestNotificat
  * Use `create(SendTestNotificationRequestSchema)` to create a new message.
  */
 export const SendTestNotificationRequestSchema: GenMessage<SendTestNotificationRequest> = /*@__PURE__*/
-  messageDesc(file_notifier_v1_admin, 31);
+  messageDesc(file_notifier_v1_admin, 36);
 
 /**
  * @generated from message notifier.v1.SendTestNotificationResponse
@@ -734,7 +881,7 @@ export type SendTestNotificationResponse = Message<"notifier.v1.SendTestNotifica
  * Use `create(SendTestNotificationResponseSchema)` to create a new message.
  */
 export const SendTestNotificationResponseSchema: GenMessage<SendTestNotificationResponse> = /*@__PURE__*/
-  messageDesc(file_notifier_v1_admin, 32);
+  messageDesc(file_notifier_v1_admin, 37);
 
 /**
  * @generated from message notifier.v1.TestTokenRequest
@@ -751,7 +898,7 @@ export type TestTokenRequest = Message<"notifier.v1.TestTokenRequest"> & {
  * Use `create(TestTokenRequestSchema)` to create a new message.
  */
 export const TestTokenRequestSchema: GenMessage<TestTokenRequest> = /*@__PURE__*/
-  messageDesc(file_notifier_v1_admin, 33);
+  messageDesc(file_notifier_v1_admin, 38);
 
 /**
  * @generated from message notifier.v1.TestTokenResponse
@@ -764,7 +911,7 @@ export type TestTokenResponse = Message<"notifier.v1.TestTokenResponse"> & {
  * Use `create(TestTokenResponseSchema)` to create a new message.
  */
 export const TestTokenResponseSchema: GenMessage<TestTokenResponse> = /*@__PURE__*/
-  messageDesc(file_notifier_v1_admin, 34);
+  messageDesc(file_notifier_v1_admin, 39);
 
 /**
  * @generated from message notifier.v1.GetProfileRequest
@@ -777,7 +924,7 @@ export type GetProfileRequest = Message<"notifier.v1.GetProfileRequest"> & {
  * Use `create(GetProfileRequestSchema)` to create a new message.
  */
 export const GetProfileRequestSchema: GenMessage<GetProfileRequest> = /*@__PURE__*/
-  messageDesc(file_notifier_v1_admin, 35);
+  messageDesc(file_notifier_v1_admin, 40);
 
 /**
  * @generated from message notifier.v1.GetProfileResponse
@@ -806,7 +953,7 @@ export type GetProfileResponse = Message<"notifier.v1.GetProfileResponse"> & {
  * Use `create(GetProfileResponseSchema)` to create a new message.
  */
 export const GetProfileResponseSchema: GenMessage<GetProfileResponse> = /*@__PURE__*/
-  messageDesc(file_notifier_v1_admin, 36);
+  messageDesc(file_notifier_v1_admin, 41);
 
 /**
  * @generated from message notifier.v1.SetProfileRequest
@@ -828,7 +975,7 @@ export type SetProfileRequest = Message<"notifier.v1.SetProfileRequest"> & {
  * Use `create(SetProfileRequestSchema)` to create a new message.
  */
 export const SetProfileRequestSchema: GenMessage<SetProfileRequest> = /*@__PURE__*/
-  messageDesc(file_notifier_v1_admin, 37);
+  messageDesc(file_notifier_v1_admin, 42);
 
 /**
  * @generated from message notifier.v1.SetProfileResponse
@@ -841,7 +988,7 @@ export type SetProfileResponse = Message<"notifier.v1.SetProfileResponse"> & {
  * Use `create(SetProfileResponseSchema)` to create a new message.
  */
 export const SetProfileResponseSchema: GenMessage<SetProfileResponse> = /*@__PURE__*/
-  messageDesc(file_notifier_v1_admin, 38);
+  messageDesc(file_notifier_v1_admin, 43);
 
 /**
  * AdminService manages channels, ingest tokens, and exposes bot health.
@@ -975,6 +1122,28 @@ export const AdminService: GenService<{
     methodKind: "unary";
     input: typeof DeleteTokenRequestSchema;
     output: typeof DeleteTokenResponseSchema;
+  },
+  /**
+   * ListDeliveries returns the delivery history (queue + terminal states),
+   * newest first, optionally filtered by channel.
+   *
+   * @generated from rpc notifier.v1.AdminService.ListDeliveries
+   */
+  listDeliveries: {
+    methodKind: "unary";
+    input: typeof ListDeliveriesRequestSchema;
+    output: typeof ListDeliveriesResponseSchema;
+  },
+  /**
+   * RetryDelivery re-queues a FAILED delivery for immediate sending.
+   * Delivered entries cannot be retried (that would duplicate them).
+   *
+   * @generated from rpc notifier.v1.AdminService.RetryDelivery
+   */
+  retryDelivery: {
+    methodKind: "unary";
+    input: typeof RetryDeliveryRequestSchema;
+    output: typeof RetryDeliveryResponseSchema;
   },
   /**
    * @generated from rpc notifier.v1.AdminService.SendTestNotification

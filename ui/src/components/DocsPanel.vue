@@ -21,6 +21,14 @@ const origin = window.location.origin
       <code>?token=mn_...</code>, an <code>Authorization: Bearer mn_...</code>
       header, or an <code>X-Gotify-Key</code> header.
     </p>
+    <p class="text-secondary">
+      A <code>200</code> response means the notification was
+      <strong>accepted and queued</strong>, not yet delivered: sends go
+      through a persistent outbox drained in the background, retrying with
+      backoff for up to 24 hours — so a homeserver outage or bot restart
+      loses nothing. Watch progress (and retry failed deliveries by hand) on
+      the <strong>History</strong> tab.
+    </p>
 
     <div class="card mb-3">
       <div class="card-header">

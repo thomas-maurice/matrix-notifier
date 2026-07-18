@@ -45,5 +45,9 @@ admin_token_hash: "$argon2id$v=19$m=65536,t=1,p=..."
 rate_limit_per_second: 5
 rate_limit_burst: 20
 
+# How long delivered/failed notifications stay browsable in the UI History
+# tab before being pruned. Pending (still retrying) entries are never pruned.
+outbox_retention_hours: 168
+
 # Channels (name -> Matrix room) and ingest tokens are NOT configured here:
 # manage them at runtime via the web UI at / or the Connect RPC admin API.

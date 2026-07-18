@@ -46,6 +46,10 @@ type Config struct {
 	RateLimitPerSecond float64 `mapstructure:"rate_limit_per_second"`
 	RateLimitBurst     int     `mapstructure:"rate_limit_burst"`
 
+	// OutboxRetentionHours is how long delivered/failed notifications are
+	// kept as browsable history before being pruned.
+	OutboxRetentionHours int `mapstructure:"outbox_retention_hours"`
+
 	// ResetIdentity is set by the --reset-identity CLI flag, not the config
 	// file: on startup, replace the account's cross-signing keys and write a
 	// fresh recovery key. For when the recovery key is lost.
@@ -62,6 +66,8 @@ func Load(path string) (*Config, error) {
 	// Generous per-token defaults: throttle only a genuinely runaway producer.
 	v.SetDefault("rate_limit_per_second", 5.0)
 	v.SetDefault("rate_limit_burst", 20)
+	// A week of delivery history by default.
+	v.SetDefault("outbox_retention_hours", 168)
 
 	if path != "" {
 		v.SetConfigFile(path)

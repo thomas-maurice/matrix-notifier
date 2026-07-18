@@ -39,10 +39,13 @@ type Server struct {
 	bot    Matrix
 	auth   *AdminAuth
 	dbType string
+	// kick wakes the outbox dispatcher after RetryDelivery re-queues an
+	// entry; nil means the dispatcher's next poll picks it up instead.
+	kick func()
 }
 
-func NewServer(st *store.Store, bot Matrix, auth *AdminAuth, dbType string) *Server {
-	return &Server{store: st, bot: bot, auth: auth, dbType: dbType}
+func NewServer(st *store.Store, bot Matrix, auth *AdminAuth, dbType string, kick func()) *Server {
+	return &Server{store: st, bot: bot, auth: auth, dbType: dbType, kick: kick}
 }
 
 // Login exchanges the admin password for a session JWT, returned in the body
@@ -253,15 +256,39 @@ func (s *Server) SendTestNotification(ctx context.Context, req *connect.Request[
 	if err != nil {
 		return nil, storeError(err)
 	}
-	err = s.bot.Send(ctx, ch.RoomID, notify.Notification{
+	n := notify.Notification{
 		Title:    "Test notification",
 		Body:     fmt.Sprintf("Sent from the admin API to channel `%s` at %s.", ch.Name, time.Now().Format(time.RFC3339)),
 		Priority: 5,
-	})
-	if err != nil {
+	}
+	if err := s.testSend(ctx, ch.Name, ch.RoomID, n); err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 	return connect.NewResponse(&notifierv1.SendTestNotificationResponse{}), nil
+}
+
+// testSend delivers synchronously (test buttons want immediate feedback,
+// not "queued") and records the outcome so the history stays complete.
+func (s *Server) testSend(ctx context.Context, channel, roomID string, n notify.Notification) error {
+	sendErr := s.bot.Send(ctx, roomID, n)
+	e := &store.OutboxEntry{
+		Channel:  channel,
+		RoomID:   roomID,
+		Kind:     "test",
+		Title:    n.Title,
+		Body:     n.Body,
+		Priority: n.Priority,
+		Attempts: 1,
+		Status:   store.DeliveryDelivered,
+	}
+	if sendErr != nil {
+		e.Status = store.DeliveryFailed
+		e.LastError = sendErr.Error()
+	}
+	if err := s.store.RecordDelivery(ctx, e); err != nil {
+		logging.From(ctx).Error("recording test delivery", "error", err)
+	}
+	return sendErr
 }
 
 // TestToken sends a test notification through a token — to its channel's
@@ -276,15 +303,67 @@ func (s *Server) TestToken(ctx context.Context, req *connect.Request[notifierv1.
 	if tok.Prefix != "" {
 		title = tok.Prefix + " " + title
 	}
-	err = s.bot.Send(ctx, tok.Channel.RoomID, notify.Notification{
+	n := notify.Notification{
 		Title:    title,
 		Body:     fmt.Sprintf("Sent via token `%s` at %s.", tok.Name, time.Now().Format(time.RFC3339)),
 		Priority: 5,
-	})
-	if err != nil {
+	}
+	if err := s.testSend(ctx, tok.Channel.Name, tok.Channel.RoomID, n); err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 	return connect.NewResponse(&notifierv1.TestTokenResponse{}), nil
+}
+
+// listDeliveriesDefault/Max bound the history page: it is a debugging view,
+// not an export.
+const (
+	listDeliveriesDefault = 100
+	listDeliveriesMax     = 500
+)
+
+func (s *Server) ListDeliveries(ctx context.Context, req *connect.Request[notifierv1.ListDeliveriesRequest]) (*connect.Response[notifierv1.ListDeliveriesResponse], error) {
+	limit := int(req.Msg.Limit)
+	if limit <= 0 {
+		limit = listDeliveriesDefault
+	}
+	limit = min(limit, listDeliveriesMax)
+	entries, err := s.store.ListOutbox(ctx, req.Msg.Channel, limit)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+	resp := &notifierv1.ListDeliveriesResponse{}
+	for _, e := range entries {
+		d := &notifierv1.Delivery{
+			Id:        int64(e.ID),
+			CreatedAt: timestamppb.New(e.CreatedAt),
+			Channel:   e.Channel,
+			Kind:      e.Kind,
+			Title:     e.Title,
+			Body:      e.Body,
+			Priority:  int32(e.Priority),
+			Status:    string(e.Status),
+			Attempts:  int32(e.Attempts),
+			LastError: e.LastError,
+		}
+		if e.DeliveredAt != nil {
+			d.DeliveredAt = timestamppb.New(*e.DeliveredAt)
+		}
+		resp.Deliveries = append(resp.Deliveries, d)
+	}
+	return connect.NewResponse(resp), nil
+}
+
+func (s *Server) RetryDelivery(ctx context.Context, req *connect.Request[notifierv1.RetryDeliveryRequest]) (*connect.Response[notifierv1.RetryDeliveryResponse], error) {
+	if req.Msg.Id <= 0 {
+		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("id is required"))
+	}
+	if err := s.store.RequeueOutbox(ctx, uint(req.Msg.Id)); err != nil {
+		return nil, storeError(err)
+	}
+	if s.kick != nil {
+		s.kick()
+	}
+	return connect.NewResponse(&notifierv1.RetryDeliveryResponse{}), nil
 }
 
 func (s *Server) GetProfile(ctx context.Context, _ *connect.Request[notifierv1.GetProfileRequest]) (*connect.Response[notifierv1.GetProfileResponse], error) {

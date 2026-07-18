@@ -37,6 +37,13 @@ service AdminService {
   rpc UpdateToken(UpdateTokenRequest) returns (UpdateTokenResponse) {}
   rpc DeleteToken(DeleteTokenRequest) returns (DeleteTokenResponse) {}
 
+  // ListDeliveries returns the delivery history (queue + terminal states),
+  // newest first, optionally filtered by channel.
+  rpc ListDeliveries(ListDeliveriesRequest) returns (ListDeliveriesResponse) {}
+  // RetryDelivery re-queues a FAILED delivery for immediate sending.
+  // Delivered entries cannot be retried (that would duplicate them).
+  rpc RetryDelivery(RetryDeliveryRequest) returns (RetryDeliveryResponse) {}
+
   rpc SendTestNotification(SendTestNotificationRequest) returns (SendTestNotificationResponse) {}
   // TestToken sends a test notification through a token, applying its prefix
   // so the operator can see exactly what a producer's messages look like.
@@ -208,6 +215,41 @@ message DeleteTokenRequest {
 }
 
 message DeleteTokenResponse {}
+
+// Delivery is one notification's trip through the outbox: pending entries
+// are still being retried, delivered/failed are history.
+message Delivery {
+  int64 id = 1;
+  google.protobuf.Timestamp created_at = 2;
+  string channel = 3;
+  string kind = 4;
+  string title = 5;
+  string body = 6;
+  int32 priority = 7;
+  // pending | delivered | failed
+  string status = 8;
+  int32 attempts = 9;
+  // Last send error, empty once delivered.
+  string last_error = 10;
+  google.protobuf.Timestamp delivered_at = 11;
+}
+
+message ListDeliveriesRequest {
+  // Filter by channel name; empty returns all channels.
+  string channel = 1;
+  // Maximum entries to return; 0 means the server default (100), capped at 500.
+  int32 limit = 2;
+}
+
+message ListDeliveriesResponse {
+  repeated Delivery deliveries = 1;
+}
+
+message RetryDeliveryRequest {
+  int64 id = 1;
+}
+
+message RetryDeliveryResponse {}
 
 message SendTestNotificationRequest {
   string channel = 1;

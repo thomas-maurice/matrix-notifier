@@ -69,6 +69,12 @@ const (
 	// AdminServiceDeleteTokenProcedure is the fully-qualified name of the AdminService's DeleteToken
 	// RPC.
 	AdminServiceDeleteTokenProcedure = "/notifier.v1.AdminService/DeleteToken"
+	// AdminServiceListDeliveriesProcedure is the fully-qualified name of the AdminService's
+	// ListDeliveries RPC.
+	AdminServiceListDeliveriesProcedure = "/notifier.v1.AdminService/ListDeliveries"
+	// AdminServiceRetryDeliveryProcedure is the fully-qualified name of the AdminService's
+	// RetryDelivery RPC.
+	AdminServiceRetryDeliveryProcedure = "/notifier.v1.AdminService/RetryDelivery"
 	// AdminServiceSendTestNotificationProcedure is the fully-qualified name of the AdminService's
 	// SendTestNotification RPC.
 	AdminServiceSendTestNotificationProcedure = "/notifier.v1.AdminService/SendTestNotification"
@@ -106,6 +112,12 @@ type AdminServiceClient interface {
 	CreateToken(context.Context, *connect.Request[v1.CreateTokenRequest]) (*connect.Response[v1.CreateTokenResponse], error)
 	UpdateToken(context.Context, *connect.Request[v1.UpdateTokenRequest]) (*connect.Response[v1.UpdateTokenResponse], error)
 	DeleteToken(context.Context, *connect.Request[v1.DeleteTokenRequest]) (*connect.Response[v1.DeleteTokenResponse], error)
+	// ListDeliveries returns the delivery history (queue + terminal states),
+	// newest first, optionally filtered by channel.
+	ListDeliveries(context.Context, *connect.Request[v1.ListDeliveriesRequest]) (*connect.Response[v1.ListDeliveriesResponse], error)
+	// RetryDelivery re-queues a FAILED delivery for immediate sending.
+	// Delivered entries cannot be retried (that would duplicate them).
+	RetryDelivery(context.Context, *connect.Request[v1.RetryDeliveryRequest]) (*connect.Response[v1.RetryDeliveryResponse], error)
 	SendTestNotification(context.Context, *connect.Request[v1.SendTestNotificationRequest]) (*connect.Response[v1.SendTestNotificationResponse], error)
 	// TestToken sends a test notification through a token, applying its prefix
 	// so the operator can see exactly what a producer's messages look like.
@@ -215,6 +227,18 @@ func NewAdminServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 			connect.WithSchema(adminServiceMethods.ByName("DeleteToken")),
 			connect.WithClientOptions(opts...),
 		),
+		listDeliveries: connect.NewClient[v1.ListDeliveriesRequest, v1.ListDeliveriesResponse](
+			httpClient,
+			baseURL+AdminServiceListDeliveriesProcedure,
+			connect.WithSchema(adminServiceMethods.ByName("ListDeliveries")),
+			connect.WithClientOptions(opts...),
+		),
+		retryDelivery: connect.NewClient[v1.RetryDeliveryRequest, v1.RetryDeliveryResponse](
+			httpClient,
+			baseURL+AdminServiceRetryDeliveryProcedure,
+			connect.WithSchema(adminServiceMethods.ByName("RetryDelivery")),
+			connect.WithClientOptions(opts...),
+		),
 		sendTestNotification: connect.NewClient[v1.SendTestNotificationRequest, v1.SendTestNotificationResponse](
 			httpClient,
 			baseURL+AdminServiceSendTestNotificationProcedure,
@@ -258,6 +282,8 @@ type adminServiceClient struct {
 	createToken          *connect.Client[v1.CreateTokenRequest, v1.CreateTokenResponse]
 	updateToken          *connect.Client[v1.UpdateTokenRequest, v1.UpdateTokenResponse]
 	deleteToken          *connect.Client[v1.DeleteTokenRequest, v1.DeleteTokenResponse]
+	listDeliveries       *connect.Client[v1.ListDeliveriesRequest, v1.ListDeliveriesResponse]
+	retryDelivery        *connect.Client[v1.RetryDeliveryRequest, v1.RetryDeliveryResponse]
 	sendTestNotification *connect.Client[v1.SendTestNotificationRequest, v1.SendTestNotificationResponse]
 	testToken            *connect.Client[v1.TestTokenRequest, v1.TestTokenResponse]
 	getProfile           *connect.Client[v1.GetProfileRequest, v1.GetProfileResponse]
@@ -334,6 +360,16 @@ func (c *adminServiceClient) DeleteToken(ctx context.Context, req *connect.Reque
 	return c.deleteToken.CallUnary(ctx, req)
 }
 
+// ListDeliveries calls notifier.v1.AdminService.ListDeliveries.
+func (c *adminServiceClient) ListDeliveries(ctx context.Context, req *connect.Request[v1.ListDeliveriesRequest]) (*connect.Response[v1.ListDeliveriesResponse], error) {
+	return c.listDeliveries.CallUnary(ctx, req)
+}
+
+// RetryDelivery calls notifier.v1.AdminService.RetryDelivery.
+func (c *adminServiceClient) RetryDelivery(ctx context.Context, req *connect.Request[v1.RetryDeliveryRequest]) (*connect.Response[v1.RetryDeliveryResponse], error) {
+	return c.retryDelivery.CallUnary(ctx, req)
+}
+
 // SendTestNotification calls notifier.v1.AdminService.SendTestNotification.
 func (c *adminServiceClient) SendTestNotification(ctx context.Context, req *connect.Request[v1.SendTestNotificationRequest]) (*connect.Response[v1.SendTestNotificationResponse], error) {
 	return c.sendTestNotification.CallUnary(ctx, req)
@@ -380,6 +416,12 @@ type AdminServiceHandler interface {
 	CreateToken(context.Context, *connect.Request[v1.CreateTokenRequest]) (*connect.Response[v1.CreateTokenResponse], error)
 	UpdateToken(context.Context, *connect.Request[v1.UpdateTokenRequest]) (*connect.Response[v1.UpdateTokenResponse], error)
 	DeleteToken(context.Context, *connect.Request[v1.DeleteTokenRequest]) (*connect.Response[v1.DeleteTokenResponse], error)
+	// ListDeliveries returns the delivery history (queue + terminal states),
+	// newest first, optionally filtered by channel.
+	ListDeliveries(context.Context, *connect.Request[v1.ListDeliveriesRequest]) (*connect.Response[v1.ListDeliveriesResponse], error)
+	// RetryDelivery re-queues a FAILED delivery for immediate sending.
+	// Delivered entries cannot be retried (that would duplicate them).
+	RetryDelivery(context.Context, *connect.Request[v1.RetryDeliveryRequest]) (*connect.Response[v1.RetryDeliveryResponse], error)
 	SendTestNotification(context.Context, *connect.Request[v1.SendTestNotificationRequest]) (*connect.Response[v1.SendTestNotificationResponse], error)
 	// TestToken sends a test notification through a token, applying its prefix
 	// so the operator can see exactly what a producer's messages look like.
@@ -485,6 +527,18 @@ func NewAdminServiceHandler(svc AdminServiceHandler, opts ...connect.HandlerOpti
 		connect.WithSchema(adminServiceMethods.ByName("DeleteToken")),
 		connect.WithHandlerOptions(opts...),
 	)
+	adminServiceListDeliveriesHandler := connect.NewUnaryHandler(
+		AdminServiceListDeliveriesProcedure,
+		svc.ListDeliveries,
+		connect.WithSchema(adminServiceMethods.ByName("ListDeliveries")),
+		connect.WithHandlerOptions(opts...),
+	)
+	adminServiceRetryDeliveryHandler := connect.NewUnaryHandler(
+		AdminServiceRetryDeliveryProcedure,
+		svc.RetryDelivery,
+		connect.WithSchema(adminServiceMethods.ByName("RetryDelivery")),
+		connect.WithHandlerOptions(opts...),
+	)
 	adminServiceSendTestNotificationHandler := connect.NewUnaryHandler(
 		AdminServiceSendTestNotificationProcedure,
 		svc.SendTestNotification,
@@ -539,6 +593,10 @@ func NewAdminServiceHandler(svc AdminServiceHandler, opts ...connect.HandlerOpti
 			adminServiceUpdateTokenHandler.ServeHTTP(w, r)
 		case AdminServiceDeleteTokenProcedure:
 			adminServiceDeleteTokenHandler.ServeHTTP(w, r)
+		case AdminServiceListDeliveriesProcedure:
+			adminServiceListDeliveriesHandler.ServeHTTP(w, r)
+		case AdminServiceRetryDeliveryProcedure:
+			adminServiceRetryDeliveryHandler.ServeHTTP(w, r)
 		case AdminServiceSendTestNotificationProcedure:
 			adminServiceSendTestNotificationHandler.ServeHTTP(w, r)
 		case AdminServiceTestTokenProcedure:
@@ -610,6 +668,14 @@ func (UnimplementedAdminServiceHandler) UpdateToken(context.Context, *connect.Re
 
 func (UnimplementedAdminServiceHandler) DeleteToken(context.Context, *connect.Request[v1.DeleteTokenRequest]) (*connect.Response[v1.DeleteTokenResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("notifier.v1.AdminService.DeleteToken is not implemented"))
+}
+
+func (UnimplementedAdminServiceHandler) ListDeliveries(context.Context, *connect.Request[v1.ListDeliveriesRequest]) (*connect.Response[v1.ListDeliveriesResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("notifier.v1.AdminService.ListDeliveries is not implemented"))
+}
+
+func (UnimplementedAdminServiceHandler) RetryDelivery(context.Context, *connect.Request[v1.RetryDeliveryRequest]) (*connect.Response[v1.RetryDeliveryResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("notifier.v1.AdminService.RetryDelivery is not implemented"))
 }
 
 func (UnimplementedAdminServiceHandler) SendTestNotification(context.Context, *connect.Request[v1.SendTestNotificationRequest]) (*connect.Response[v1.SendTestNotificationResponse], error) {
