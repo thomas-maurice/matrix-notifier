@@ -128,9 +128,10 @@ status (sync health, verification, per-channel joined/encrypted state,
 delivery counters), channel CRUD, token CRUD (plaintext shown exactly once),
 test notifications, the password change, the bot's Matrix profile (display
 name and avatar, Settings tab), and a Docs tab documenting every ingest
-endpoint (how it works, sender-side configuration, priority mapping). Channel rooms are shown by ID
-with the room's canonical alias (`#notifs:example.org`) next to it when one
-is set. The API is plain Connect JSON — curl works:
+endpoint (how it works, sender-side configuration, priority mapping). Channel rooms are shown by their
+canonical alias (`#notifs:example.org`) when one is set, by raw ID
+otherwise; the ID is in the alias's tooltip and a click on either copies
+the room ID. The API is plain Connect JSON — curl works:
 
 ```sh
 JWT=$(curl -s -X POST http://localhost:8686/notifier.v1.AdminService/Login \

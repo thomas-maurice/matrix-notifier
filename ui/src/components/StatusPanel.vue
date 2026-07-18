@@ -2,6 +2,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { api } from '../api.js'
 import { notifyError } from '../toast.js'
+import RoomRef from './RoomRef.vue'
 
 const status = ref(null)
 const channels = ref([])
@@ -120,10 +121,7 @@ onUnmounted(() => clearInterval(timer))
             <tbody>
               <tr v-for="ch in channels" :key="ch.name">
                 <td class="ps-3">{{ ch.name }}</td>
-                <td>
-                  <code>{{ ch.roomId }}</code>
-                  <code v-if="ch.alias" class="text-info ms-2">{{ ch.alias }}</code>
-                </td>
+                <td><RoomRef :room-id="ch.roomId" :alias="ch.alias" /></td>
                 <td><i :class="ch.joined ? 'fa-solid fa-check text-success' : 'fa-solid fa-xmark text-danger'"></i></td>
                 <td><i :class="ch.encrypted ? 'fa-solid fa-lock text-success' : 'fa-solid fa-lock-open text-danger'"></i></td>
               </tr>
