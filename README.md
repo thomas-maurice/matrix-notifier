@@ -126,8 +126,9 @@ restart: the credential re-seeds from the config hash.
 The web UI (Vue 3 + Bootstrap, embedded in the binary, same listener) covers
 status (sync health, verification, per-channel joined/encrypted state,
 delivery counters), channel CRUD, token CRUD (plaintext shown exactly once),
-test notifications, the password change, and a Docs tab documenting every
-ingest endpoint (how it works, sender-side configuration, priority mapping). Channel rooms are shown by ID
+test notifications, the password change, the bot's Matrix profile (display
+name and avatar, Settings tab), and a Docs tab documenting every ingest
+endpoint (how it works, sender-side configuration, priority mapping). Channel rooms are shown by ID
 with the room's canonical alias (`#notifs:example.org`) next to it when one
 is set. The API is plain Connect JSON — curl works:
 

@@ -174,6 +174,64 @@ func (b *Bot) Start(ctx context.Context) error {
 	return nil
 }
 
+// Profile is the bot account's public Matrix profile.
+type Profile struct {
+	DisplayName string
+	Avatar      []byte
+	AvatarMIME  string
+}
+
+// Profile returns the account's display name and avatar. The avatar is
+// downloaded and inlined so callers (the admin UI) can show it without an
+// authenticated media endpoint; a missing or undownloadable avatar is not
+// an error — the name is still useful on its own.
+func (b *Bot) Profile(ctx context.Context) (Profile, error) {
+	name, err := b.client.GetOwnDisplayName(ctx)
+	if err != nil {
+		return Profile{}, fmt.Errorf("fetching display name: %w", err)
+	}
+	p := Profile{DisplayName: name.DisplayName}
+	uri, err := b.client.GetAvatarURL(ctx, b.client.UserID)
+	if err != nil || uri.IsEmpty() {
+		// Synapse answers 404 when no avatar was ever set.
+		return p, nil
+	}
+	data, err := b.client.DownloadBytes(ctx, uri)
+	if err != nil {
+		logging.From(ctx).Warn("downloading own avatar", "error", err)
+		return p, nil
+	}
+	p.Avatar = data
+	p.AvatarMIME = http.DetectContentType(data)
+	return p, nil
+}
+
+// SetProfile applies the non-empty parts: a display name rename and/or a
+// new avatar image, which is uploaded to the media repo first.
+func (b *Bot) SetProfile(ctx context.Context, displayName string, avatar []byte) error {
+	if displayName != "" {
+		if err := b.client.SetDisplayName(ctx, displayName); err != nil {
+			return fmt.Errorf("setting display name: %w", err)
+		}
+		logging.From(ctx).Info("display name updated", "display_name", displayName)
+	}
+	if len(avatar) > 0 {
+		mime := http.DetectContentType(avatar)
+		if !strings.HasPrefix(mime, "image/") {
+			return fmt.Errorf("avatar looks like %s, not an image", mime)
+		}
+		resp, err := b.client.UploadBytes(ctx, avatar, mime)
+		if err != nil {
+			return fmt.Errorf("uploading avatar: %w", err)
+		}
+		if err := b.client.SetAvatarURL(ctx, resp.ContentURI); err != nil {
+			return fmt.Errorf("setting avatar url: %w", err)
+		}
+		logging.From(ctx).Info("avatar updated", "size", len(avatar), "mime", mime)
+	}
+	return nil
+}
+
 // metricsLoop keeps the sync-age and verification gauges fresh until ctx is
 // cancelled.
 func (b *Bot) metricsLoop(ctx context.Context) {

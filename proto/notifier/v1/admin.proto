@@ -41,6 +41,15 @@ service AdminService {
   // TestToken sends a test notification through a token, applying its prefix
   // so the operator can see exactly what a producer's messages look like.
   rpc TestToken(TestTokenRequest) returns (TestTokenResponse) {}
+
+  // GetProfile returns the bot account's Matrix profile; the avatar is
+  // inlined as bytes (profile pictures are small) so the browser can
+  // preview it without an authenticated media download.
+  rpc GetProfile(GetProfileRequest) returns (GetProfileResponse) {}
+  // SetProfile updates the parts of the profile that are set: a non-empty
+  // display_name renames the bot, non-empty avatar bytes replace its
+  // picture. Both are visible in every room the bot is in.
+  rpc SetProfile(SetProfileRequest) returns (SetProfileResponse) {}
 }
 
 message Channel {
@@ -208,3 +217,19 @@ message TestTokenRequest {
 }
 
 message TestTokenResponse {}
+
+message GetProfileRequest {}
+
+message GetProfileResponse {
+  string display_name = 1;
+  // Raw image bytes and their MIME type; empty when no avatar is set.
+  bytes avatar = 2;
+  string avatar_mime = 3;
+}
+
+message SetProfileRequest {
+  string display_name = 1;
+  bytes avatar = 2;
+}
+
+message SetProfileResponse {}

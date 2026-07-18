@@ -74,6 +74,10 @@ const (
 	AdminServiceSendTestNotificationProcedure = "/notifier.v1.AdminService/SendTestNotification"
 	// AdminServiceTestTokenProcedure is the fully-qualified name of the AdminService's TestToken RPC.
 	AdminServiceTestTokenProcedure = "/notifier.v1.AdminService/TestToken"
+	// AdminServiceGetProfileProcedure is the fully-qualified name of the AdminService's GetProfile RPC.
+	AdminServiceGetProfileProcedure = "/notifier.v1.AdminService/GetProfile"
+	// AdminServiceSetProfileProcedure is the fully-qualified name of the AdminService's SetProfile RPC.
+	AdminServiceSetProfileProcedure = "/notifier.v1.AdminService/SetProfile"
 )
 
 // AdminServiceClient is a client for the notifier.v1.AdminService service.
@@ -106,6 +110,14 @@ type AdminServiceClient interface {
 	// TestToken sends a test notification through a token, applying its prefix
 	// so the operator can see exactly what a producer's messages look like.
 	TestToken(context.Context, *connect.Request[v1.TestTokenRequest]) (*connect.Response[v1.TestTokenResponse], error)
+	// GetProfile returns the bot account's Matrix profile; the avatar is
+	// inlined as bytes (profile pictures are small) so the browser can
+	// preview it without an authenticated media download.
+	GetProfile(context.Context, *connect.Request[v1.GetProfileRequest]) (*connect.Response[v1.GetProfileResponse], error)
+	// SetProfile updates the parts of the profile that are set: a non-empty
+	// display_name renames the bot, non-empty avatar bytes replace its
+	// picture. Both are visible in every room the bot is in.
+	SetProfile(context.Context, *connect.Request[v1.SetProfileRequest]) (*connect.Response[v1.SetProfileResponse], error)
 }
 
 // NewAdminServiceClient constructs a client for the notifier.v1.AdminService service. By default,
@@ -215,6 +227,18 @@ func NewAdminServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 			connect.WithSchema(adminServiceMethods.ByName("TestToken")),
 			connect.WithClientOptions(opts...),
 		),
+		getProfile: connect.NewClient[v1.GetProfileRequest, v1.GetProfileResponse](
+			httpClient,
+			baseURL+AdminServiceGetProfileProcedure,
+			connect.WithSchema(adminServiceMethods.ByName("GetProfile")),
+			connect.WithClientOptions(opts...),
+		),
+		setProfile: connect.NewClient[v1.SetProfileRequest, v1.SetProfileResponse](
+			httpClient,
+			baseURL+AdminServiceSetProfileProcedure,
+			connect.WithSchema(adminServiceMethods.ByName("SetProfile")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -236,6 +260,8 @@ type adminServiceClient struct {
 	deleteToken          *connect.Client[v1.DeleteTokenRequest, v1.DeleteTokenResponse]
 	sendTestNotification *connect.Client[v1.SendTestNotificationRequest, v1.SendTestNotificationResponse]
 	testToken            *connect.Client[v1.TestTokenRequest, v1.TestTokenResponse]
+	getProfile           *connect.Client[v1.GetProfileRequest, v1.GetProfileResponse]
+	setProfile           *connect.Client[v1.SetProfileRequest, v1.SetProfileResponse]
 }
 
 // Login calls notifier.v1.AdminService.Login.
@@ -318,6 +344,16 @@ func (c *adminServiceClient) TestToken(ctx context.Context, req *connect.Request
 	return c.testToken.CallUnary(ctx, req)
 }
 
+// GetProfile calls notifier.v1.AdminService.GetProfile.
+func (c *adminServiceClient) GetProfile(ctx context.Context, req *connect.Request[v1.GetProfileRequest]) (*connect.Response[v1.GetProfileResponse], error) {
+	return c.getProfile.CallUnary(ctx, req)
+}
+
+// SetProfile calls notifier.v1.AdminService.SetProfile.
+func (c *adminServiceClient) SetProfile(ctx context.Context, req *connect.Request[v1.SetProfileRequest]) (*connect.Response[v1.SetProfileResponse], error) {
+	return c.setProfile.CallUnary(ctx, req)
+}
+
 // AdminServiceHandler is an implementation of the notifier.v1.AdminService service.
 type AdminServiceHandler interface {
 	// Login exchanges the admin password for a JWT (7 days validity). The only
@@ -348,6 +384,14 @@ type AdminServiceHandler interface {
 	// TestToken sends a test notification through a token, applying its prefix
 	// so the operator can see exactly what a producer's messages look like.
 	TestToken(context.Context, *connect.Request[v1.TestTokenRequest]) (*connect.Response[v1.TestTokenResponse], error)
+	// GetProfile returns the bot account's Matrix profile; the avatar is
+	// inlined as bytes (profile pictures are small) so the browser can
+	// preview it without an authenticated media download.
+	GetProfile(context.Context, *connect.Request[v1.GetProfileRequest]) (*connect.Response[v1.GetProfileResponse], error)
+	// SetProfile updates the parts of the profile that are set: a non-empty
+	// display_name renames the bot, non-empty avatar bytes replace its
+	// picture. Both are visible in every room the bot is in.
+	SetProfile(context.Context, *connect.Request[v1.SetProfileRequest]) (*connect.Response[v1.SetProfileResponse], error)
 }
 
 // NewAdminServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -453,6 +497,18 @@ func NewAdminServiceHandler(svc AdminServiceHandler, opts ...connect.HandlerOpti
 		connect.WithSchema(adminServiceMethods.ByName("TestToken")),
 		connect.WithHandlerOptions(opts...),
 	)
+	adminServiceGetProfileHandler := connect.NewUnaryHandler(
+		AdminServiceGetProfileProcedure,
+		svc.GetProfile,
+		connect.WithSchema(adminServiceMethods.ByName("GetProfile")),
+		connect.WithHandlerOptions(opts...),
+	)
+	adminServiceSetProfileHandler := connect.NewUnaryHandler(
+		AdminServiceSetProfileProcedure,
+		svc.SetProfile,
+		connect.WithSchema(adminServiceMethods.ByName("SetProfile")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/notifier.v1.AdminService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case AdminServiceLoginProcedure:
@@ -487,6 +543,10 @@ func NewAdminServiceHandler(svc AdminServiceHandler, opts ...connect.HandlerOpti
 			adminServiceSendTestNotificationHandler.ServeHTTP(w, r)
 		case AdminServiceTestTokenProcedure:
 			adminServiceTestTokenHandler.ServeHTTP(w, r)
+		case AdminServiceGetProfileProcedure:
+			adminServiceGetProfileHandler.ServeHTTP(w, r)
+		case AdminServiceSetProfileProcedure:
+			adminServiceSetProfileHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -558,4 +618,12 @@ func (UnimplementedAdminServiceHandler) SendTestNotification(context.Context, *c
 
 func (UnimplementedAdminServiceHandler) TestToken(context.Context, *connect.Request[v1.TestTokenRequest]) (*connect.Response[v1.TestTokenResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("notifier.v1.AdminService.TestToken is not implemented"))
+}
+
+func (UnimplementedAdminServiceHandler) GetProfile(context.Context, *connect.Request[v1.GetProfileRequest]) (*connect.Response[v1.GetProfileResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("notifier.v1.AdminService.GetProfile is not implemented"))
+}
+
+func (UnimplementedAdminServiceHandler) SetProfile(context.Context, *connect.Request[v1.SetProfileRequest]) (*connect.Response[v1.SetProfileResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("notifier.v1.AdminService.SetProfile is not implemented"))
 }

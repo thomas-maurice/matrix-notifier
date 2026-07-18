@@ -134,5 +134,44 @@ const origin = window.location.origin
   -d '{"username":"TrueNAS","text":"Pool tank is healthy again"}'</code></pre>
       </div>
     </div>
+
+    <h4 class="mb-3 mt-4"><i class="fa-solid fa-clock-rotate-left me-2"></i>Room retention (purging old notifications)</h4>
+    <div class="card mb-3">
+      <div class="card-body">
+        <p>
+          Notification rooms grow forever by default. Matrix supports
+          per-room retention: the homeserver deletes events older than a
+          lifetime you set on the room. This is homeserver-side — the bot
+          needs no configuration.
+        </p>
+        <p class="mb-1">
+          <strong>1. Enable retention on the homeserver</strong> (Synapse
+          <code>homeserver.yaml</code> — it is off by default; the purge job
+          runs in the background):
+        </p>
+        <pre class="bg-body-tertiary p-2 rounded"><code>retention:
+  enabled: true</code></pre>
+        <p class="mb-1">
+          <strong>2. Set the policy on the room</strong> with an
+          <code>m.room.retention</code> state event
+          (<code>max_lifetime</code> is in milliseconds — the example is 7
+          days). In Element: enable developer mode, then
+          <code>/devtools</code> in the room → Send custom state event.
+          Or with any access token of a room admin:
+        </p>
+        <pre class="bg-body-tertiary p-2 rounded"><code>curl -X PUT \
+  'https://homeserver/_matrix/client/v3/rooms/!roomid:server/state/m.room.retention' \
+  -H 'Authorization: Bearer &lt;access token&gt;' \
+  -H 'Content-Type: application/json' \
+  -d '{"max_lifetime": 604800000}'</code></pre>
+        <p class="mb-0">
+          Deleting events does not automatically free attachment media;
+          pair it with Synapse's <code>media_retention</code> setting
+          (<code>local_media_lifetime</code>) so charts and images are
+          purged too. One-off cleanups can use Synapse's admin
+          <em>purge history</em> API instead.
+        </p>
+      </div>
+    </div>
   </div>
 </template>

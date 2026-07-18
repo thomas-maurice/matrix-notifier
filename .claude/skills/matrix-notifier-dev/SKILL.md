@@ -170,6 +170,7 @@ curl -s -X POST http://localhost:8686/notifier.v1.AdminService/ListChannels \
 # UpdateChannel, DeleteChannel, LeaveRoom, ListTokens, CreateToken
 # {name, kind, channel, prefix}, UpdateToken, DeleteToken,
 # SendTestNotification {channel}, TestToken {name}, Logout,
+# GetProfile, SetProfile {displayName, avatar (base64 bytes)},
 # ChangeAdminPassword {currentPassword, newPassword} (rotates the JWT
 # secret: kills ALL other sessions, returns a fresh token for the caller)
 ```
@@ -235,6 +236,17 @@ admin, open the room, "Verify user" on the bot — it auto-accepts SAS.
 - **Health** — `GET /health` is real: 503 with a reason when sync age > 90s
   or not logged in. `GET /metrics` has `matrix_notifier_sync_age_seconds`,
   delivered/failed counters per channel/kind.
+
+## Bot profile
+
+Display name + avatar are managed at RUNTIME via the admin API
+(`GetProfile`/`SetProfile` RPCs, UI Settings tab), NOT the config file.
+`Bot.Profile`/`Bot.SetProfile` in bot.go wrap the Matrix profile +
+media-upload calls; GetProfile inlines the avatar bytes (base64 in Connect
+JSON) so the browser previews it without authenticated media. SetProfile
+caps avatars at 1 MiB and rejects non-image bytes. The UI Docs tab also
+documents room retention (`m.room.retention` + Synapse `retention.enabled`)
+for purging old notifications.
 
 ## Identity model (don't break it)
 

@@ -30,6 +30,8 @@ type Matrix interface {
 	ResolveRoom(ctx context.Context, room string) (string, error)
 	JoinedRooms(ctx context.Context) ([]matrix.RoomInfo, error)
 	LeaveRoom(ctx context.Context, roomID string) error
+	Profile(ctx context.Context) (matrix.Profile, error)
+	SetProfile(ctx context.Context, displayName string, avatar []byte) error
 }
 
 type Server struct {
@@ -282,6 +284,35 @@ func (s *Server) TestToken(ctx context.Context, req *connect.Request[notifierv1.
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 	return connect.NewResponse(&notifierv1.TestTokenResponse{}), nil
+}
+
+func (s *Server) GetProfile(ctx context.Context, _ *connect.Request[notifierv1.GetProfileRequest]) (*connect.Response[notifierv1.GetProfileResponse], error) {
+	p, err := s.bot.Profile(ctx)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+	return connect.NewResponse(&notifierv1.GetProfileResponse{
+		DisplayName: p.DisplayName,
+		Avatar:      p.Avatar,
+		AvatarMime:  p.AvatarMIME,
+	}), nil
+}
+
+// maxAvatarBytes bounds SetProfile uploads: avatars are rendered at chat
+// size, anything past 1 MiB is a mistake and would bloat the media repo.
+const maxAvatarBytes = 1 << 20
+
+func (s *Server) SetProfile(ctx context.Context, req *connect.Request[notifierv1.SetProfileRequest]) (*connect.Response[notifierv1.SetProfileResponse], error) {
+	if req.Msg.DisplayName == "" && len(req.Msg.Avatar) == 0 {
+		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("nothing to change: set display_name and/or avatar"))
+	}
+	if len(req.Msg.Avatar) > maxAvatarBytes {
+		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("avatar exceeds %d bytes", maxAvatarBytes))
+	}
+	if err := s.bot.SetProfile(ctx, req.Msg.DisplayName, req.Msg.Avatar); err != nil {
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+	return connect.NewResponse(&notifierv1.SetProfileResponse{}), nil
 }
 
 func (s *Server) protoChannel(ctx context.Context, ch store.Channel) *notifierv1.Channel {

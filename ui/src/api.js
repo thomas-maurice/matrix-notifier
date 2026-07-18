@@ -52,6 +52,9 @@ export const api = {
   deleteToken: (name) => call('DeleteToken', { name }),
   testToken: (name) => call('TestToken', { name }),
   sendTest: (channel) => call('SendTestNotification', { channel }),
+  getProfile: () => call('GetProfile'),
+  // avatar is base64-encoded bytes (Connect JSON encoding for proto bytes).
+  setProfile: (displayName, avatar) => call('SetProfile', { displayName, avatar }),
 }
 
 export { call }

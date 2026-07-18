@@ -21,8 +21,9 @@ import (
 )
 
 type fakeBot struct {
-	sent []string
-	left []string
+	sent    []string
+	left    []string
+	profile matrix.Profile
 }
 
 func (f *fakeBot) Send(_ context.Context, roomID string, _ notify.Notification) error {
@@ -56,6 +57,20 @@ func (f *fakeBot) JoinedRooms(context.Context) ([]matrix.RoomInfo, error) {
 
 func (f *fakeBot) LeaveRoom(_ context.Context, roomID string) error {
 	f.left = append(f.left, roomID)
+	return nil
+}
+
+func (f *fakeBot) Profile(context.Context) (matrix.Profile, error) {
+	return f.profile, nil
+}
+
+func (f *fakeBot) SetProfile(_ context.Context, displayName string, avatar []byte) error {
+	if displayName != "" {
+		f.profile.DisplayName = displayName
+	}
+	if len(avatar) > 0 {
+		f.profile.Avatar = avatar
+	}
 	return nil
 }
 
@@ -237,4 +252,32 @@ func TestStatus(t *testing.T) {
 	assert.True(t, resp.Msg.Verified)
 	assert.Equal(t, "@bot:x", resp.Msg.UserId)
 	assert.Equal(t, "sqlite", resp.Msg.DatabaseType)
+}
+
+// The profile RPCs drive the bot's public identity: a set must round-trip
+// through a get, an empty set is a caller mistake (invalid, not a no-op),
+// and an oversized avatar must be rejected before reaching the homeserver.
+func TestProfileRoundTrip(t *testing.T) {
+	client, bot := newAuthedClient(t, "test-admin-token")
+	ctx := context.Background()
+
+	_, err := client.SetProfile(ctx, connect.NewRequest(&notifierv1.SetProfileRequest{
+		DisplayName: "Notifier",
+		Avatar:      []byte("png-bytes"),
+	}))
+	require.NoError(t, err)
+	assert.Equal(t, "Notifier", bot.profile.DisplayName)
+
+	resp, err := client.GetProfile(ctx, connect.NewRequest(&notifierv1.GetProfileRequest{}))
+	require.NoError(t, err)
+	assert.Equal(t, "Notifier", resp.Msg.DisplayName)
+	assert.Equal(t, []byte("png-bytes"), resp.Msg.Avatar)
+
+	_, err = client.SetProfile(ctx, connect.NewRequest(&notifierv1.SetProfileRequest{}))
+	assert.Equal(t, connect.CodeInvalidArgument, connect.CodeOf(err))
+
+	_, err = client.SetProfile(ctx, connect.NewRequest(&notifierv1.SetProfileRequest{
+		Avatar: make([]byte, maxAvatarBytes+1),
+	}))
+	assert.Equal(t, connect.CodeInvalidArgument, connect.CodeOf(err))
 }
