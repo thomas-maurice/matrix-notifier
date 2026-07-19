@@ -59,6 +59,7 @@ func main() {
 	})
 	rootCmd.AddCommand(tokenCmd)
 	rootCmd.AddCommand(newSendCmd())
+	rootCmd.AddCommand(newVerifyIdentityCmd())
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, "error:", err)

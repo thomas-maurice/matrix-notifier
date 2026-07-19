@@ -317,6 +317,11 @@ for purging old notifications.
 recovery key (automatic); recovery-key loss requires
 `--reset-identity` (destructive: logs out devices, new cross-signing keys,
 everyone re-verifies). Never put `--reset-identity` in a restart loop.
+**Backup = recovery.key ONLY** — never snapshot/restore the crypto store or
+pickle.key (megolm ratchet replay + olm account desync).
+`matrix-notifier verify-identity -c config.yaml` proves the on-disk key
+still matches the server (temp device, removed after; exit 0/1, cron-able;
+`internal/matrix/verify.go`). Covered by the integration test.
 
 ## Production (context, not for agents to touch casually)
 

@@ -11,6 +11,7 @@ package integration
 import (
 	"context"
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -148,6 +149,17 @@ func TestEndToEndEncryptedDelivery(t *testing.T) {
 	edit := waitForEdit(t, verifier, 30*time.Second)
 	require.Equal(t, eventID, edit.editOf, "the edit must target the original firing message")
 	require.Contains(t, edit.body, resolvedMarker, "verifier should decrypt the edited content")
+
+	// verify-identity: a throwaway device armed with nothing but the config
+	// and data_dir/recovery.key must prove the identity end to end — this
+	// is the disaster-recovery guarantee the backup story rests on.
+	require.NoError(t, matrix.VerifyIdentity(ctx, cfg))
+
+	// A wrong recovery key must fail loudly, not report a healthy identity.
+	badCfg := *cfg
+	badCfg.DataDir = t.TempDir()
+	require.NoError(t, os.WriteFile(filepath.Join(badCfg.DataDir, "recovery.key"), []byte("EsTxNotARealRecoveryKey\n"), 0o600))
+	require.Error(t, matrix.VerifyIdentity(ctx, &badCfg), "a corrupted recovery key must not verify")
 }
 
 // message is a decrypted incoming message; editOf carries the target event

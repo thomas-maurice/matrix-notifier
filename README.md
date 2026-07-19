@@ -230,6 +230,24 @@ Key for the bot's account.
 | Crypto store (olm sessions) | the configured database      | recreated on start (new device)  |
 | Channels + tokens           | the configured database      | recreate via UI/API              |
 
+Do **not** back up the crypto store or the pickle key: megolm sessions
+ratchet forward on every send, so restoring a snapshot replays ratchet
+state and desyncs the device from the homeserver. `recovery.key` is the
+single file to protect — and the single file that suffices.
+
+### Verifying the recovery key still works
+
+```sh
+matrix-notifier verify-identity --config config.yaml
+```
+
+logs in as a **temporary device** (removed afterwards), unlocks the
+server-side SSSS with `recovery.key`, decrypts the private cross-signing
+keys and checks the derived master key against the one published on the
+server. One line of output, exit 0/1 — run it from cron so a silently
+mismatched key (e.g. after an identity reset from another session) is
+discovered before a disaster, not during one.
+
 ### Reset with the recovery key (crypto DB / pickle key / host lost)
 
 Nothing to do — this is automatic. Keep (or restore) `recovery.key` in
