@@ -14,12 +14,12 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	notifierv1 "github.com/thomas-maurice/matrix-notifier/gen/notifier/v1"
-	"github.com/thomas-maurice/matrix-notifier/gen/notifier/v1/notifierv1connect"
-	"github.com/thomas-maurice/matrix-notifier/internal/config"
-	"github.com/thomas-maurice/matrix-notifier/internal/matrix"
-	"github.com/thomas-maurice/matrix-notifier/internal/notify"
-	"github.com/thomas-maurice/matrix-notifier/internal/store"
+	notifierv1 "github.com/thomas-maurice/tocsin/gen/notifier/v1"
+	"github.com/thomas-maurice/tocsin/gen/notifier/v1/notifierv1connect"
+	"github.com/thomas-maurice/tocsin/internal/config"
+	"github.com/thomas-maurice/tocsin/internal/matrix"
+	"github.com/thomas-maurice/tocsin/internal/notify"
+	"github.com/thomas-maurice/tocsin/internal/store"
 )
 
 type fakeBot struct {

@@ -1,9 +1,15 @@
 ---
-name: matrix-notifier-dev
-description: How to work on the matrix-notifier repo — layout, dev stack lifecycle (up/seed/down/nuke), building, testing with cmdclient, talking to the bot, and troubleshooting. Use for ANY development, debugging, or ops task in this repository.
+name: tocsin-dev
+description: How to work on the tocsin repo — layout, dev stack lifecycle (up/seed/down/nuke), building, testing with cmdclient, talking to the bot, and troubleshooting. Use for ANY development, debugging, or ops task in this repository.
 ---
 
-# Working on matrix-notifier
+# Working on tocsin
+
+Renamed from `matrix-notifier` on 2026-07-19 (repo, module path, binary,
+image, `TOCSIN_*` env prefix, `tcsn_` token prefix). Legacy `mn_...` tokens
+still authenticate (stored as SHA-256 of the full string). Prometheus
+metric names deliberately kept as `matrix_notifier_*` (dashboards/alerts
+reference them) and the Connect package stays `notifier.v1`.
 
 Go Matrix notification gateway: HTTP ingest endpoints (Gotify, Alertmanager,
 Gitea/Forgejo, Slack-compatible) → end-to-end-encrypted Matrix rooms. Routing is **channels**
@@ -53,7 +59,7 @@ back to cortex when done.
 ## Repo structure
 
 ```
-cmd/matrix-notifier/    main, `send` subcommand (CLI client), `token hash`
+cmd/tocsin/    main, `send` subcommand (CLI client), `token hash`
 internal/
   matrix/     bot: login, E2EE (mautrix cryptohelper), cross-signing, SAS
               verification, key backup, !notify commands, room helpers
@@ -68,7 +74,7 @@ internal/
               ingest tokens stored as SHA-256, admin password as argon2id
   ingest/     gotify/, alertmanager/, gitea/, slack/ payload parsing + formatting
   chart/      Prometheus range-query → PNG chart rendering (go-charts v2)
-  config/     viper config, MATRIX_NOTIFIER_* env overrides
+  config/     viper config, TOCSIN_* env overrides
   logging/    slog + charmbracelet handler, logger-in-context
   metrics/    Prometheus collectors
   notify/     Notification struct + Sender interface
@@ -107,7 +113,7 @@ test/integration/       testcontainers Synapse E2E (build tag `integration`)
   supports it.
 
 ```sh
-make build            # ui-ensure + go build → bin/matrix-notifier
+make build            # ui-ensure + go build → bin/tocsin
 make test             # go test -tags goolm ./...
 make test-integration # real Synapse via testcontainers (needs Docker)
 make fuzz             # FuzzParse on all 5 ingest parsers, FUZZTIME=10s each
@@ -137,7 +143,7 @@ make dev-up     # bootstrap.sh: containers, accounts, encrypted room with
                 # canonical alias #notifications:localhost, config.dev.yaml
 make run-dev    # build + run bot in FOREGROUND (blocks — see below)
 make dev-seed   # channel "notifications" + ingest token (bot must be running;
-                # prints the mn_... plaintext token)
+                # prints the tcsn_... plaintext token)
 make dev-down   # stop containers, keep state
 make dev-nuke   # scorched earth: containers+volumes, synapse keys, room id,
                 # config.dev.yaml, bot data/ — dev-up rebuilds from zero
@@ -149,7 +155,7 @@ cached in `dev/.room_id`.
 **Running the bot as an agent** (run-dev blocks): build, then
 
 ```sh
-nohup ./bin/matrix-notifier --config config.dev.yaml > <scratchpad>/bot.log 2>&1 &
+nohup ./bin/tocsin --config config.dev.yaml > <scratchpad>/bot.log 2>&1 &
 # wait for readiness:
 curl -sf http://localhost:8686/health   # {"health":"green"}
 ```
@@ -163,14 +169,14 @@ Before starting, check nothing stale holds the port:
 **Ingest** (token from `make dev-seed`):
 
 ```sh
-curl -X POST 'http://localhost:8686/message?token=mn_...' \
+curl -X POST 'http://localhost:8686/message?token=tcsn_...' \
   -F title='Hello' -F message='**It works!**' -F priority=5
 # also: POST /alertmanager?token=..., POST /gitea?token=... (X-Gitea-Event header)
 ```
 
 **GOTCHA — adding a new ingest endpoint takes TWO registrations:** the gin
 route in `internal/server/server.go` AND the path whitelist in
-`cmd/matrix-notifier/main.go` (the outer mux that splits admin API / ingest /
+`cmd/tocsin/main.go` (the outer mux that splits admin API / ingest /
 embedded UI). Miss the second and the route silently falls through to the
 SPA handler: 200 + index.html, no delivery. Server-level tests exercise
 server.New directly and CANNOT catch this — verify new endpoints against
@@ -197,10 +203,10 @@ a runtime-minted token) — recreate after a nuke via the API:
 # contact point → bot on the host; policy → route + fast grouping; rule: vector(1)>0
 curl -su admin:admin -X POST localhost:8011/api/v1/provisioning/contact-points \
   -H 'Content-Type: application/json' \
-  -d "{\"name\":\"matrix-notifier\",\"type\":\"webhook\",\"settings\":{\"url\":\"http://host.docker.internal:8686/grafana?token=$GTOKEN\"}}"
+  -d "{\"name\":\"tocsin\",\"type\":\"webhook\",\"settings\":{\"url\":\"http://host.docker.internal:8686/grafana?token=$GTOKEN\"}}"
 curl -su admin:admin -X PUT localhost:8011/api/v1/provisioning/policies \
   -H 'Content-Type: application/json' \
-  -d '{"receiver":"matrix-notifier","group_by":["grafana_folder","alertname"],"group_wait":"5s","group_interval":"10s","repeat_interval":"4h"}'
+  -d '{"receiver":"tocsin","group_by":["grafana_folder","alertname"],"group_wait":"5s","group_interval":"10s","repeat_interval":"4h"}'
 # then create a folder (POST /api/folders) and an alert-rule
 # (POST /api/v1/provisioning/alert-rules, datasourceUid dev-prometheus,
 # expr vector(1), threshold C > 0) — fires within ~1 min.
@@ -324,7 +330,7 @@ recovery key (automatic); recovery-key loss requires
 everyone re-verifies). Never put `--reset-identity` in a restart loop.
 **Backup = recovery.key ONLY** — never snapshot/restore the crypto store or
 pickle.key (megolm ratchet replay + olm account desync).
-`matrix-notifier verify-identity -c config.yaml` proves the on-disk key
+`tocsin verify-identity -c config.yaml` proves the on-disk key
 still matches the server (temp device, removed after; exit 0/1, cron-able;
 `internal/matrix/verify.go`). Covered by the integration test.
 
@@ -332,8 +338,8 @@ still matches the server (temp device, removed after; exit 0/1, cron-able;
 
 Prod runs at https://notifier.lil.maurice.fr (`@notifier:matrix.maurice.fr`),
 deployed from `~/git/ansible-basics` (role `matrix_notifier`, host
-synapse.lil.maurice.fr) with secrets in Vault `prod/kv/matrix-notifier`.
-Image: `ghcr.io/thomas-maurice/matrix-notifier:latest` (GHA on master push,
+synapse.lil.maurice.fr) with secrets in Vault `prod/kv/tocsin`.
+Image: `ghcr.io/thomas-maurice/tocsin:latest` (GHA on master push,
 linux/amd64 + linux/arm64, arm64 built under qemu). Weekly dependabot PRs
 (gomod grouped minor/patch, npm in ui/ with TS major pinned out, actions,
 docker). Ask before doing anything prod-facing.

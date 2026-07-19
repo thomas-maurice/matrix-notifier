@@ -31,8 +31,8 @@ type Config struct {
 	Matrix   Matrix   `mapstructure:"matrix"`
 	Database Database `mapstructure:"database"`
 	// AdminTokenHash is the argon2id hash (PHC string) that SEEDS the admin
-	// password in the database on first boot. Generate with `matrix-notifier
-	// token hash`; usually supplied via MATRIX_NOTIFIER_ADMIN_TOKEN_HASH.
+	// password in the database on first boot. Generate with `tocsin
+	// token hash`; usually supplied via TOCSIN_ADMIN_TOKEN_HASH.
 	// Once the credential exists in the database it is authoritative —
 	// change the password via the UI/ChangeAdminPassword, not this value.
 	AdminTokenHash string `mapstructure:"admin_token_hash"`
@@ -76,7 +76,7 @@ func Load(path string) (*Config, error) {
 		v.SetConfigType("yaml")
 		v.AddConfigPath(".")
 	}
-	v.SetEnvPrefix("MATRIX_NOTIFIER")
+	v.SetEnvPrefix("TOCSIN")
 	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	v.AutomaticEnv()
 

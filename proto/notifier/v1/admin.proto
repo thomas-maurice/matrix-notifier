@@ -4,7 +4,7 @@ package notifier.v1;
 
 import "google/protobuf/timestamp.proto";
 
-option go_package = "github.com/thomas-maurice/matrix-notifier/gen/notifier/v1;notifierv1";
+option go_package = "github.com/thomas-maurice/tocsin/gen/notifier/v1;notifierv1";
 
 // AdminService manages channels, ingest tokens, and exposes bot health.
 // All RPCs require the admin bearer token.

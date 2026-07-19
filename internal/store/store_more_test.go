@@ -11,10 +11,10 @@ import (
 func TestHashTokenIsDeterministicAndOneWay(t *testing.T) {
 	// Lookups depend on determinism; storage safety depends on the hash not
 	// being the plaintext.
-	h1 := HashToken("mn_abc")
-	assert.Equal(t, h1, HashToken("mn_abc"))
-	assert.NotEqual(t, h1, HashToken("mn_abd"))
-	assert.NotContains(t, h1, "mn_abc")
+	h1 := HashToken("tcsn_abc")
+	assert.Equal(t, h1, HashToken("tcsn_abc"))
+	assert.NotEqual(t, h1, HashToken("tcsn_abd"))
+	assert.NotContains(t, h1, "tcsn_abc")
 	assert.Len(t, h1, 64) // sha256 hex
 }
 

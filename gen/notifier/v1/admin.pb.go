@@ -2460,7 +2460,7 @@ const file_notifier_v1_admin_proto_rawDesc = "" +
 	"\n" +
 	"GetProfile\x12\x1e.notifier.v1.GetProfileRequest\x1a\x1f.notifier.v1.GetProfileResponse\"\x00\x12O\n" +
 	"\n" +
-	"SetProfile\x12\x1e.notifier.v1.SetProfileRequest\x1a\x1f.notifier.v1.SetProfileResponse\"\x00BFZDgithub.com/thomas-maurice/matrix-notifier/gen/notifier/v1;notifierv1b\x06proto3"
+	"SetProfile\x12\x1e.notifier.v1.SetProfileRequest\x1a\x1f.notifier.v1.SetProfileResponse\"\x00B=Z;github.com/thomas-maurice/tocsin/gen/notifier/v1;notifierv1b\x06proto3"
 
 var (
 	file_notifier_v1_admin_proto_rawDescOnce sync.Once

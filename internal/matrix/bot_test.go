@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/thomas-maurice/matrix-notifier/internal/notify"
+	"github.com/thomas-maurice/tocsin/internal/notify"
 )
 
 func TestBuildMarkdown(t *testing.T) {

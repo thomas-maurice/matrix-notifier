@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/thomas-maurice/matrix-notifier/internal/config"
+	"github.com/thomas-maurice/tocsin/internal/config"
 )
 
 func newTestStore(t *testing.T) *Store {
@@ -29,7 +29,7 @@ func TestTokenLifecycleAndResolution(t *testing.T) {
 	plaintext, tok, err := st.CreateToken(ctx, "prom", KindAlertmanager, "infra", "", nil)
 	require.NoError(t, err)
 	// The plaintext must be usable and must never be stored as-is.
-	assert.True(t, strings.HasPrefix(plaintext, "mn_"))
+	assert.True(t, strings.HasPrefix(plaintext, "tcsn_"))
 	assert.NotEqual(t, plaintext, tok.TokenHash)
 
 	// Resolution routes to the channel's room, restricted by kind.
@@ -42,7 +42,7 @@ func TestTokenLifecycleAndResolution(t *testing.T) {
 	assert.ErrorIs(t, err, ErrNotFound)
 
 	// Wrong tokens never resolve.
-	_, err = st.ResolveToken(ctx, "mn_forged", KindAlertmanager)
+	_, err = st.ResolveToken(ctx, "tcsn_forged", KindAlertmanager)
 	assert.ErrorIs(t, err, ErrNotFound)
 
 	// Resolution stamps LastUsedAt so stale tokens can be audited.

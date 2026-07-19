@@ -8,7 +8,7 @@ import (
 	connect "connectrpc.com/connect"
 	context "context"
 	errors "errors"
-	v1 "github.com/thomas-maurice/matrix-notifier/gen/notifier/v1"
+	v1 "github.com/thomas-maurice/tocsin/gen/notifier/v1"
 	http "net/http"
 	strings "strings"
 )

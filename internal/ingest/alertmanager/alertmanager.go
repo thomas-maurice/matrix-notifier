@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/thomas-maurice/matrix-notifier/internal/notify"
+	"github.com/thomas-maurice/tocsin/internal/notify"
 )
 
 // graphURL anchors a Prometheus generatorURL to the alert's firing window.

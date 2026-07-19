@@ -20,23 +20,23 @@ import (
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
 
-	"github.com/thomas-maurice/matrix-notifier/gen/notifier/v1/notifierv1connect"
-	"github.com/thomas-maurice/matrix-notifier/internal/api"
-	"github.com/thomas-maurice/matrix-notifier/internal/chart"
-	"github.com/thomas-maurice/matrix-notifier/internal/config"
-	"github.com/thomas-maurice/matrix-notifier/internal/logging"
-	"github.com/thomas-maurice/matrix-notifier/internal/matrix"
-	"github.com/thomas-maurice/matrix-notifier/internal/outbox"
-	"github.com/thomas-maurice/matrix-notifier/internal/server"
-	"github.com/thomas-maurice/matrix-notifier/internal/store"
-	"github.com/thomas-maurice/matrix-notifier/ui"
+	"github.com/thomas-maurice/tocsin/gen/notifier/v1/notifierv1connect"
+	"github.com/thomas-maurice/tocsin/internal/api"
+	"github.com/thomas-maurice/tocsin/internal/chart"
+	"github.com/thomas-maurice/tocsin/internal/config"
+	"github.com/thomas-maurice/tocsin/internal/logging"
+	"github.com/thomas-maurice/tocsin/internal/matrix"
+	"github.com/thomas-maurice/tocsin/internal/outbox"
+	"github.com/thomas-maurice/tocsin/internal/server"
+	"github.com/thomas-maurice/tocsin/internal/store"
+	"github.com/thomas-maurice/tocsin/ui"
 )
 
 func main() {
 	var configPath string
 	var resetIdentity bool
 	rootCmd := &cobra.Command{
-		Use:           "matrix-notifier",
+		Use:           "tocsin",
 		Short:         "HTTP notification gateway (Gotify + Alertmanager compatible) that delivers to encrypted Matrix rooms",
 		SilenceUsage:  true,
 		SilenceErrors: true,
@@ -51,7 +51,7 @@ func main() {
 	tokenCmd.AddCommand(&cobra.Command{
 		Use:   "hash [token]",
 		Short: "Print the argon2id hash of an admin token (reads stdin if no argument)",
-		Long:  "Hash an admin API token for the admin_token_hash config key / MATRIX_NOTIFIER_ADMIN_TOKEN_HASH env var. Prefer piping via stdin so the token stays out of shell history.",
+		Long:  "Hash an admin API token for the admin_token_hash config key / TOCSIN_ADMIN_TOKEN_HASH env var. Prefer piping via stdin so the token stays out of shell history.",
 		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return hashToken(cmd.OutOrStdout(), cmd.InOrStdin(), args)

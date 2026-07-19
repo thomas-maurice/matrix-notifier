@@ -8,7 +8,7 @@ import (
 	"maunium.net/go/mautrix/event"
 	"maunium.net/go/mautrix/id"
 
-	"github.com/thomas-maurice/matrix-notifier/internal/logging"
+	"github.com/thomas-maurice/tocsin/internal/logging"
 )
 
 // inRoomVerificationEventTypes are the in-room verification steps that

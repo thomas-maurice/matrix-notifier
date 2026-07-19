@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/thomas-maurice/matrix-notifier/internal/notify"
+	"github.com/thomas-maurice/tocsin/internal/notify"
 )
 
 func parseJSON(t *testing.T, body string) notify.Notification {

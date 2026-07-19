@@ -1,4 +1,4 @@
-name: matrix-notifier-dev
+name: tocsin-dev
 
 services:
   postgres:

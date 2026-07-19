@@ -12,15 +12,15 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
-	"github.com/thomas-maurice/matrix-notifier/internal/ingest/alertmanager"
-	"github.com/thomas-maurice/matrix-notifier/internal/ingest/gitea"
-	"github.com/thomas-maurice/matrix-notifier/internal/ingest/gotify"
-	"github.com/thomas-maurice/matrix-notifier/internal/ingest/grafana"
-	"github.com/thomas-maurice/matrix-notifier/internal/ingest/slack"
-	"github.com/thomas-maurice/matrix-notifier/internal/logging"
-	"github.com/thomas-maurice/matrix-notifier/internal/metrics"
-	"github.com/thomas-maurice/matrix-notifier/internal/notify"
-	"github.com/thomas-maurice/matrix-notifier/internal/store"
+	"github.com/thomas-maurice/tocsin/internal/ingest/alertmanager"
+	"github.com/thomas-maurice/tocsin/internal/ingest/gitea"
+	"github.com/thomas-maurice/tocsin/internal/ingest/gotify"
+	"github.com/thomas-maurice/tocsin/internal/ingest/grafana"
+	"github.com/thomas-maurice/tocsin/internal/ingest/slack"
+	"github.com/thomas-maurice/tocsin/internal/logging"
+	"github.com/thomas-maurice/tocsin/internal/metrics"
+	"github.com/thomas-maurice/tocsin/internal/notify"
+	"github.com/thomas-maurice/tocsin/internal/store"
 )
 
 // Health reports whether the bot can deliver (used by /health).
@@ -60,7 +60,7 @@ func New(log *slog.Logger, health Health, st *store.Store, q Queue, rl *limiters
 		}
 	})
 	r.GET("/version", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{"version": "2.6.3", "commit": "matrix-notifier", "buildDate": ""})
+		c.JSON(http.StatusOK, gin.H{"version": "2.6.3", "commit": "tocsin", "buildDate": ""})
 	})
 	r.GET("/metrics", gin.WrapH(promhttp.Handler()))
 

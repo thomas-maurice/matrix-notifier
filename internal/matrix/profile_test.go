@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"maunium.net/go/mautrix"
 
-	"github.com/thomas-maurice/matrix-notifier/internal/config"
+	"github.com/thomas-maurice/tocsin/internal/config"
 )
 
 // pngHeader makes DetectContentType say image/png.

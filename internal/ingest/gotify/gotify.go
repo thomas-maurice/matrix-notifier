@@ -11,7 +11,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/thomas-maurice/matrix-notifier/internal/notify"
+	"github.com/thomas-maurice/tocsin/internal/notify"
 )
 
 // Message mirrors the request body of Gotify's POST /message.

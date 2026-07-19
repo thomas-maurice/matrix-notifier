@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/thomas-maurice/matrix-notifier/internal/notify"
+	"github.com/thomas-maurice/tocsin/internal/notify"
 )
 
 type user struct {

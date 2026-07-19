@@ -78,7 +78,7 @@ onMounted(async () => {
   <nav class="mb-6 border-b">
     <div class="flex h-14 items-center gap-6 px-6">
       <span class="flex items-center gap-2 font-semibold">
-        <Bell class="size-4" />matrix-notifier
+        <Bell class="size-4" />tocsin
       </span>
       <div v-if="authed" class="flex flex-1 items-center gap-1">
         <button
@@ -121,12 +121,12 @@ onMounted(async () => {
 
   <footer class="mt-10 border-t px-6 py-4 text-center text-xs text-muted-foreground">
     <a
-      href="https://github.com/thomas-maurice/matrix-notifier"
+      href="https://github.com/thomas-maurice/tocsin"
       target="_blank"
       rel="noopener"
       class="inline-flex items-center gap-1.5 transition-colors hover:text-foreground"
     >
-      <i class="fa-brands fa-github"></i>thomas-maurice/matrix-notifier
+      <i class="fa-brands fa-github"></i>thomas-maurice/tocsin
     </a>
   </footer>
 </template>

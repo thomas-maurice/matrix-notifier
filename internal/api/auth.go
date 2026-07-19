@@ -14,7 +14,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/time/rate"
 
-	"github.com/thomas-maurice/matrix-notifier/internal/store"
+	"github.com/thomas-maurice/tocsin/internal/store"
 )
 
 var (
@@ -27,7 +27,7 @@ const (
 	sessionTTL = 7 * 24 * time.Hour
 	// sessionCookie carries the JWT for browser sessions; httpOnly so the UI
 	// never touches (or stores) the token itself.
-	sessionCookie = "mn_admin_session"
+	sessionCookie = "tcsn_admin_session"
 	// loginProcedure is the only RPC reachable without a session.
 	loginProcedure = "/notifier.v1.AdminService/Login"
 )

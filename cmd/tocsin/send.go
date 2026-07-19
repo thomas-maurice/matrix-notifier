@@ -15,7 +15,7 @@ import (
 )
 
 // newSendCmd builds the `send` subcommand: a small client that posts a
-// notification to a matrix-notifier's Gotify endpoint. Handy for scripts and
+// notification to a tocsin's Gotify endpoint. Handy for scripts and
 // cron jobs.
 func newSendCmd() *cobra.Command {
 	var (
@@ -27,18 +27,18 @@ func newSendCmd() *cobra.Command {
 	)
 	cmd := &cobra.Command{
 		Use:   "send [message]",
-		Short: "Send a notification to a matrix-notifier instance",
-		Long: "Post a notification to a matrix-notifier (Gotify endpoint). The message is\n" +
+		Short: "Send a notification to a tocsin instance",
+		Long: "Post a notification to a tocsin (Gotify endpoint). The message is\n" +
 			"taken from the argument, --message, or stdin (in that order).\n\n" +
-			"Server and token default to the MATRIX_NOTIFIER_URL and\n" +
-			"MATRIX_NOTIFIER_TOKEN environment variables.",
+			"Server and token default to the TOCSIN_URL and\n" +
+			"TOCSIN_TOKEN environment variables.",
 		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if server == "" {
-				server = os.Getenv("MATRIX_NOTIFIER_URL")
+				server = os.Getenv("TOCSIN_URL")
 			}
 			if token == "" {
-				token = os.Getenv("MATRIX_NOTIFIER_TOKEN")
+				token = os.Getenv("TOCSIN_TOKEN")
 			}
 			if len(args) == 1 {
 				message = args[0]
@@ -53,8 +53,8 @@ func newSendCmd() *cobra.Command {
 			return send(server, token, title, message, priority)
 		},
 	}
-	cmd.Flags().StringVar(&server, "url", "", "notifier base URL (env MATRIX_NOTIFIER_URL)")
-	cmd.Flags().StringVar(&token, "token", "", "ingest token (env MATRIX_NOTIFIER_TOKEN)")
+	cmd.Flags().StringVar(&server, "url", "", "notifier base URL (env TOCSIN_URL)")
+	cmd.Flags().StringVar(&token, "token", "", "ingest token (env TOCSIN_TOKEN)")
 	cmd.Flags().StringVarP(&title, "title", "t", "", "notification title")
 	cmd.Flags().StringVarP(&message, "message", "m", "", "notification message (markdown; else read from stdin)")
 	cmd.Flags().IntVarP(&priority, "priority", "p", 5, "Gotify priority (>=8 is emergency)")
@@ -63,10 +63,10 @@ func newSendCmd() *cobra.Command {
 
 func send(server, token, title, message string, priority int) error {
 	if server == "" {
-		return fmt.Errorf("no server URL (--url or MATRIX_NOTIFIER_URL)")
+		return fmt.Errorf("no server URL (--url or TOCSIN_URL)")
 	}
 	if token == "" {
-		return fmt.Errorf("no token (--token or MATRIX_NOTIFIER_TOKEN)")
+		return fmt.Errorf("no token (--token or TOCSIN_TOKEN)")
 	}
 	if message == "" {
 		return fmt.Errorf("empty message")

@@ -14,7 +14,7 @@ const origin = window.location.origin
     <h4 class="flex items-center gap-2 text-lg font-semibold"><BookOpen class="size-5" />Webhook endpoints</h4>
     <p class="text-muted-foreground">
       Every endpoint authenticates with an <strong>ingest token</strong>
-      (<code>mn_...</code>, minted on the Tokens tab). A token belongs to a
+      (<code>tcsn_...</code>, minted on the Tokens tab). A token belongs to a
       channel — that channel's Matrix room is where the notification lands.
       Notification rooms must be <strong>encrypted and named</strong>: a
       nameless two-member room is indistinguishable from a direct message,
@@ -22,7 +22,7 @@ const origin = window.location.origin
       Tokens can be restricted to a single endpoint kind, carry an optional
       prefix prepended to every message, and are rate limited per token.
       Unless noted otherwise, the token can be presented as
-      <code>?token=mn_...</code>, an <code>Authorization: Bearer mn_...</code>
+      <code>?token=tcsn_...</code>, an <code>Authorization: Bearer tcsn_...</code>
       header, or an <code>X-Gotify-Key</code> header.
     </p>
     <p class="text-muted-foreground">
@@ -48,7 +48,7 @@ const origin = window.location.origin
           <code>message</code> (rendered as markdown) and
           <code>priority</code> (0–10, ≥8 is emergency).
         </p>
-        <pre><code>curl -X POST '{{ origin }}/message?token=mn_...' \
+        <pre><code>curl -X POST '{{ origin }}/message?token=tcsn_...' \
   -F title='Backup done' -F message='**All good**' -F priority=3</code></pre>
       </div>
     </Card>
@@ -74,9 +74,9 @@ const origin = window.location.origin
         </p>
         <p class="mb-1">Alertmanager configuration:</p>
         <pre><code>receivers:
-  - name: matrix-notifier
+  - name: tocsin
     webhook_configs:
-      - url: {{ origin }}/alertmanager?token=mn_...
+      - url: {{ origin }}/alertmanager?token=tcsn_...
         send_resolved: true</code></pre>
       </div>
     </Card>
@@ -105,7 +105,7 @@ const origin = window.location.origin
           <li>Target URL: <code>{{ origin }}/forgejo</code></li>
           <li>Method <code>POST</code>, content type <code>application/json</code></li>
           <li>
-            Authorization Header: <code>Bearer mn_...</code> — preferred over
+            Authorization Header: <code>Bearer tcsn_...</code> — preferred over
             <code>?token=</code> in the URL, which ends up in proxy logs
           </li>
           <li>
@@ -143,11 +143,11 @@ const origin = window.location.origin
         <p>
           Slack senders cannot set headers, so the token rides in the URL:
           configure the webhook URL as
-          <code>{{ origin }}/slack?token=mn_...</code>. On TrueNAS SCALE:
+          <code>{{ origin }}/slack?token=tcsn_...</code>. On TrueNAS SCALE:
           System → Alert Settings → Add alert service of type
           <em>Slack</em>, paste that URL as the webhook URL.
         </p>
-        <pre><code>curl -X POST '{{ origin }}/slack?token=mn_...' \
+        <pre><code>curl -X POST '{{ origin }}/slack?token=tcsn_...' \
   -H 'Content-Type: application/json' \
   -d '{"username":"TrueNAS","text":"Pool tank is healthy again"}'</code></pre>
       </div>
@@ -172,7 +172,7 @@ const origin = window.location.origin
         <p>
           Configure in Grafana: <em>Alerting → Contact points → New contact
           point</em>, integration <em>Webhook</em>, URL
-          <code>{{ origin }}/grafana?token=mn_...</code> (Grafana sends no
+          <code>{{ origin }}/grafana?token=tcsn_...</code> (Grafana sends no
           custom headers, so the token rides in the URL). Route alerts to it
           via your notification policy.
         </p>
@@ -194,7 +194,7 @@ const origin = window.location.origin
           them still delivers, but shows up as a bare alert name at
           priority 3.
         </p>
-        <pre><code>curl -X POST '{{ origin }}/grafana?token=mn_...' \
+        <pre><code>curl -X POST '{{ origin }}/grafana?token=tcsn_...' \
   -H 'Content-Type: application/json' \
   -d '{"status":"firing","alerts":[{"status":"firing",
        "labels":{"alertname":"SensorOffline","severity":"warning"},

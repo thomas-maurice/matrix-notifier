@@ -17,7 +17,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 
-	"github.com/thomas-maurice/matrix-notifier/internal/config"
+	"github.com/thomas-maurice/tocsin/internal/config"
 )
 
 // TokenKind restricts which ingest endpoint a token may be used on.
@@ -230,7 +230,7 @@ func (s *Store) CreateToken(ctx context.Context, name string, kind TokenKind, ch
 	if _, err := rand.Read(raw); err != nil {
 		return "", nil, fmt.Errorf("generating token: %w", err)
 	}
-	plaintext := "mn_" + hex.EncodeToString(raw)
+	plaintext := "tcsn_" + hex.EncodeToString(raw)
 	tok := IngestToken{
 		Name:      name,
 		Kind:      kind,

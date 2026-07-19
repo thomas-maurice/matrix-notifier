@@ -11,8 +11,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/thomas-maurice/matrix-notifier/internal/config"
-	"github.com/thomas-maurice/matrix-notifier/internal/store"
+	"github.com/thomas-maurice/tocsin/internal/config"
+	"github.com/thomas-maurice/tocsin/internal/store"
 )
 
 // recordingQueue captures what the ingest endpoints enqueue; delivery itself
@@ -58,7 +58,7 @@ func newTestServer(t *testing.T) (*recordingQueue, *store.Store, http.Handler, s
 // unauthenticated request must never result in a queued message.
 func TestRejectsMissingOrWrongToken(t *testing.T) {
 	q, _, h, _, _ := newTestServer(t)
-	for _, target := range []string{"/message", "/alertmanager", "/message?token=mn_wrong"} {
+	for _, target := range []string{"/message", "/alertmanager", "/message?token=tcsn_wrong"} {
 		req := httptest.NewRequest("POST", target, strings.NewReader(`{"message":"x"}`))
 		req.Header.Set("Content-Type", "application/json")
 		w := httptest.NewRecorder()

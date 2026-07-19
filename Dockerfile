@@ -16,8 +16,8 @@ COPY . .
 COPY --from=ui /src/ui/dist ui/dist
 ARG VERSION=dev
 RUN CGO_ENABLED=1 go build -tags goolm \
-    -ldflags "-s -w -X github.com/thomas-maurice/matrix-notifier/internal/api.Version=${VERSION}" \
-    -o /matrix-notifier ./cmd/matrix-notifier
+    -ldflags "-s -w -X github.com/thomas-maurice/tocsin/internal/api.Version=${VERSION}" \
+    -o /tocsin ./cmd/tocsin
 
 # Stage 3: runtime.
 FROM debian:bookworm-slim
@@ -25,10 +25,10 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends ca-certificates \
     && rm -rf /var/lib/apt/lists/* \
     && useradd --system --uid 1000 --create-home --home-dir /data notifier
-COPY --from=build /matrix-notifier /usr/local/bin/matrix-notifier
+COPY --from=build /tocsin /usr/local/bin/tocsin
 USER notifier
 WORKDIR /data
 VOLUME /data
 EXPOSE 8686
-ENTRYPOINT ["/usr/local/bin/matrix-notifier"]
+ENTRYPOINT ["/usr/local/bin/tocsin"]
 CMD ["--config", "/config/config.yaml"]

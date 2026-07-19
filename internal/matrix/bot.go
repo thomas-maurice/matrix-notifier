@@ -28,10 +28,10 @@ import (
 
 	_ "github.com/jackc/pgx/v5/stdlib" // registers the pgx driver
 
-	"github.com/thomas-maurice/matrix-notifier/internal/config"
-	"github.com/thomas-maurice/matrix-notifier/internal/logging"
-	"github.com/thomas-maurice/matrix-notifier/internal/metrics"
-	"github.com/thomas-maurice/matrix-notifier/internal/notify"
+	"github.com/thomas-maurice/tocsin/internal/config"
+	"github.com/thomas-maurice/tocsin/internal/logging"
+	"github.com/thomas-maurice/tocsin/internal/metrics"
+	"github.com/thomas-maurice/tocsin/internal/notify"
 )
 
 const (
@@ -102,7 +102,7 @@ func New(ctx context.Context, cfg *config.Config) (*Bot, error) {
 		Type:                     mautrix.AuthTypePassword,
 		Identifier:               mautrix.UserIdentifier{Type: mautrix.IdentifierTypeUser, User: cfg.Matrix.UserID},
 		Password:                 cfg.Matrix.Password,
-		InitialDeviceDisplayName: "matrix-notifier",
+		InitialDeviceDisplayName: "tocsin",
 	}
 
 	b := &Bot{

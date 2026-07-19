@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	notifierv1 "github.com/thomas-maurice/matrix-notifier/gen/notifier/v1"
+	notifierv1 "github.com/thomas-maurice/tocsin/gen/notifier/v1"
 )
 
 func TestCreateChannelValidation(t *testing.T) {

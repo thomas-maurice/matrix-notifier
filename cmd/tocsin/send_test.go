@@ -18,10 +18,10 @@ func TestSend(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	if err := send(srv.URL, "mn_tok", "Title", "hello **world**", 7); err != nil {
+	if err := send(srv.URL, "tcsn_tok", "Title", "hello **world**", 7); err != nil {
 		t.Fatal(err)
 	}
-	if gotToken != "mn_tok" {
+	if gotToken != "tcsn_tok" {
 		t.Fatalf("token not forwarded: %q", gotToken)
 	}
 	// Gotify-shaped JSON body with our fields.

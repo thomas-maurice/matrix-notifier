@@ -53,7 +53,7 @@ func TestLoadRejectsUnknownDatabaseType(t *testing.T) {
 // Secrets are usually injected via environment; the env override contract
 // must not silently break.
 func TestEnvOverride(t *testing.T) {
-	t.Setenv("MATRIX_NOTIFIER_MATRIX_PASSWORD", "from-env")
+	t.Setenv("TOCSIN_MATRIX_PASSWORD", "from-env")
 	cfg, err := Load(writeConfig(t, validConfig))
 	require.NoError(t, err)
 	assert.Equal(t, "from-env", cfg.Matrix.Password)

@@ -10,10 +10,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/thomas-maurice/matrix-notifier/internal/chart"
-	"github.com/thomas-maurice/matrix-notifier/internal/metrics"
-	"github.com/thomas-maurice/matrix-notifier/internal/notify"
-	"github.com/thomas-maurice/matrix-notifier/internal/store"
+	"github.com/thomas-maurice/tocsin/internal/chart"
+	"github.com/thomas-maurice/tocsin/internal/metrics"
+	"github.com/thomas-maurice/tocsin/internal/notify"
+	"github.com/thomas-maurice/tocsin/internal/store"
 )
 
 // Sender is what the dispatcher needs from the bot.

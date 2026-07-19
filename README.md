@@ -1,4 +1,7 @@
-# matrix-notifier
+# tocsin
+
+> **tocsin** /tɔk.sɛ̃/ (the French way — not /ˈtɒk.sɪn/): the alarm bell rung
+> to warn the town that something is on fire.
 
 HTTP notification gateway that delivers to **end-to-end encrypted** Matrix
 rooms. It impersonates servers your tooling already knows how to talk to, so
@@ -24,11 +27,11 @@ nothing needs a Matrix client:
   the Forgejo-only (>= v12) `action_run_failure` / `action_run_recover` /
   `action_run_success` CI events. The event type is read from the
   `X-Gitea-Event` / `X-Forgejo-Event` header; pass the token as `?token=` or
-  set the webhook's Authorization Header field to `Bearer mn_...`. For
+  set the webhook's Authorization Header field to `Bearer tcsn_...`. For
   CI-failure notifications, pick "Custom Events" in the Forgejo webhook
   config and tick only Action Run Failure (and Recover for the all-clear);
   the webhook's Secret field is unused — auth is the ingest token.
-- **Slack incoming webhook**: `POST /slack?token=mn_...` — for tools that
+- **Slack incoming webhook**: `POST /slack?token=tcsn_...` — for tools that
   only speak Slack webhooks (TrueNAS SCALE alert services, Uptime Kuma, ...).
   Accepts a JSON body or the legacy `payload=` form field; reads `text`,
   `blocks` (header/section) and `attachments` (title/text/fallback).
@@ -43,7 +46,7 @@ nothing needs a Matrix client:
   severity mapped to priority: `critical` → 8, `warning` → 5), with the
   alert name linked to the Grafana rule and a 📈 link to the panel/dashboard
   when the rule is bound to one. Configure: Alerting → Contact points →
-  Webhook, URL `https://notifier.example.com/grafana?token=mn_...`.
+  Webhook, URL `https://notifier.example.com/grafana?token=tcsn_...`.
   **Author rules for good notifications**: the message text comes from the
   alert's annotations (`summary`, falling back to `description`, then
   `message`) and the priority from its `severity` label — a rule with
@@ -96,6 +99,10 @@ tokens live in the database and are managed at runtime through the **web
 UI** (served at `/`) or the **Connect RPC admin API**
 (`/notifier.v1.AdminService/...`) — never in the config file.
 
+Tokens are minted as `tcsn_<hex>` and stored as a SHA-256 hash of the full
+string, so tokens from before the rename (`mn_...`) keep authenticating —
+the prefix is cosmetic, no rotation needed.
+
 ## Prometheus charts
 
 Charts are double opt-in: the **channel** must have the chart flag, and the
@@ -147,13 +154,13 @@ a bearer header. Login attempts are rate-limited (argon2 verification is
 expensive by design).
 
 The admin password is stored in the database as an argon2id hash. The config
-key `admin_token_hash` (or `MATRIX_NOTIFIER_ADMIN_TOKEN_HASH`) only **seeds**
+key `admin_token_hash` (or `TOCSIN_ADMIN_TOKEN_HASH`) only **seeds**
 that credential on first boot:
 
 ```sh
 # pick a password, hash it for the seed config:
-openssl rand -hex 24 | tee /dev/stderr | matrix-notifier token hash
-# → put the hash in admin_token_hash (or MATRIX_NOTIFIER_ADMIN_TOKEN_HASH)
+openssl rand -hex 24 | tee /dev/stderr | tocsin token hash
+# → put the hash in admin_token_hash (or TOCSIN_ADMIN_TOKEN_HASH)
 ```
 
 After the first start the database row is authoritative: change the password
@@ -189,7 +196,7 @@ would be self-inflicted DoS).
 
 See [config.example.yaml](config.example.yaml). One database (`sqlite` or
 `postgres`) holds both the E2EE crypto store and the channel/token store
-(GORM, auto-migrated). Every key can be overridden via `MATRIX_NOTIFIER_*`
+(GORM, auto-migrated). Every key can be overridden via `TOCSIN_*`
 env vars.
 
 Operational flow: create an **encrypted, named** room, invite the bot (it
@@ -238,7 +245,7 @@ single file to protect — and the single file that suffices.
 ### Verifying the recovery key still works
 
 ```sh
-matrix-notifier verify-identity --config config.yaml
+tocsin verify-identity --config config.yaml
 ```
 
 logs in as a **temporary device** (removed afterwards), unlocks the
@@ -282,7 +289,7 @@ cross-signing keys exist on the server but the recovery key is unavailable
 The way out is to burn the old identity and mint a new one. Run **once**:
 
 ```sh
-matrix-notifier --config config.yaml --reset-identity
+tocsin --config config.yaml --reset-identity
 ```
 
 This burns the old identity completely (everything authenticated with the
@@ -337,7 +344,7 @@ seeded on first boot — if you change it in the UI, `dev-nuke` resets it).
 Send a test notification with the token `make dev-seed` printed:
 
 ```sh
-curl -X POST 'http://localhost:8686/message?token=mn_...' \
+curl -X POST 'http://localhost:8686/message?token=tcsn_...' \
   -F title='Hello' -F message='**It works!**' -F priority=5
 ```
 
@@ -353,10 +360,10 @@ go run -tags goolm ./dev/cmdclient -room "$(cat dev/.room_id)" -verify   # asser
 The binary doubles as a client for scripts and cron jobs:
 
 ```sh
-export MATRIX_NOTIFIER_URL=https://notifier.example.org
-export MATRIX_NOTIFIER_TOKEN=mn_your-ingest-token
-matrix-notifier send -t "Backup done" "**42 GB** copied"
-echo "or pipe the body in" | matrix-notifier send -t "From cron"
+export TOCSIN_URL=https://notifier.example.org
+export TOCSIN_TOKEN=tcsn_your-ingest-token
+tocsin send -t "Backup done" "**42 GB** copied"
+echo "or pipe the body in" | tocsin send -t "From cron"
 ```
 
 `--url`/`--token` flags override the env vars; `--priority` sets the Gotify
@@ -369,13 +376,13 @@ receiver straight at it (token in the URL):
 
 ```yaml
 receivers:
-  - name: matrix-notifier
+  - name: tocsin
     webhook_configs:
-      - url: https://notifier.example.org/alertmanager?token=mn_your-token
+      - url: https://notifier.example.org/alertmanager?token=tcsn_your-token
         send_resolved: true
 route:
   routes:
-    - receiver: matrix-notifier
+    - receiver: tocsin
       continue: true   # also fall through to your other receivers
 ```
 
@@ -388,7 +395,7 @@ GitHub Actions (mirroring `thomas-maurice/cortex`):
   webhook bodies; `make fuzz FUZZTIME=5m` for a longer local hunt).
 - **build** — on master pushes and `v*` tags: runs the test workflow, then
   builds and pushes a multi-arch (amd64/arm64) image to
-  `ghcr.io/thomas-maurice/matrix-notifier` — `:latest` + `:sha-…` on master,
+  `ghcr.io/thomas-maurice/tocsin` — `:latest` + `:sha-…` on master,
   `:X.Y.Z`/`:X.Y` on tags.
 - **dependabot** — weekly grouped dependency PRs (Go modules, ui npm,
   actions, Dockerfile images); the testcontainers Synapse E2E job is what

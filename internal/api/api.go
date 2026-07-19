@@ -11,11 +11,11 @@ import (
 	"connectrpc.com/connect"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	notifierv1 "github.com/thomas-maurice/matrix-notifier/gen/notifier/v1"
-	"github.com/thomas-maurice/matrix-notifier/internal/logging"
-	"github.com/thomas-maurice/matrix-notifier/internal/matrix"
-	"github.com/thomas-maurice/matrix-notifier/internal/notify"
-	"github.com/thomas-maurice/matrix-notifier/internal/store"
+	notifierv1 "github.com/thomas-maurice/tocsin/gen/notifier/v1"
+	"github.com/thomas-maurice/tocsin/internal/logging"
+	"github.com/thomas-maurice/tocsin/internal/matrix"
+	"github.com/thomas-maurice/tocsin/internal/notify"
+	"github.com/thomas-maurice/tocsin/internal/store"
 )
 
 // Version is stamped via -ldflags at release time.

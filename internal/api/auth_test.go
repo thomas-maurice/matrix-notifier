@@ -12,8 +12,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/thomas-maurice/matrix-notifier/internal/config"
-	"github.com/thomas-maurice/matrix-notifier/internal/store"
+	"github.com/thomas-maurice/tocsin/internal/config"
+	"github.com/thomas-maurice/tocsin/internal/store"
 )
 
 func newTestAuth(t *testing.T, password string) (*AdminAuth, *store.Store) {

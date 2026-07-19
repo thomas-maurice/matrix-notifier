@@ -1,4 +1,4 @@
-# Dev-only Synapse config for matrix-notifier. Copied over the generated
+# Dev-only Synapse config for tocsin. Copied over the generated
 # /data/homeserver.yaml by dev/bootstrap.sh — do not put secrets you care
 # about in here.
 server_name: "localhost"

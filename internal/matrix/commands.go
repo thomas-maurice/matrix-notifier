@@ -9,13 +9,13 @@ import (
 	"maunium.net/go/mautrix/event"
 	"maunium.net/go/mautrix/id"
 
-	"github.com/thomas-maurice/matrix-notifier/internal/logging"
-	"github.com/thomas-maurice/matrix-notifier/internal/notify"
+	"github.com/thomas-maurice/tocsin/internal/logging"
+	"github.com/thomas-maurice/tocsin/internal/notify"
 )
 
 const commandPrefix = "!notify"
 
-const helpText = "**matrix-notifier commands**\n\n" +
+const helpText = "**tocsin commands**\n\n" +
 	"- `!notify ping` — liveness check\n" +
 	"- `!notify status` — device, encryption, key backup, and delivery stats\n" +
 	"- `!notify test` — send a test notification through the delivery path\n" +
@@ -94,7 +94,7 @@ func (b *Bot) statusText(ctx context.Context, roomID id.RoomID) string {
 	}
 	encrypted, _ := b.client.StateStore.IsEncrypted(ctx, roomID)
 	return fmt.Sprintf(
-		"**matrix-notifier status**\n\n"+
+		"**tocsin status**\n\n"+
 			"- device: `%s` (verified: %s)\n"+
 			"- this room encrypted: %t\n"+
 			"- notifications delivered since start: %d\n"+

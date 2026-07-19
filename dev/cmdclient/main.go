@@ -35,7 +35,7 @@ import (
 	"maunium.net/go/mautrix/format"
 	"maunium.net/go/mautrix/id"
 
-	matrixbot "github.com/thomas-maurice/matrix-notifier/internal/matrix"
+	matrixbot "github.com/thomas-maurice/tocsin/internal/matrix"
 )
 
 func main() {

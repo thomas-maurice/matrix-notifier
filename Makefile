@@ -3,7 +3,7 @@ GO_TAGS := goolm
 .PHONY: build test run-dev dev-up dev-down dev-nuke dev-seed ui proto
 
 build: ui-ensure
-	go build -tags $(GO_TAGS) -o bin/matrix-notifier ./cmd/matrix-notifier
+	go build -tags $(GO_TAGS) -o bin/tocsin ./cmd/tocsin
 
 # go:embed needs ui/dist to exist; build the UI once if it never was.
 .PHONY: ui-ensure
@@ -63,4 +63,4 @@ dev-nuke:
 	rm -rf dev/synapse/data dev/.room_id config.dev.yaml data
 
 run-dev: build
-	./bin/matrix-notifier --config config.dev.yaml
+	./bin/tocsin --config config.dev.yaml

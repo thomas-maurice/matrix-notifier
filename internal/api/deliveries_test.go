@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	notifierv1 "github.com/thomas-maurice/matrix-notifier/gen/notifier/v1"
+	notifierv1 "github.com/thomas-maurice/tocsin/gen/notifier/v1"
 )
 
 // Test sends stay synchronous for immediate operator feedback, but must

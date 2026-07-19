@@ -1,4 +1,4 @@
-module github.com/thomas-maurice/matrix-notifier
+module github.com/thomas-maurice/tocsin
 
 go 1.26.5
 

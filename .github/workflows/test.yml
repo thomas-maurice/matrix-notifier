@@ -53,7 +53,7 @@ jobs:
           format: false
           push: false
           breaking: ${{ github.event_name == 'pull_request' }}
-          breaking_against: "https://github.com/thomas-maurice/matrix-notifier.git#branch=master"
+          breaking_against: "https://github.com/thomas-maurice/tocsin.git#branch=master"
 
       - name: Test
         run: go test -race -tags goolm ./...

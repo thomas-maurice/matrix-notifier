@@ -11,7 +11,7 @@ import (
 	"maunium.net/go/mautrix"
 	"maunium.net/go/mautrix/crypto/cryptohelper"
 
-	"github.com/thomas-maurice/matrix-notifier/internal/config"
+	"github.com/thomas-maurice/tocsin/internal/config"
 )
 
 // VerifyIdentity proves that the persisted recovery key ALONE can
@@ -38,7 +38,7 @@ func VerifyIdentity(ctx context.Context, cfg *config.Config) error {
 
 	// Throwaway crypto store: the whole point is proving recovery works
 	// WITHOUT the bot's existing store.
-	tmpDir, err := os.MkdirTemp("", "matrix-notifier-verify-*")
+	tmpDir, err := os.MkdirTemp("", "tocsin-verify-*")
 	if err != nil {
 		return fmt.Errorf("creating temp dir: %w", err)
 	}

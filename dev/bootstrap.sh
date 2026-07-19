@@ -76,7 +76,7 @@ curl -sf -X PUT -H "Authorization: Bearer $ADMIN_TOKEN" \
   -d '{"alias": "#notifications:localhost"}' >/dev/null
 
 echo "==> Writing config.dev.yaml (admin token: dev-admin-token)"
-ADMIN_TOKEN_HASH=$(cd .. && go run -tags goolm ./cmd/matrix-notifier token hash dev-admin-token)
+ADMIN_TOKEN_HASH=$(cd .. && go run -tags goolm ./cmd/tocsin token hash dev-admin-token)
 sed "s|@ADMIN_TOKEN_HASH@|$ADMIN_TOKEN_HASH|" config.dev.template.yaml > ../config.dev.yaml
 
 cat <<EOF
