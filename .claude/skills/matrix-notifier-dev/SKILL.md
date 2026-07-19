@@ -74,7 +74,9 @@ internal/
   notify/     Notification struct + Sender interface
 proto/notifier/v1/      admin.proto — the API source of truth
 gen/                    generated stubs — NEVER edit, `make proto` regenerates
-ui/                     Vue 3 + TypeScript + Vite + Bootstrap (dark);
+ui/                     Vue 3 + TypeScript + Vite + Tailwind 4 (shadcn-style
+                        dark-zinc theme in src/style.css, hand-rolled ui/
+                        components, @lucide/vue icons);
                         ui/src/gen = buf-generated TS client (never edit);
                         embedded via go:embed all:dist — StatusPanel/
                         ChannelsPanel/TokensPanel/SettingsPanel/DocsPanel
@@ -275,7 +277,10 @@ admin, open the room, "Verify user" on the bot — it auto-accepts SAS.
 - **"room is not encrypted" on a room that is** — stale state store; the
   bot refetches `/state` automatically at send time. If creating a channel
   by `#alias`, the alias is resolved once and the ID is stored (all internal
-  lookups are ID-keyed).
+  lookups are ID-keyed). Raw room IDs are shape-validated
+  (`matrix.ValidateRoomID`: `!opaque:server`, or `!opaque` for room v12+) —
+  garbage gets invalid_argument; existence is deliberately not checked
+  (mapping a not-yet-joined room is a supported flow).
 - **Element never shows the green shield** — your Element session holds an
   old cross-signing identity. Verify the Element session with the current
   Security Key (`dev/cmdclient.db.recovery.key` for the dev admin) or reset

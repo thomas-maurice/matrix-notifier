@@ -2,13 +2,17 @@
 // Static endpoint documentation. Keep this page in sync with the ingest
 // parsers (internal/ingest/*) and the README whenever an endpoint or its
 // configuration changes — it is part of the repo's maintenance contract.
+import { BookOpen, MessageCircle, Flame, GitBranch, ChartLine, History } from '@lucide/vue'
+import Card from './ui/Card.vue'
+import Badge from './ui/Badge.vue'
+
 const origin = window.location.origin
 </script>
 
 <template>
-  <div class="mb-4">
-    <h4 class="mb-3"><i class="fa-solid fa-book me-2"></i>Webhook endpoints</h4>
-    <p class="text-secondary">
+  <div class="mb-4 space-y-4 [&_p]:text-sm [&_pre]:overflow-x-auto [&_pre]:rounded-md [&_pre]:bg-muted [&_pre]:p-3 [&_pre]:font-mono [&_pre]:text-xs">
+    <h4 class="flex items-center gap-2 text-lg font-semibold"><BookOpen class="size-5" />Webhook endpoints</h4>
+    <p class="text-muted-foreground">
       Every endpoint authenticates with an <strong>ingest token</strong>
       (<code>mn_...</code>, minted on the Tokens tab). A token belongs to a
       channel — that channel's Matrix room is where the notification lands.
@@ -21,7 +25,7 @@ const origin = window.location.origin
       <code>?token=mn_...</code>, an <code>Authorization: Bearer mn_...</code>
       header, or an <code>X-Gotify-Key</code> header.
     </p>
-    <p class="text-secondary">
+    <p class="text-muted-foreground">
       A <code>200</code> response means the notification was
       <strong>accepted and queued</strong>, not yet delivered: sends go
       through a persistent outbox drained in the background, retrying with
@@ -30,13 +34,13 @@ const origin = window.location.origin
       the <strong>History</strong> tab.
     </p>
 
-    <div class="card mb-3">
-      <div class="card-header">
-        <i class="fa-solid fa-message me-2"></i><strong>Gotify</strong>
+    <Card>
+      <template #header>
+        <MessageCircle /><strong>Gotify</strong>
         — <code>POST /message</code>
-        <span class="badge text-bg-secondary ms-2">kind: gotify</span>
-      </div>
-      <div class="card-body">
+        <Badge variant="secondary">kind: gotify</Badge>
+      </template>
+      <div class="space-y-2">
         <p>
           Drop-in replacement for a Gotify server: anything that can push to
           Gotify can push here unmodified. Accepts JSON, urlencoded and
@@ -44,18 +48,18 @@ const origin = window.location.origin
           <code>message</code> (rendered as markdown) and
           <code>priority</code> (0–10, ≥8 is emergency).
         </p>
-        <pre class="bg-body-tertiary p-2 rounded mb-0"><code>curl -X POST '{{ origin }}/message?token=mn_...' \
+        <pre><code>curl -X POST '{{ origin }}/message?token=mn_...' \
   -F title='Backup done' -F message='**All good**' -F priority=3</code></pre>
       </div>
-    </div>
+    </Card>
 
-    <div class="card mb-3">
-      <div class="card-header">
-        <i class="fa-solid fa-fire me-2"></i><strong>Prometheus Alertmanager</strong>
+    <Card>
+      <template #header>
+        <Flame /><strong>Prometheus Alertmanager</strong>
         — <code>POST /alertmanager</code>
-        <span class="badge text-bg-secondary ms-2">kind: alertmanager</span>
-      </div>
-      <div class="card-body">
+        <Badge variant="secondary">kind: alertmanager</Badge>
+      </template>
+      <div class="space-y-2">
         <p>
           Webhook receiver (payload v4). Formats firing/resolved counts,
           severities, summaries and generator links — anchored to the
@@ -69,21 +73,21 @@ const origin = window.location.origin
           alert expression is attached as an image.
         </p>
         <p class="mb-1">Alertmanager configuration:</p>
-        <pre class="bg-body-tertiary p-2 rounded mb-0"><code>receivers:
+        <pre><code>receivers:
   - name: matrix-notifier
     webhook_configs:
       - url: {{ origin }}/alertmanager?token=mn_...
         send_resolved: true</code></pre>
       </div>
-    </div>
+    </Card>
 
-    <div class="card mb-3">
-      <div class="card-header">
-        <i class="fa-solid fa-code-branch me-2"></i><strong>Gitea / Forgejo</strong>
+    <Card>
+      <template #header>
+        <GitBranch /><strong>Gitea / Forgejo</strong>
         — <code>POST /gitea</code> or <code>POST /forgejo</code>
-        <span class="badge text-bg-secondary ms-2">kind: gitea</span>
-      </div>
-      <div class="card-body">
+        <Badge variant="secondary">kind: gitea</Badge>
+      </template>
+      <div class="space-y-2">
         <p>
           Webhook receiver for push, pull-request, issue, release and
           branch/tag events (the event type is read from the
@@ -97,7 +101,7 @@ const origin = window.location.origin
           In the repo (or org) settings, add a webhook of type
           <strong>Forgejo</strong> / <strong>Gitea</strong>:
         </p>
-        <ul class="mb-2">
+        <ul class="list-disc space-y-1 pl-6 text-sm">
           <li>Target URL: <code>{{ origin }}/forgejo</code></li>
           <li>Method <code>POST</code>, content type <code>application/json</code></li>
           <li>
@@ -115,15 +119,15 @@ const origin = window.location.origin
           </li>
         </ul>
       </div>
-    </div>
+    </Card>
 
-    <div class="card mb-3">
-      <div class="card-header">
-        <i class="fa-brands fa-slack me-2"></i><strong>Slack incoming webhook</strong>
+    <Card>
+      <template #header>
+        <i class="fa-brands fa-slack text-muted-foreground"></i><strong>Slack incoming webhook</strong>
         — <code>POST /slack</code>
-        <span class="badge text-bg-secondary ms-2">kind: slack</span>
-      </div>
-      <div class="card-body">
+        <Badge variant="secondary">kind: slack</Badge>
+      </template>
+      <div class="space-y-2">
         <p>
           For tools that only speak Slack webhooks (TrueNAS SCALE alert
           services, Uptime Kuma, ...). Accepts a JSON body or Slack's legacy
@@ -143,19 +147,19 @@ const origin = window.location.origin
           System → Alert Settings → Add alert service of type
           <em>Slack</em>, paste that URL as the webhook URL.
         </p>
-        <pre class="bg-body-tertiary p-2 rounded mb-0"><code>curl -X POST '{{ origin }}/slack?token=mn_...' \
+        <pre><code>curl -X POST '{{ origin }}/slack?token=mn_...' \
   -H 'Content-Type: application/json' \
   -d '{"username":"TrueNAS","text":"Pool tank is healthy again"}'</code></pre>
       </div>
-    </div>
+    </Card>
 
-    <div class="card mb-3">
-      <div class="card-header">
-        <i class="fa-solid fa-chart-line me-2"></i><strong>Grafana alerting</strong>
+    <Card>
+      <template #header>
+        <ChartLine /><strong>Grafana alerting</strong>
         — <code>POST /grafana</code>
-        <span class="badge text-bg-secondary ms-2">kind: grafana</span>
-      </div>
-      <div class="card-body">
+        <Badge variant="secondary">kind: grafana</Badge>
+      </template>
+      <div class="space-y-2">
         <p>
           Receiver for Grafana's unified-alerting <em>webhook</em> contact
           point. Alerts are formatted one line per alert like the
@@ -190,17 +194,19 @@ const origin = window.location.origin
           them still delivers, but shows up as a bare alert name at
           priority 3.
         </p>
-        <pre class="bg-body-tertiary p-2 rounded mb-0"><code>curl -X POST '{{ origin }}/grafana?token=mn_...' \
+        <pre><code>curl -X POST '{{ origin }}/grafana?token=mn_...' \
   -H 'Content-Type: application/json' \
   -d '{"status":"firing","alerts":[{"status":"firing",
        "labels":{"alertname":"SensorOffline","severity":"warning"},
        "annotations":{"summary":"no data for 5m"}}]}'</code></pre>
       </div>
-    </div>
+    </Card>
 
-    <h4 class="mb-3 mt-4"><i class="fa-solid fa-clock-rotate-left me-2"></i>Room retention (purging old notifications)</h4>
-    <div class="card mb-3">
-      <div class="card-body">
+    <h4 class="flex items-center gap-2 pt-2 text-lg font-semibold">
+      <History class="size-5" />Room retention (purging old notifications)
+    </h4>
+    <Card>
+      <div class="space-y-2">
         <p>
           Notification rooms grow forever by default. Matrix supports
           per-room retention: the homeserver deletes events older than a
@@ -212,7 +218,7 @@ const origin = window.location.origin
           <code>homeserver.yaml</code> — it is off by default; the purge job
           runs in the background):
         </p>
-        <pre class="bg-body-tertiary p-2 rounded"><code>retention:
+        <pre><code>retention:
   enabled: true</code></pre>
         <p class="mb-1">
           <strong>2. Set the policy on the room</strong> with an
@@ -222,7 +228,7 @@ const origin = window.location.origin
           <code>/devtools</code> in the room → Send custom state event.
           Or with any access token of a room admin:
         </p>
-        <pre class="bg-body-tertiary p-2 rounded"><code>curl -X PUT \
+        <pre><code>curl -X PUT \
   'https://homeserver/_matrix/client/v3/rooms/!roomid:server/state/m.room.retention' \
   -H 'Authorization: Bearer &lt;access token&gt;' \
   -H 'Content-Type: application/json' \
@@ -235,6 +241,6 @@ const origin = window.location.origin
           <em>purge history</em> API instead.
         </p>
       </div>
-    </div>
+    </Card>
   </div>
 </template>

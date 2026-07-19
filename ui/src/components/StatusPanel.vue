@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { timestampDate } from '@bufbuild/protobuf/wkt'
+import { Bot, Gauge, Hash, ShieldCheck, TriangleAlert, Check, X, Lock, LockOpen } from '@lucide/vue'
 import { api, errMsg } from '../api'
 import { notifyError } from '../toast'
+import Card from './ui/Card.vue'
+import Badge from './ui/Badge.vue'
 import RoomRef from './RoomRef.vue'
 import type { Channel, GetStatusResponse } from '../gen/notifier/v1/admin_pb'
 
@@ -50,92 +53,87 @@ onUnmounted(() => clearInterval(timer))
 </script>
 
 <template>
-  <div v-if="status" class="row g-4">
-    <div class="col-md-6">
-      <div class="card h-100">
-        <div class="card-header"><i class="fa-solid fa-robot me-2"></i>Bot</div>
-        <div class="card-body">
-          <table class="table table-sm mb-0">
-            <tbody>
-              <tr>
-                <th>User</th>
-                <td><code>{{ status.userId }}</code></td>
-              </tr>
-              <tr>
-                <th>Device</th>
-                <td><code>{{ status.deviceId }}</code></td>
-              </tr>
-              <tr>
-                <th>Verified</th>
-                <td>
-                  <span :class="status.verified ? 'badge text-bg-success' : 'badge text-bg-danger'">
-                    <i :class="status.verified ? 'fa-solid fa-shield-halved' : 'fa-solid fa-triangle-exclamation'" class="me-1"></i>
-                    {{ status.verified ? 'cross-signed' : 'not verified' }}
-                  </span>
-                </td>
-              </tr>
-              <tr>
-                <th>Sync</th>
-                <td>
-                  <span :class="syncHealthy ? 'badge text-bg-success' : 'badge text-bg-danger'">
-                    {{ syncHealthy ? 'healthy' : 'stalled' }}
-                  </span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-    <div class="col-md-6">
-      <div class="card h-100">
-        <div class="card-header"><i class="fa-solid fa-gauge me-2"></i>Runtime</div>
-        <div class="card-body">
-          <table class="table table-sm mb-0">
-            <tbody>
-              <tr>
-                <th>Uptime</th>
-                <td>{{ fmtUptime(status.uptimeSeconds) }}</td>
-              </tr>
-              <tr>
-                <th>Delivered since start</th>
-                <td>{{ status.deliveredSinceStart }}</td>
-              </tr>
-              <tr>
-                <th>Database</th>
-                <td><code>{{ status.databaseType }}</code></td>
-              </tr>
-              <tr>
-                <th>Version</th>
-                <td><code>{{ status.version }}</code></td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-    <div class="col-12">
-      <div class="card">
-        <div class="card-header"><i class="fa-solid fa-hashtag me-2"></i>Channel health</div>
-        <div class="card-body p-0">
-          <table class="table table-sm mb-0 align-middle">
-            <thead>
-              <tr><th class="ps-3">Channel</th><th>Room</th><th>Joined</th><th>Encrypted</th></tr>
-            </thead>
-            <tbody>
-              <tr v-for="ch in channels" :key="ch.name">
-                <td class="ps-3">{{ ch.name }}</td>
-                <td><RoomRef :room-id="ch.roomId" :alias="ch.alias" /></td>
-                <td><i :class="ch.joined ? 'fa-solid fa-check text-success' : 'fa-solid fa-xmark text-danger'"></i></td>
-                <td><i :class="ch.encrypted ? 'fa-solid fa-lock text-success' : 'fa-solid fa-lock-open text-danger'"></i></td>
-              </tr>
-              <tr v-if="!channels.length">
-                <td colspan="4" class="text-center text-secondary py-3">No channels configured</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
+  <div v-if="status" class="grid grid-cols-1 gap-4 md:grid-cols-2">
+    <Card flush>
+      <template #header><Bot />Bot</template>
+      <table class="data-table">
+        <tbody>
+          <tr>
+            <th>User</th>
+            <td><code>{{ status.userId }}</code></td>
+          </tr>
+          <tr>
+            <th>Device</th>
+            <td><code>{{ status.deviceId }}</code></td>
+          </tr>
+          <tr>
+            <th>Verified</th>
+            <td>
+              <Badge :variant="status.verified ? 'success' : 'destructive'">
+                <ShieldCheck v-if="status.verified" />
+                <TriangleAlert v-else />
+                {{ status.verified ? 'cross-signed' : 'not verified' }}
+              </Badge>
+            </td>
+          </tr>
+          <tr>
+            <th>Sync</th>
+            <td>
+              <Badge :variant="syncHealthy ? 'success' : 'destructive'">
+                {{ syncHealthy ? 'healthy' : 'stalled' }}
+              </Badge>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </Card>
+    <Card flush>
+      <template #header><Gauge />Runtime</template>
+      <table class="data-table">
+        <tbody>
+          <tr>
+            <th>Uptime</th>
+            <td>{{ fmtUptime(status.uptimeSeconds) }}</td>
+          </tr>
+          <tr>
+            <th>Delivered since start</th>
+            <td>{{ status.deliveredSinceStart }}</td>
+          </tr>
+          <tr>
+            <th>Database</th>
+            <td><code>{{ status.databaseType }}</code></td>
+          </tr>
+          <tr>
+            <th>Version</th>
+            <td><code>{{ status.version }}</code></td>
+          </tr>
+        </tbody>
+      </table>
+    </Card>
+    <Card flush class="md:col-span-2">
+      <template #header><Hash />Channel health</template>
+      <table class="data-table hoverable">
+        <thead>
+          <tr><th>Channel</th><th>Room</th><th>Joined</th><th>Encrypted</th></tr>
+        </thead>
+        <tbody>
+          <tr v-for="ch in channels" :key="ch.name">
+            <td>{{ ch.name }}</td>
+            <td><RoomRef :room-id="ch.roomId" :alias="ch.alias" /></td>
+            <td>
+              <Check v-if="ch.joined" class="size-4 text-green-400" />
+              <X v-else class="size-4 text-red-400" />
+            </td>
+            <td>
+              <Lock v-if="ch.encrypted" class="size-4 text-green-400" />
+              <LockOpen v-else class="size-4 text-red-400" />
+            </td>
+          </tr>
+          <tr v-if="!channels.length">
+            <td colspan="4" class="py-4 text-center text-muted-foreground">No channels configured</td>
+          </tr>
+        </tbody>
+      </table>
+    </Card>
   </div>
 </template>

@@ -1,6 +1,11 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, watch, onMounted, onUnmounted } from 'vue'
+import { Bell, Activity, Hash, KeyRound, History, Settings, BookOpen, LogOut, Lock } from '@lucide/vue'
 import { api, errMsg, isUnauthenticated } from './api'
+import Button from './components/ui/Button.vue'
+import Card from './components/ui/Card.vue'
+import Alert from './components/ui/Alert.vue'
+import Input from './components/ui/Input.vue'
 import StatusPanel from './components/StatusPanel.vue'
 import ChannelsPanel from './components/ChannelsPanel.vue'
 import TokensPanel from './components/TokensPanel.vue'
@@ -12,6 +17,29 @@ const authed = ref(false)
 const tab = ref('status')
 const loginPassword = ref('')
 const loginError = ref('')
+
+const tabs = [
+  { id: 'status', label: 'Status', icon: Activity },
+  { id: 'channels', label: 'Channels', icon: Hash },
+  { id: 'tokens', label: 'Tokens', icon: KeyRound },
+  { id: 'history', label: 'History', icon: History },
+  { id: 'settings', label: 'Settings', icon: Settings },
+  { id: 'docs', label: 'Docs', icon: BookOpen },
+]
+
+// The active tab is anchored in the URL hash (#tokens) so a reload lands on
+// the same view and back/forward moves between tabs — a full router would be
+// overkill for six flat tabs.
+function syncTabFromHash() {
+  const h = window.location.hash.replace(/^#\/?/, '')
+  if (tabs.some((t) => t.id === h)) tab.value = h
+}
+syncTabFromHash()
+watch(tab, (t) => {
+  if (window.location.hash.replace(/^#\/?/, '') !== t) window.location.hash = t
+})
+onMounted(() => window.addEventListener('hashchange', syncTabFromHash))
+onUnmounted(() => window.removeEventListener('hashchange', syncTabFromHash))
 
 async function tryLogin() {
   loginError.value = ''
@@ -47,71 +75,38 @@ onMounted(async () => {
 </script>
 
 <template>
-  <nav class="navbar navbar-expand border-bottom mb-4">
-    <div class="container-fluid px-4">
-      <span class="navbar-brand">
-        <i class="fa-solid fa-bell me-2 text-primary"></i>matrix-notifier
+  <nav class="mb-6 border-b">
+    <div class="flex h-14 items-center gap-6 px-6">
+      <span class="flex items-center gap-2 font-semibold">
+        <Bell class="size-4" />matrix-notifier
       </span>
-      <ul v-if="authed" class="navbar-nav me-auto">
-        <li class="nav-item">
-          <a class="nav-link" :class="{ active: tab === 'status' }" href="#" @click.prevent="tab = 'status'">
-            <i class="fa-solid fa-heart-pulse me-1"></i>Status
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" :class="{ active: tab === 'channels' }" href="#" @click.prevent="tab = 'channels'">
-            <i class="fa-solid fa-hashtag me-1"></i>Channels
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" :class="{ active: tab === 'tokens' }" href="#" @click.prevent="tab = 'tokens'">
-            <i class="fa-solid fa-key me-1"></i>Tokens
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" :class="{ active: tab === 'history' }" href="#" @click.prevent="tab = 'history'">
-            <i class="fa-solid fa-clock-rotate-left me-1"></i>History
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" :class="{ active: tab === 'settings' }" href="#" @click.prevent="tab = 'settings'">
-            <i class="fa-solid fa-gear me-1"></i>Settings
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" :class="{ active: tab === 'docs' }" href="#" @click.prevent="tab = 'docs'">
-            <i class="fa-solid fa-book me-1"></i>Docs
-          </a>
-        </li>
-      </ul>
-      <button v-if="authed" class="btn btn-outline-secondary btn-sm" @click="logout">
-        <i class="fa-solid fa-right-from-bracket me-1"></i>Logout
-      </button>
+      <div v-if="authed" class="flex flex-1 items-center gap-1">
+        <button
+          v-for="t in tabs"
+          :key="t.id"
+          class="inline-flex cursor-pointer items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors"
+          :class="tab === t.id ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:text-foreground'"
+          @click="tab = t.id"
+        >
+          <component :is="t.icon" class="size-4" />{{ t.label }}
+        </button>
+      </div>
+      <Button v-if="authed" variant="outline" size="sm" @click="logout">
+        <LogOut />Logout
+      </Button>
     </div>
   </nav>
 
-  <div class="container-fluid px-4">
-    <div v-if="!authed" class="row justify-content-center mt-5">
-      <div class="col-md-6">
-        <div class="card">
-          <div class="card-body">
-            <h5 class="card-title mb-3"><i class="fa-solid fa-lock me-2"></i>Admin login</h5>
-            <form @submit.prevent="tryLogin">
-              <div class="mb-3">
-                <input
-                  v-model="loginPassword"
-                  type="password"
-                  class="form-control"
-                  placeholder="Admin password"
-                  autofocus
-                />
-              </div>
-              <div v-if="loginError" class="alert alert-danger py-2">{{ loginError }}</div>
-              <button class="btn btn-primary w-100" type="submit">Sign in</button>
-            </form>
-          </div>
-        </div>
-      </div>
+  <div class="px-6">
+    <div v-if="!authed" class="mx-auto mt-16 w-full max-w-md">
+      <Card>
+        <template #header><Lock />Admin login</template>
+        <form class="space-y-3" @submit.prevent="tryLogin">
+          <Input v-model="loginPassword" type="password" placeholder="Admin password" autofocus />
+          <Alert v-if="loginError" variant="destructive">{{ loginError }}</Alert>
+          <Button class="w-full" type="submit">Sign in</Button>
+        </form>
+      </Card>
     </div>
 
     <template v-else>
@@ -124,14 +119,14 @@ onMounted(async () => {
     </template>
   </div>
 
-  <footer class="container-fluid px-4 text-center text-secondary small border-top mt-5 py-3">
+  <footer class="mt-10 border-t px-6 py-4 text-center text-xs text-muted-foreground">
     <a
       href="https://github.com/thomas-maurice/matrix-notifier"
       target="_blank"
       rel="noopener"
-      class="link-secondary text-decoration-none"
+      class="inline-flex items-center gap-1.5 transition-colors hover:text-foreground"
     >
-      <i class="fa-brands fa-github me-1"></i>thomas-maurice/matrix-notifier
+      <i class="fa-brands fa-github"></i>thomas-maurice/matrix-notifier
     </a>
   </footer>
 </template>

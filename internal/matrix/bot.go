@@ -341,9 +341,12 @@ func (b *Bot) LeaveRoom(ctx context.Context, roomID string) error {
 }
 
 // ResolveRoom turns a room alias (#foo:server) into a room ID; room IDs
-// pass through unchanged.
+// pass through after a shape check.
 func (b *Bot) ResolveRoom(ctx context.Context, room string) (string, error) {
 	if !strings.HasPrefix(room, "#") {
+		if err := ValidateRoomID(room); err != nil {
+			return "", err
+		}
 		return room, nil
 	}
 	resp, err := b.client.ResolveAlias(ctx, id.RoomAlias(room))
@@ -351,6 +354,30 @@ func (b *Bot) ResolveRoom(ctx context.Context, room string) (string, error) {
 		return "", fmt.Errorf("resolving alias %s: %w", room, err)
 	}
 	return resp.RoomID.String(), nil
+}
+
+// ValidateRoomID checks that a string is shaped like a Matrix room ID.
+// Aliases are resolved server-side and thus validated for real; raw IDs used
+// to pass through completely unchecked, letting any garbage be stored as a
+// channel's room. Existence is deliberately NOT checked: mapping a room the
+// bot has not been invited to yet is a supported flow (the UI shows it as
+// not joined). Both !opaque:server (classic) and !opaque (room v12+,
+// MSC4291) forms are accepted.
+func ValidateRoomID(room string) error {
+	malformed := fmt.Errorf("%q is not a room ID (!opaque:server) or alias (#alias:server)", room)
+	if !strings.HasPrefix(room, "!") || len(room) < 2 || len(room) > 255 {
+		return malformed
+	}
+	local, server, hasServer := strings.Cut(room[1:], ":")
+	if local == "" || (hasServer && server == "") {
+		return malformed
+	}
+	for _, r := range room {
+		if r <= ' ' || r > '~' { // control chars, whitespace, non-ASCII
+			return malformed
+		}
+	}
+	return nil
 }
 
 // RoomAlias returns the room's canonical alias (#foo:server), or "" when

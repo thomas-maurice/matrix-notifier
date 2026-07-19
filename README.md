@@ -163,7 +163,7 @@ secret, which **instantly logs out every session** (browser cookies and API
 tokens alike). Locked out completely? Delete the `admin_credentials` row and
 restart: the credential re-seeds from the config hash.
 
-The web UI (Vue 3 + Bootstrap, embedded in the binary, same listener) covers
+The web UI (Vue 3 + Tailwind/shadcn-style dark theme, embedded in the binary, same listener) covers
 status (sync health, verification, per-channel joined/encrypted state,
 delivery counters), channel CRUD, token CRUD (plaintext shown exactly once),
 test notifications, the password change, the bot's Matrix profile (display

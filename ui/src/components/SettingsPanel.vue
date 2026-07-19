@@ -1,7 +1,11 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
+import { IdCard, KeyRound, Bot, Save } from '@lucide/vue'
 import { api, errMsg } from '../api'
 import { notifyError, notifySuccess } from '../toast'
+import Card from './ui/Card.vue'
+import Button from './ui/Button.vue'
+import Input from './ui/Input.vue'
 
 const currentPassword = ref('')
 const newPassword = ref('')
@@ -81,103 +85,75 @@ async function changePassword() {
 </script>
 
 <template>
-  <div class="row justify-content-center">
-    <div class="col-md-6">
-      <div class="card mb-4">
-        <div class="card-header"><i class="fa-solid fa-id-badge me-2"></i>Bot profile</div>
-        <div class="card-body">
-          <form @submit.prevent="saveProfile">
-            <div class="d-flex align-items-center mb-3">
-              <img
-                v-if="avatarPreview"
-                :src="avatarPreview"
-                alt="Bot avatar"
-                class="rounded-circle me-3"
-                style="width: 64px; height: 64px; object-fit: cover"
-              />
-              <div
-                v-else
-                class="rounded-circle me-3 bg-body-tertiary d-flex align-items-center justify-content-center"
-                style="width: 64px; height: 64px"
-              >
-                <i class="fa-solid fa-robot text-secondary"></i>
-              </div>
-              <div class="flex-grow-1">
-                <label class="form-label" for="botDisplayName">Display name</label>
-                <input
-                  id="botDisplayName"
-                  v-model="displayName"
-                  class="form-control"
-                  placeholder="Notifier"
-                />
-              </div>
-            </div>
-            <div class="mb-3">
-              <label class="form-label" for="botAvatar">Avatar image</label>
-              <input
-                id="botAvatar"
-                type="file"
-                class="form-control"
-                accept="image/*"
-                @change="pickAvatar"
-              />
-            </div>
-            <button class="btn btn-primary" type="submit" :disabled="savingProfile">
-              <i class="fa-solid fa-floppy-disk me-1"></i>Save profile
-            </button>
-            <div class="form-text mt-2">
-              Name and picture are the bot's Matrix profile, visible in every room it is in.
-            </div>
-          </form>
+  <div class="mx-auto w-full max-w-2xl">
+    <Card class="mb-4">
+      <template #header><IdCard />Bot profile</template>
+      <form @submit.prevent="saveProfile">
+        <div class="mb-4 flex items-center gap-4">
+          <img
+            v-if="avatarPreview"
+            :src="avatarPreview"
+            alt="Bot avatar"
+            class="size-16 rounded-full object-cover"
+          />
+          <div v-else class="flex size-16 items-center justify-center rounded-full bg-muted">
+            <Bot class="size-6 text-muted-foreground" />
+          </div>
+          <div class="flex-1 space-y-1.5">
+            <label class="text-sm font-medium" for="botDisplayName">Display name</label>
+            <Input id="botDisplayName" v-model="displayName" placeholder="Notifier" />
+          </div>
         </div>
-      </div>
+        <div class="mb-4 space-y-1.5">
+          <label class="text-sm font-medium" for="botAvatar">Avatar image</label>
+          <input
+            id="botAvatar"
+            type="file"
+            accept="image/*"
+            class="flex h-9 w-full cursor-pointer rounded-md border border-input bg-transparent px-3 py-1.5 text-sm shadow-sm file:me-3 file:border-0 file:bg-transparent file:p-0 file:text-sm file:font-medium file:text-foreground"
+            @change="pickAvatar"
+          />
+        </div>
+        <Button type="submit" :disabled="savingProfile"><Save />Save profile</Button>
+        <p class="mt-3 text-xs text-muted-foreground">
+          Name and picture are the bot's Matrix profile, visible in every room it is in.
+        </p>
+      </form>
+    </Card>
 
-      <div class="card">
-        <div class="card-header"><i class="fa-solid fa-key me-2"></i>Change admin password</div>
-        <div class="card-body">
-          <form @submit.prevent="changePassword">
-            <div class="mb-3">
-              <label class="form-label" for="currentPassword">Current password</label>
-              <input
-                id="currentPassword"
-                v-model="currentPassword"
-                type="password"
-                class="form-control"
-                autocomplete="current-password"
-                required
-              />
-            </div>
-            <div class="mb-3">
-              <label class="form-label" for="newPassword">New password</label>
-              <input
-                id="newPassword"
-                v-model="newPassword"
-                type="password"
-                class="form-control"
-                autocomplete="new-password"
-                minlength="8"
-                required
-              />
-            </div>
-            <div class="mb-3">
-              <label class="form-label" for="confirmPassword">Confirm new password</label>
-              <input
-                id="confirmPassword"
-                v-model="confirmPassword"
-                type="password"
-                class="form-control"
-                autocomplete="new-password"
-                minlength="8"
-                required
-              />
-            </div>
-            <button class="btn btn-primary" type="submit">Change password</button>
-            <div class="form-text mt-2">
-              Changing the password logs out every other session (browsers and API tokens alike).
-            </div>
-          </form>
+    <Card>
+      <template #header><KeyRound />Change admin password</template>
+      <form class="space-y-4" @submit.prevent="changePassword">
+        <div class="space-y-1.5">
+          <label class="text-sm font-medium" for="currentPassword">Current password</label>
+          <Input
+            id="currentPassword"
+            v-model="currentPassword"
+            type="password"
+            autocomplete="current-password"
+            required
+          />
         </div>
-      </div>
-    </div>
+        <div class="space-y-1.5">
+          <label class="text-sm font-medium" for="newPassword">New password</label>
+          <Input id="newPassword" v-model="newPassword" type="password" autocomplete="new-password" minlength="8" required />
+        </div>
+        <div class="space-y-1.5">
+          <label class="text-sm font-medium" for="confirmPassword">Confirm new password</label>
+          <Input
+            id="confirmPassword"
+            v-model="confirmPassword"
+            type="password"
+            autocomplete="new-password"
+            minlength="8"
+            required
+          />
+        </div>
+        <Button type="submit">Change password</Button>
+        <p class="text-xs text-muted-foreground">
+          Changing the password logs out every other session (browsers and API tokens alike).
+        </p>
+      </form>
+    </Card>
   </div>
 </template>

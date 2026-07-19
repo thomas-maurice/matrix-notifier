@@ -1,5 +1,8 @@
-import 'bootstrap/dist/css/bootstrap.min.css'
-import '@fortawesome/fontawesome-free/css/all.min.css'
+import './style.css'
+// Brand glyphs only (GitHub, Slack) — lucide ships no brand icons. Core CSS +
+// brands CSS pulls in just the brands webfont, not the solid/regular sets.
+import '@fortawesome/fontawesome-free/css/fontawesome.min.css'
+import '@fortawesome/fontawesome-free/css/brands.min.css'
 import 'vue3-toastify/dist/index.css'
 import { createApp } from 'vue'
 import Vue3Toastify from 'vue3-toastify'

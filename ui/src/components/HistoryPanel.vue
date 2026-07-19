@@ -1,8 +1,12 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 import { timestampDate, type Timestamp } from '@bufbuild/protobuf/wkt'
+import { History, RefreshCw, RotateCw, TriangleAlert, Check } from '@lucide/vue'
 import { api, errMsg } from '../api'
 import { notifyError, notifySuccess } from '../toast'
+import Card from './ui/Card.vue'
+import Button from './ui/Button.vue'
+import Badge from './ui/Badge.vue'
 import type { Channel, Delivery } from '../gen/notifier/v1/admin_pb'
 
 const deliveries = ref<Delivery[]>([])
@@ -37,14 +41,14 @@ function toggle(d: Delivery) {
   expanded.value = expanded.value === d.id ? null : d.id
 }
 
-function statusBadge(status: string): string {
+function statusVariant(status: string): 'success' | 'destructive' | 'warning' {
   switch (status) {
     case 'delivered':
-      return 'text-bg-success'
+      return 'success'
     case 'failed':
-      return 'text-bg-danger'
+      return 'destructive'
     default:
-      return 'text-bg-warning'
+      return 'warning'
   }
 }
 
@@ -62,76 +66,70 @@ onUnmounted(() => clearInterval(timer))
 </script>
 
 <template>
-  <div class="card">
-    <div class="card-header d-flex align-items-center">
-      <span><i class="fa-solid fa-clock-rotate-left me-2"></i>Delivery history</span>
-      <select
-        v-model="channelFilter"
-        class="form-select form-select-sm ms-auto"
-        style="width: auto"
-        title="Filter by channel"
-        @change="refresh"
-      >
+  <Card flush>
+    <template #header>
+      <History /><span class="flex-1">Delivery history</span>
+      <select v-model="channelFilter" class="select select-sm w-auto" title="Filter by channel" @change="refresh">
         <option value="">all channels</option>
         <option v-for="ch in channels" :key="ch.name" :value="ch.name">{{ ch.name }}</option>
       </select>
-      <button class="btn btn-sm btn-outline-secondary ms-2" title="Refresh" @click="refresh">
-        <i class="fa-solid fa-rotate"></i>
-      </button>
-    </div>
-    <div class="card-body p-0">
-      <table class="table mb-0 align-middle">
-        <thead>
-          <tr>
-            <th class="ps-3">Time</th>
-            <th>Channel</th>
-            <th>Kind</th>
-            <th>Title</th>
-            <th>Status</th>
-            <th>Attempts</th>
-            <th class="text-end pe-3"></th>
+      <Button variant="outline" size="icon-sm" title="Refresh" @click="refresh">
+        <RefreshCw />
+      </Button>
+    </template>
+    <table class="data-table hoverable">
+      <thead>
+        <tr>
+          <th>Time</th>
+          <th>Channel</th>
+          <th>Kind</th>
+          <th>Title</th>
+          <th>Status</th>
+          <th>Attempts</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <template v-for="d in deliveries" :key="d.id">
+          <tr class="cursor-pointer" @click="toggle(d)">
+            <td class="whitespace-nowrap text-muted-foreground">{{ fmtDate(d.createdAt) }}</td>
+            <td>{{ d.channel }}</td>
+            <td><Badge variant="secondary">{{ d.kind }}</Badge></td>
+            <td class="max-w-[220px] truncate">{{ d.title || d.body }}</td>
+            <td><Badge :variant="statusVariant(d.status)">{{ d.status }}</Badge></td>
+            <td class="text-muted-foreground">{{ d.attempts }}</td>
+            <td class="text-right">
+              <Button
+                v-if="d.status === 'failed'"
+                variant="outline"
+                size="icon-sm"
+                class="text-amber-400"
+                title="Queue this delivery again"
+                @click.stop="retry(d)"
+              >
+                <RotateCw />
+              </Button>
+            </td>
           </tr>
-        </thead>
-        <tbody>
-          <template v-for="d in deliveries" :key="d.id">
-            <tr role="button" @click="toggle(d)">
-              <td class="ps-3 text-secondary">{{ fmtDate(d.createdAt) }}</td>
-              <td>{{ d.channel }}</td>
-              <td><span class="badge text-bg-secondary">{{ d.kind }}</span></td>
-              <td class="text-truncate" style="max-width: 220px">{{ d.title || d.body }}</td>
-              <td><span class="badge" :class="statusBadge(d.status)">{{ d.status }}</span></td>
-              <td class="text-secondary">{{ d.attempts }}</td>
-              <td class="text-end pe-3">
-                <button
-                  v-if="d.status === 'failed'"
-                  class="btn btn-sm btn-outline-warning"
-                  title="Queue this delivery again"
-                  @click.stop="retry(d)"
-                >
-                  <i class="fa-solid fa-rotate-right"></i>
-                </button>
-              </td>
-            </tr>
-            <tr v-if="expanded === d.id">
-              <td colspan="7" class="ps-3 small">
-                <div class="text-secondary" style="white-space: pre-wrap">{{ d.body }}</div>
-                <div v-if="d.lastError" class="text-danger mt-1">
-                  <i class="fa-solid fa-triangle-exclamation me-1"></i>{{ d.lastError }}
-                </div>
-                <div v-if="d.deliveredAt" class="text-success mt-1">
-                  <i class="fa-solid fa-check me-1"></i>delivered {{ fmtDate(d.deliveredAt) }}
-                </div>
-              </td>
-            </tr>
-          </template>
-          <tr v-if="!deliveries.length">
-            <td colspan="7" class="text-center text-secondary py-3">No deliveries yet</td>
+          <tr v-if="expanded === d.id">
+            <td colspan="7" class="text-xs">
+              <div class="whitespace-pre-wrap text-muted-foreground">{{ d.body }}</div>
+              <div v-if="d.lastError" class="mt-1 flex items-center gap-1 text-red-400">
+                <TriangleAlert class="size-3.5" />{{ d.lastError }}
+              </div>
+              <div v-if="d.deliveredAt" class="mt-1 flex items-center gap-1 text-green-400">
+                <Check class="size-3.5" />delivered {{ fmtDate(d.deliveredAt) }}
+              </div>
+            </td>
           </tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-  <p class="text-secondary small mt-2 mb-0">
+        </template>
+        <tr v-if="!deliveries.length">
+          <td colspan="7" class="py-4 text-center text-muted-foreground">No deliveries yet</td>
+        </tr>
+      </tbody>
+    </table>
+  </Card>
+  <p class="mt-2 text-xs text-muted-foreground">
     Ingest endpoints answer <code>200</code> as soon as a notification is queued; delivery is retried
     with backoff for up to 24 hours, then marked failed (retryable here by hand).
   </p>

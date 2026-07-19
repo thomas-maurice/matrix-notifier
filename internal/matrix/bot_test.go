@@ -21,3 +21,35 @@ func TestBuildMarkdown(t *testing.T) {
 	md = BuildMarkdown(notify.Notification{Body: "just text"})
 	assert.Equal(t, "just text", md)
 }
+
+func TestValidateRoomID(t *testing.T) {
+	// Raw room IDs bypass server-side alias resolution, so this shape check
+	// is the only thing stopping arbitrary garbage from being stored as a
+	// channel's routing target.
+	valid := []string{
+		"!abc:example.org",
+		"!abc:localhost",
+		"!ZSMDPrDDasLroDNPJh:localhost",
+		"!31hneApxJ_1o-63DmFrpeg", // room v12+ (MSC4291): no server part
+	}
+	for _, room := range valid {
+		assert.NoError(t, ValidateRoomID(room), room)
+	}
+
+	invalid := []string{
+		"",
+		"garbage",
+		"room:example.org",       // missing sigil
+		"!",                      // empty opaque part
+		"!:example.org",          // empty opaque part
+		"!abc:",                  // empty server part
+		"!abc def:example.org",   // whitespace
+		"!abc\n:example.org",     // control char
+		"#alias:example.org",     // aliases resolve elsewhere, not a raw ID
+		"@user:example.org",      // wrong sigil
+		"!" + string(rune(0xE9)), // non-ASCII
+	}
+	for _, room := range invalid {
+		assert.Error(t, ValidateRoomID(room), room)
+	}
+}
