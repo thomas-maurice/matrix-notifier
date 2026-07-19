@@ -75,6 +75,19 @@ func TestFolderLabelNotUsedAsTitle(t *testing.T) {
 	assert.Equal(t, "[FIRING:1] X", title)
 }
 
+// Fingerprints drive resolve-by-edit; they must split by status and skip
+// alerts without one.
+func TestFingerprints(t *testing.T) {
+	p := &Payload{Alerts: []Alert{
+		{Status: "firing", Fingerprint: "a"},
+		{Status: "resolved", Fingerprint: "b"},
+		{Status: "firing"}, // no fingerprint — skipped
+	}}
+	firing, resolved := Fingerprints(p)
+	assert.Equal(t, []string{"a"}, firing)
+	assert.Equal(t, []string{"b"}, resolved)
+}
+
 // Garbage and empty payloads must be rejected so the endpoint 400s instead
 // of queueing an empty notification.
 func TestRejectsBadPayloads(t *testing.T) {

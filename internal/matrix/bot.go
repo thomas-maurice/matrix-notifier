@@ -585,11 +585,39 @@ const (
 	sendRetryBase   = 2 * time.Second
 )
 
-// Send renders the notification as markdown and sends it to the given room.
-// Sending to an unencrypted room is a hard error.
-func (b *Bot) Send(ctx context.Context, roomID string, n notify.Notification) error {
+// Send renders the notification as markdown and sends it to the given room,
+// returning the event ID of the delivered message. Sending to an
+// unencrypted room is a hard error.
+func (b *Bot) Send(ctx context.Context, roomID string, n notify.Notification) (string, error) {
 	start := time.Now()
-	if err := b.sendMarkdown(ctx, id.RoomID(roomID), BuildMarkdown(n)); err != nil {
+	eventID, err := b.sendMarkdown(ctx, id.RoomID(roomID), BuildMarkdown(n))
+	if err != nil {
+		return "", err
+	}
+	metrics.SendDuration.Observe(time.Since(start).Seconds())
+	b.delivered.Add(1)
+	return eventID, nil
+}
+
+// SendEdit replaces an earlier message with the rendered notification via an
+// m.replace relation — used to flip a firing alert message into its resolved
+// form in place. The target must be a plain text message the bot sent.
+func (b *Bot) SendEdit(ctx context.Context, roomID, targetEventID string, n notify.Notification) error {
+	rid := id.RoomID(roomID)
+	encrypted, err := b.roomEncrypted(ctx, rid)
+	if err != nil {
+		return fmt.Errorf("checking room encryption: %w", err)
+	}
+	if !encrypted {
+		return fmt.Errorf("room %s is not encrypted (or the bot has not joined it): refusing to send", rid)
+	}
+	start := time.Now()
+	content := format.RenderMarkdown(BuildMarkdown(n), true, false)
+	content.SetEdit(id.EventID(targetEventID))
+	if err := b.retrySend(ctx, func() error {
+		_, err := b.client.SendMessageEvent(ctx, rid, event.EventMessage, &content)
+		return err
+	}); err != nil {
 		return err
 	}
 	metrics.SendDuration.Observe(time.Since(start).Seconds())
@@ -597,25 +625,30 @@ func (b *Bot) Send(ctx context.Context, roomID string, n notify.Notification) er
 	return nil
 }
 
-// sendMarkdown delivers a markdown message to a room, refusing if the room
-// is not encrypted. The network send is retried to ride out transient
-// failures (e.g. a homeserver restart).
-func (b *Bot) sendMarkdown(ctx context.Context, roomID id.RoomID, md string) error {
+// sendMarkdown delivers a markdown message to a room, returning the sent
+// event ID and refusing if the room is not encrypted. The network send is
+// retried to ride out transient failures (e.g. a homeserver restart).
+func (b *Bot) sendMarkdown(ctx context.Context, roomID id.RoomID, md string) (string, error) {
 	if md == "" {
-		return nil
+		return "", nil
 	}
 	encrypted, err := b.roomEncrypted(ctx, roomID)
 	if err != nil {
-		return fmt.Errorf("checking room encryption: %w", err)
+		return "", fmt.Errorf("checking room encryption: %w", err)
 	}
 	if !encrypted {
-		return fmt.Errorf("room %s is not encrypted (or the bot has not joined it): refusing to send", roomID)
+		return "", fmt.Errorf("room %s is not encrypted (or the bot has not joined it): refusing to send", roomID)
 	}
 	content := format.RenderMarkdown(md, true, false)
-	return b.retrySend(ctx, func() error {
-		_, err := b.client.SendMessageEvent(ctx, roomID, event.EventMessage, &content)
+	var eventID string
+	err = b.retrySend(ctx, func() error {
+		resp, err := b.client.SendMessageEvent(ctx, roomID, event.EventMessage, &content)
+		if err == nil {
+			eventID = resp.EventID.String()
+		}
 		return err
 	})
+	return eventID, err
 }
 
 // retrySend runs fn up to sendMaxAttempts times with linear backoff. It is
@@ -653,14 +686,14 @@ func (b *Bot) retrySend(ctx context.Context, fn func() error) error {
 // file name, body/formatted_body become the caption). The PNG is AES-CTR
 // encrypted client-side before upload; the decryption key travels inside the
 // megolm-encrypted event. Refuses unencrypted rooms like every send path.
-func (b *Bot) SendWithImage(ctx context.Context, roomID string, n notify.Notification, filename string, png []byte) error {
+func (b *Bot) SendWithImage(ctx context.Context, roomID string, n notify.Notification, filename string, png []byte) (string, error) {
 	rid := id.RoomID(roomID)
 	encrypted, err := b.roomEncrypted(ctx, rid)
 	if err != nil {
-		return fmt.Errorf("checking room encryption: %w", err)
+		return "", fmt.Errorf("checking room encryption: %w", err)
 	}
 	if !encrypted {
-		return fmt.Errorf("room %s is not encrypted (or the bot has not joined it): refusing to send", rid)
+		return "", fmt.Errorf("room %s is not encrypted (or the bot has not joined it): refusing to send", rid)
 	}
 
 	start := time.Now()
@@ -669,7 +702,7 @@ func (b *Bot) SendWithImage(ctx context.Context, roomID string, n notify.Notific
 	file.EncryptInPlace(png)
 	upload, err := b.client.UploadBytes(ctx, png, "application/octet-stream")
 	if err != nil {
-		return fmt.Errorf("uploading encrypted attachment: %w", err)
+		return "", fmt.Errorf("uploading encrypted attachment: %w", err)
 	}
 
 	caption := format.RenderMarkdown(BuildMarkdown(n), true, false)
@@ -688,15 +721,19 @@ func (b *Bot) SendWithImage(ctx context.Context, roomID string, n notify.Notific
 			URL:           upload.ContentURI.CUString(),
 		},
 	}
+	var eventID string
 	if err := b.retrySend(ctx, func() error {
-		_, err := b.client.SendMessageEvent(ctx, rid, event.EventMessage, content)
+		resp, err := b.client.SendMessageEvent(ctx, rid, event.EventMessage, content)
+		if err == nil {
+			eventID = resp.EventID.String()
+		}
 		return err
 	}); err != nil {
-		return err
+		return "", err
 	}
 	metrics.SendDuration.Observe(time.Since(start).Seconds())
 	b.delivered.Add(1)
-	return nil
+	return eventID, nil
 }
 
 // Healthy reports whether the bot is operational: logged in and syncing

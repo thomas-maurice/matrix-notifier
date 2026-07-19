@@ -47,6 +47,7 @@ type Alert struct {
 	StartsAt     time.Time         `json:"startsAt"`
 	EndsAt       time.Time         `json:"endsAt"`
 	GeneratorURL string            `json:"generatorURL"`
+	Fingerprint  string            `json:"fingerprint"`
 }
 
 type Payload struct {
@@ -175,6 +176,22 @@ func groupName(p *Payload) string {
 		}
 	}
 	return "alerts"
+}
+
+// Fingerprints splits the payload's alert fingerprints by status, for
+// resolve-by-edit correlation. Alerts without a fingerprint are skipped.
+func Fingerprints(p *Payload) (firing, resolved []string) {
+	for _, a := range p.Alerts {
+		if a.Fingerprint == "" {
+			continue
+		}
+		if a.Status == "resolved" {
+			resolved = append(resolved, a.Fingerprint)
+		} else {
+			firing = append(firing, a.Fingerprint)
+		}
+	}
+	return firing, resolved
 }
 
 // ChartTarget picks the alert to chart: charts are opt-in per alert via the

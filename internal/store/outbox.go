@@ -37,6 +37,14 @@ type OutboxEntry struct {
 	ChartGeneratorURL string
 	ChartStartsAt     *time.Time
 	ChartAlertName    string
+	// Fingerprints (comma-joined) of the firing alerts this entry
+	// announces; recorded against the sent message so a later resolved
+	// notification can edit it in place.
+	Fingerprints string
+	// ResolveFingerprints marks an all-resolved notification: the firing
+	// messages mapped to these fingerprints are edited into the resolved
+	// rendering instead of posting a new message.
+	ResolveFingerprints string
 
 	Status        DeliveryStatus `gorm:"not null;index:idx_outbox_due"`
 	Attempts      int            `gorm:"not null;default:0"`

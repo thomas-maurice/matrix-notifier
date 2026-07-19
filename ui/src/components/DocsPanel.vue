@@ -173,6 +173,14 @@ const origin = window.location.origin
           via your notification policy.
         </p>
         <p>
+          Grouped alerts keep <strong>one live message</strong>: partial
+          and full resolutions edit it in place (🔥 flips to ✅ per alert,
+          matched by fingerprint) instead of posting new messages. A
+          payload with a <em>new</em> firing alert always posts fresh — an
+          edit pings nobody — and unknown fingerprints fall back to a
+          normal message. The Alertmanager receiver behaves the same way.
+        </p>
+        <p>
           <strong>Author rules for good notifications:</strong> the message
           text is taken from the alert's annotations —
           <code>summary</code>, falling back to <code>description</code>,

@@ -12,6 +12,13 @@ nothing needs a Matrix client:
   and generator links. The links are anchored to the alert's firing window
   (graph tab, window ending shortly after the onset) instead of Prometheus's
   default "ending now", so they still show the trigger when clicked late.
+  **Grouped alerts keep one live message**: resolutions — partial or full —
+  edit the group's message in place (matched by alert fingerprint), so
+  individual alerts flip 🔥→✅ inside it instead of spawning new messages.
+  A payload introducing a NEW firing alert always posts fresh (an edit
+  pings nobody), and unknown fingerprints fall back to a normal message.
+  Applies to the Grafana receiver too; chart (image) messages are excluded
+  and always resolve as a new message.
 - **Gitea / Forgejo**: `POST /gitea` (alias `POST /forgejo`) — webhook
   receiver for push, pull-request, issue, release and branch/tag events, plus
   the Forgejo-only (>= v12) `action_run_failure` / `action_run_recover` /

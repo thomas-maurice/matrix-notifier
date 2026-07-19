@@ -286,7 +286,7 @@ func (s *Server) SendTestNotification(ctx context.Context, req *connect.Request[
 // testSend delivers synchronously (test buttons want immediate feedback,
 // not "queued") and records the outcome so the history stays complete.
 func (s *Server) testSend(ctx context.Context, channel, roomID string, n notify.Notification) error {
-	sendErr := s.bot.Send(ctx, roomID, n)
+	_, sendErr := s.bot.Send(ctx, roomID, n)
 	e := &store.OutboxEntry{
 		Channel:  channel,
 		RoomID:   roomID,

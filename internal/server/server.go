@@ -70,7 +70,7 @@ func New(log *slog.Logger, health Health, st *store.Store, q Queue, rl *limiters
 	r.POST("/gitea", giteaHandler)
 	r.POST("/forgejo", giteaHandler)
 	r.POST("/slack", handleIngest(st, store.KindSlack, slack.Parse, q, slackResponse, rl))
-	r.POST("/grafana", handleIngest(st, store.KindGrafana, grafana.Parse, q, nil, rl))
+	r.POST("/grafana", handleGrafana(st, q, rl))
 
 	return r
 }
@@ -112,10 +112,61 @@ func handleAlertmanager(st *store.Store, q Queue, rl *limiters) gin.HandlerFunc 
 				e.ChartAlertName = target.Labels["alertname"]
 			}
 		}
+		firing, resolved := alertmanager.Fingerprints(payload)
+		correlate(e, firing, resolved)
 		if !enqueue(c, q, e) {
 			return
 		}
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
+	}
+}
+
+// handleGrafana queues Grafana unified-alerting webhook notifications,
+// carrying alert fingerprints for resolve-by-edit correlation.
+func handleGrafana(st *store.Store, q Queue, rl *limiters) gin.HandlerFunc {
+	const kind = "grafana"
+	return func(c *gin.Context) {
+		token, err := st.ResolveToken(c.Request.Context(), presentedToken(c), store.KindGrafana)
+		if err != nil {
+			metrics.IngestRejected.WithLabelValues(kind, rejectReason(err)).Inc()
+			writeTokenError(c, err)
+			return
+		}
+		if !rl.allow(token.Name) {
+			metrics.IngestRejected.WithLabelValues(kind, "rate_limit").Inc()
+			rateLimited(c, token.Name)
+			return
+		}
+		payload, err := grafana.ParsePayload(c.Request)
+		if err != nil {
+			metrics.IngestRejected.WithLabelValues(kind, "parse").Inc()
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Bad Request", "errorCode": 400, "errorDescription": err.Error()})
+			return
+		}
+		n := grafana.Format(payload)
+		applyPrefix(&n, token.Prefix)
+
+		e := queueEntry(&token.Channel, kind, n)
+		firing, resolved := grafana.Fingerprints(payload)
+		correlate(e, firing, resolved)
+		if !enqueue(c, q, e) {
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"status": "ok"})
+	}
+}
+
+// correlate stamps the entry with the payload's fingerprints: firing ones
+// get recorded at delivery, resolved ones let the dispatcher update the
+// group's existing message in place — including partial resolutions, as
+// long as the payload introduces no unannounced firing alert (the
+// dispatcher decides; a new alert always posts).
+func correlate(e *store.OutboxEntry, firing, resolved []string) {
+	if len(firing) > 0 {
+		e.Fingerprints = strings.Join(firing, ",")
+	}
+	if len(resolved) > 0 {
+		e.ResolveFingerprints = strings.Join(resolved, ",")
 	}
 }
 

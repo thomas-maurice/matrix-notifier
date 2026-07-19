@@ -19,6 +19,15 @@ are the History shown in the UI, pruned after `outbox_retention_hours`
 (default 168). Don't assert "curl 200 ⇒ message in room" — check the room,
 the UI History tab, `ListDeliveries`, or `matrix_notifier_outbox_pending`.
 Alertmanager charts are rendered by the dispatcher at send time.
+**Grouped alerts keep one live Matrix message** (alertmanager + grafana,
+matched by alert `fingerprint` via the `alert_messages` table): partial
+and full resolutions EDIT the group message in place; a payload with any
+unannounced firing fingerprint, or whose fingerprints map to more than one
+message, POSTS instead (new alerts must ping). Repeats re-edit
+idempotently (mappings are looked up, never consumed). Fallbacks → normal
+message: unknown fingerprints, failed edit, chart/image originals (images
+never record fingerprints). Mappings re-point on re-fire and are pruned
+with the outbox retention.
 
 ## Maintenance contract (non-negotiable)
 

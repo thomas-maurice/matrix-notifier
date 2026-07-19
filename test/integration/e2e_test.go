@@ -132,17 +132,35 @@ func TestEndToEndEncryptedDelivery(t *testing.T) {
 	}, 30*time.Second, time.Second, "bot should join the encrypted room")
 
 	const marker = "integration-test-secret-payload"
-	require.NoError(t, bot.Send(ctx, roomID, notify.Notification{Title: "E2E", Body: marker}))
+	eventID, err := bot.Send(ctx, roomID, notify.Notification{Title: "E2E", Body: marker})
+	require.NoError(t, err)
+	require.NotEmpty(t, eventID, "Send must return the event ID for resolve-by-edit correlation")
 
 	// The verifier must be able to decrypt the megolm message the bot sent.
-	got := waitForDecryptedMessage(t, verifier, id.RoomID(roomID), 30*time.Second)
-	require.Contains(t, got, marker, "verifier should decrypt the bot's encrypted message")
+	got := waitForDecryptedMessage(t, verifier, 30*time.Second)
+	require.Contains(t, got.body, marker, "verifier should decrypt the bot's encrypted message")
+
+	// Resolve-by-edit: the bot flips the firing message into its resolved
+	// form via an encrypted m.replace; the verifier must see an edit
+	// targeting the original event, with the new content decrypted.
+	const resolvedMarker = "integration-resolved-payload"
+	require.NoError(t, bot.SendEdit(ctx, roomID, eventID, notify.Notification{Title: "E2E resolved", Body: resolvedMarker}))
+	edit := waitForEdit(t, verifier, 30*time.Second)
+	require.Equal(t, eventID, edit.editOf, "the edit must target the original firing message")
+	require.Contains(t, edit.body, resolvedMarker, "verifier should decrypt the edited content")
+}
+
+// message is a decrypted incoming message; editOf carries the target event
+// ID when it is an m.replace edit (with body already the replacement).
+type message struct {
+	body   string
+	editOf string
 }
 
 type client struct {
 	mx     *mautrix.Client
 	helper *cryptohelper.CryptoHelper
-	msgs   chan string
+	msgs   chan message
 }
 
 func newClient(t *testing.T, ctx context.Context, homeserver, user string) *client {
@@ -162,12 +180,21 @@ func newClient(t *testing.T, ctx context.Context, homeserver, user string) *clie
 	mx.Crypto = helper
 	t.Cleanup(func() { _ = helper.Close() })
 
-	c := &client{mx: mx, helper: helper, msgs: make(chan string, 16)}
+	c := &client{mx: mx, helper: helper, msgs: make(chan message, 16)}
 	syncer := mx.Syncer.(*mautrix.DefaultSyncer)
 	syncer.OnEventType(event.EventMessage, func(_ context.Context, evt *event.Event) {
-		if evt.Sender != mx.UserID {
-			c.msgs <- evt.Content.AsMessage().Body
+		if evt.Sender == mx.UserID {
+			return
 		}
+		content := evt.Content.AsMessage()
+		m := message{body: content.Body}
+		if rel := content.RelatesTo; rel != nil && rel.Type == event.RelReplace {
+			m.editOf = rel.EventID.String()
+			if content.NewContent != nil {
+				m.body = content.NewContent.Body
+			}
+		}
+		c.msgs <- m
 	})
 	go func() { _ = mx.SyncWithContext(ctx) }()
 	time.Sleep(2 * time.Second) // let the first sync establish device lists
@@ -190,18 +217,34 @@ func createEncryptedRoom(t *testing.T, ctx context.Context, c *client, invite st
 	return resp.RoomID.String()
 }
 
-func waitForDecryptedMessage(t *testing.T, c *client, room id.RoomID, timeout time.Duration) string {
+func waitForDecryptedMessage(t *testing.T, c *client, timeout time.Duration) message {
 	t.Helper()
 	deadline := time.After(timeout)
 	for {
 		select {
-		case body := <-c.msgs:
-			if body != "" {
-				return body
+		case m := <-c.msgs:
+			if m.body != "" && m.editOf == "" {
+				return m
 			}
 		case <-deadline:
 			t.Fatal("timed out waiting for a decrypted message")
-			return ""
+			return message{}
+		}
+	}
+}
+
+func waitForEdit(t *testing.T, c *client, timeout time.Duration) message {
+	t.Helper()
+	deadline := time.After(timeout)
+	for {
+		select {
+		case m := <-c.msgs:
+			if m.editOf != "" {
+				return m
+			}
+		case <-deadline:
+			t.Fatal("timed out waiting for an edit (m.replace)")
+			return message{}
 		}
 	}
 }

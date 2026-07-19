@@ -58,7 +58,7 @@ func (b *Bot) handleMessage(ctx context.Context, evt *event.Event) {
 	}
 	log := logging.From(ctx)
 	log.Info("handling command", "command", cmd, "sender", evt.Sender, "room_id", evt.RoomID)
-	if err := b.sendMarkdown(ctx, evt.RoomID, b.runCommand(ctx, cmd, evt.RoomID)); err != nil {
+	if _, err := b.sendMarkdown(ctx, evt.RoomID, b.runCommand(ctx, cmd, evt.RoomID)); err != nil {
 		log.Error("failed to reply to command", "command", cmd, "error", err)
 	}
 }
@@ -70,7 +70,7 @@ func (b *Bot) runCommand(ctx context.Context, cmd string, roomID id.RoomID) stri
 	case "status":
 		return b.statusText(ctx, roomID)
 	case "test":
-		err := b.Send(ctx, roomID.String(), notify.Notification{
+		_, err := b.Send(ctx, roomID.String(), notify.Notification{
 			Title:    "Test notification",
 			Body:     "Requested via `!notify test` — the full delivery path works.",
 			Priority: 5,

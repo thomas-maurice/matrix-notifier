@@ -29,12 +29,12 @@ type fakeBot struct {
 	sendErr error
 }
 
-func (f *fakeBot) Send(_ context.Context, roomID string, _ notify.Notification) error {
+func (f *fakeBot) Send(_ context.Context, roomID string, _ notify.Notification) (string, error) {
 	if f.sendErr != nil {
-		return f.sendErr
+		return "", f.sendErr
 	}
 	f.sent = append(f.sent, roomID)
-	return nil
+	return "$evt", nil
 }
 
 func (f *fakeBot) Status(context.Context) matrix.Status {

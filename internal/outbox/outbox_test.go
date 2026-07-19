@@ -19,25 +19,40 @@ import (
 	"github.com/thomas-maurice/matrix-notifier/internal/store"
 )
 
-type fakeSender struct {
-	err    error
-	sent   []notify.Notification
-	images []string
+type edit struct {
+	target string
+	n      notify.Notification
 }
 
-func (f *fakeSender) Send(_ context.Context, _ string, n notify.Notification) error {
+type fakeSender struct {
+	err     error
+	editErr error
+	sent    []notify.Notification
+	images  []string
+	edits   []edit
+}
+
+func (f *fakeSender) Send(_ context.Context, _ string, n notify.Notification) (string, error) {
 	if f.err != nil {
-		return f.err
+		return "", f.err
 	}
 	f.sent = append(f.sent, n)
-	return nil
+	return fmt.Sprintf("$e%d", len(f.sent)), nil
 }
 
-func (f *fakeSender) SendWithImage(_ context.Context, _ string, _ notify.Notification, filename string, _ []byte) error {
+func (f *fakeSender) SendWithImage(_ context.Context, _ string, _ notify.Notification, filename string, _ []byte) (string, error) {
 	if f.err != nil {
-		return f.err
+		return "", f.err
 	}
 	f.images = append(f.images, filename)
+	return fmt.Sprintf("$img%d", len(f.images)), nil
+}
+
+func (f *fakeSender) SendEdit(_ context.Context, _ string, target string, n notify.Notification) error {
+	if f.editErr != nil {
+		return f.editErr
+	}
+	f.edits = append(f.edits, edit{target: target, n: n})
 	return nil
 }
 
@@ -160,6 +175,143 @@ func TestDispatcherChartFailureDegradesToText(t *testing.T) {
 	assert.Contains(t, sender.sent[0].Title, "FIRING:1")
 	list, _ := st.ListOutbox(ctx, "", 10)
 	assert.Equal(t, store.DeliveryDelivered, list[0].Status)
+}
+
+// The point of correlation: a resolved notification edits the firing
+// message in place instead of posting an unrelated second message.
+func TestDispatcherResolvesByEdit(t *testing.T) {
+	d, sender, st := newTestDispatcher(t)
+	ctx := context.Background()
+
+	require.NoError(t, d.Enqueue(ctx, &store.OutboxEntry{
+		Channel: "infra", RoomID: "!r:x", Kind: "alertmanager",
+		Title: "[FIRING:1] Down", Body: "🔥", Fingerprints: "fp1,fp2",
+	}))
+	d.drain(ctx)
+	require.Len(t, sender.sent, 1)
+
+	require.NoError(t, d.Enqueue(ctx, &store.OutboxEntry{
+		Channel: "infra", RoomID: "!r:x", Kind: "alertmanager",
+		Title: "[RESOLVED:1] Down", Body: "✅", ResolveFingerprints: "fp1,fp2",
+	}))
+	d.drain(ctx)
+
+	require.Len(t, sender.edits, 1, "resolution must edit, not re-post")
+	assert.Equal(t, "$e1", sender.edits[0].target, "the FIRING message is the edit target")
+	assert.Equal(t, "[RESOLVED:1] Down", sender.edits[0].n.Title)
+	assert.Len(t, sender.sent, 1, "no standalone resolved message")
+
+	list, err := st.ListOutbox(ctx, "", 10)
+	require.NoError(t, err)
+	assert.Equal(t, store.DeliveryDelivered, list[0].Status, "an edit counts as delivered")
+
+	// Alertmanager re-sends resolved group notifications (group_interval,
+	// flapping): a repeat must re-edit the same message idempotently, never
+	// post a duplicate standalone message.
+	require.NoError(t, d.Enqueue(ctx, &store.OutboxEntry{
+		Channel: "infra", RoomID: "!r:x", Kind: "alertmanager",
+		Title: "[RESOLVED:1] Down", Body: "✅", ResolveFingerprints: "fp1",
+	}))
+	d.drain(ctx)
+	require.Len(t, sender.edits, 2)
+	assert.Equal(t, "$e1", sender.edits[1].target, "the repeat edits the same firing message")
+	assert.Len(t, sender.sent, 1, "no duplicate standalone message on repeated resolution")
+}
+
+// Grouped alerts keep ONE live message: a partial resolution (A resolved,
+// B still firing, no NEW alert) edits the group message in place; a payload
+// introducing an unannounced firing alert must post fresh — an edit pings
+// nobody.
+func TestDispatcherPartialResolutionEditsInPlace(t *testing.T) {
+	d, sender, _ := newTestDispatcher(t)
+	ctx := context.Background()
+
+	// Group fires with two alerts → one message ($e1).
+	require.NoError(t, d.Enqueue(ctx, &store.OutboxEntry{
+		Channel: "infra", RoomID: "!r:x", Kind: "alertmanager",
+		Title: "[FIRING:2] Down", Body: "🔥🔥", Fingerprints: "fpA,fpB",
+	}))
+	d.drain(ctx)
+	require.Len(t, sender.sent, 1)
+
+	// A resolves, B keeps firing: the group message is updated in place.
+	require.NoError(t, d.Enqueue(ctx, &store.OutboxEntry{
+		Channel: "infra", RoomID: "!r:x", Kind: "alertmanager",
+		Title: "[FIRING:1, RESOLVED:1] Down", Body: "🔥✅",
+		Fingerprints: "fpB", ResolveFingerprints: "fpA",
+	}))
+	d.drain(ctx)
+	require.Len(t, sender.edits, 1, "partial resolution must edit the group message")
+	assert.Equal(t, "$e1", sender.edits[0].target)
+	assert.Contains(t, sender.edits[0].n.Title, "RESOLVED:1")
+	assert.Len(t, sender.sent, 1, "no new message for a pure status change")
+
+	// A new alert C joins while A stays resolved: must POST (people need
+	// the ping), and the firing alerts re-point to the new message.
+	require.NoError(t, d.Enqueue(ctx, &store.OutboxEntry{
+		Channel: "infra", RoomID: "!r:x", Kind: "alertmanager",
+		Title: "[FIRING:2, RESOLVED:1] Down", Body: "🔥🔥✅",
+		Fingerprints: "fpB,fpC", ResolveFingerprints: "fpA",
+	}))
+	d.drain(ctx)
+	assert.Len(t, sender.edits, 1)
+	require.Len(t, sender.sent, 2, "an unannounced firing alert must post a new message")
+
+	// Everything resolves: the NEWEST group message ($e2) gets the final
+	// flip.
+	require.NoError(t, d.Enqueue(ctx, &store.OutboxEntry{
+		Channel: "infra", RoomID: "!r:x", Kind: "alertmanager",
+		Title: "[RESOLVED:3] Down", Body: "✅✅✅", ResolveFingerprints: "fpA,fpB,fpC",
+	}))
+	d.drain(ctx)
+	// fpA still maps to $e1 while fpB/fpC map to $e2 → split targets →
+	// posts normally rather than editing two messages with one rendering.
+	require.Len(t, sender.sent, 3)
+
+	// But a final resolution whose fingerprints all live on one message
+	// edits it: resolve only fpB+fpC.
+	require.NoError(t, d.Enqueue(ctx, &store.OutboxEntry{
+		Channel: "infra", RoomID: "!r:x", Kind: "alertmanager",
+		Title: "[RESOLVED:2] Down", Body: "✅✅", ResolveFingerprints: "fpB,fpC",
+	}))
+	d.drain(ctx)
+	require.Len(t, sender.edits, 2)
+	assert.Equal(t, "$e2", sender.edits[1].target)
+}
+
+// Unknown fingerprints (never announced, pruned, restart before the
+// feature) must not lose the resolved notification — it posts normally.
+func TestDispatcherResolveFallsBackWithoutMapping(t *testing.T) {
+	d, sender, _ := newTestDispatcher(t)
+	ctx := context.Background()
+
+	require.NoError(t, d.Enqueue(ctx, &store.OutboxEntry{
+		Channel: "infra", RoomID: "!r:x", Kind: "grafana",
+		Title: "[RESOLVED:1] X", Body: "✅", ResolveFingerprints: "ghost",
+	}))
+	d.drain(ctx)
+	assert.Empty(t, sender.edits)
+	require.Len(t, sender.sent, 1)
+}
+
+// A failed edit (redacted original, purged history) must degrade to a
+// normal message, never a dropped notification.
+func TestDispatcherEditFailureFallsBack(t *testing.T) {
+	d, sender, _ := newTestDispatcher(t)
+	ctx := context.Background()
+
+	require.NoError(t, d.Enqueue(ctx, &store.OutboxEntry{
+		Channel: "infra", RoomID: "!r:x", Kind: "alertmanager", Title: "f", Body: "b", Fingerprints: "fp1",
+	}))
+	d.drain(ctx)
+
+	sender.editErr = errors.New("event redacted")
+	require.NoError(t, d.Enqueue(ctx, &store.OutboxEntry{
+		Channel: "infra", RoomID: "!r:x", Kind: "alertmanager", Title: "r", Body: "✅", ResolveFingerprints: "fp1",
+	}))
+	d.drain(ctx)
+	assert.Empty(t, sender.edits)
+	require.Len(t, sender.sent, 2, "edit failure must fall back to a normal send")
 }
 
 // Backoff must grow (no hot-loop hammering a down homeserver) but stay

@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"strings"
 	"time"
 
 	"github.com/thomas-maurice/matrix-notifier/internal/chart"
@@ -18,7 +19,8 @@ import (
 // Sender is what the dispatcher needs from the bot.
 type Sender interface {
 	notify.Sender
-	SendWithImage(ctx context.Context, roomID string, n notify.Notification, filename string, png []byte) error
+	SendWithImage(ctx context.Context, roomID string, n notify.Notification, filename string, png []byte) (eventID string, err error)
+	SendEdit(ctx context.Context, roomID, targetEventID string, n notify.Notification) error
 }
 
 const (
@@ -153,13 +155,23 @@ func (d *Dispatcher) attempt(ctx context.Context, e *store.OutboxEntry) {
 	d.log.Warn("delivery failed, will retry", "channel", e.Channel, "kind", e.Kind, "attempt", attempts, "retry_in", delay, "error", err)
 }
 
-// deliver performs one attempt: render the chart when the entry asks for
-// one (best effort — a chart failure degrades to text, it never fails the
-// delivery), then send.
+// deliver performs one attempt: update the group's message in place when
+// the entry only advances known alerts, else render the chart when the
+// entry asks for one (best effort — a chart failure degrades to text, it
+// never fails the delivery), then send.
 func (d *Dispatcher) deliver(ctx context.Context, e *store.OutboxEntry) error {
 	ctx, cancel := context.WithTimeout(ctx, attemptTimeout)
 	defer cancel()
 	n := notify.Notification{Title: e.Title, Body: e.Body, Priority: e.Priority}
+
+	if target := d.editTarget(ctx, e); target != "" {
+		if err := d.sender.SendEdit(ctx, e.RoomID, target, n); err != nil {
+			d.log.Warn("editing alert message failed, posting a new message", "channel", e.Channel, "event_id", target, "error", err)
+		} else {
+			d.log.Info("updated alert message in place", "channel", e.Channel, "event_id", target)
+			return nil
+		}
+	}
 
 	if e.ChartGeneratorURL != "" && e.ChartStartsAt != nil && d.charts != nil {
 		start := time.Now()
@@ -175,20 +187,100 @@ func (d *Dispatcher) deliver(ctx context.Context, e *store.OutboxEntry) error {
 				name = "alert"
 			}
 			d.log.Debug("chart rendered", "channel", e.Channel, "expr", expr)
-			return d.sender.SendWithImage(ctx, e.RoomID, n, fmt.Sprintf("%s.png", name), png)
+			// Image messages are never recorded for resolve-by-edit:
+			// replacing an m.image with text renders unreliably across
+			// clients, so their resolved counterpart posts normally.
+			_, err := d.sender.SendWithImage(ctx, e.RoomID, n, fmt.Sprintf("%s.png", name), png)
+			return err
 		}
 	}
-	return d.sender.Send(ctx, e.RoomID, n)
+
+	eventID, err := d.sender.Send(ctx, e.RoomID, n)
+	if err != nil {
+		return err
+	}
+	if e.Fingerprints != "" && eventID != "" {
+		// Best effort: the notification IS delivered; a failed mapping only
+		// costs the future edit, and failing here would re-send.
+		if err := d.st.RecordAlertMessages(ctx, e.RoomID, eventID, splitFingerprints(e.Fingerprints)); err != nil {
+			d.log.Error("recording alert message mapping", "channel", e.Channel, "error", err)
+		}
+	}
+	return nil
+}
+
+// editTarget decides whether this entry may update an existing message in
+// place instead of posting a new one. Allowed only when the entry resolves
+// at least one known alert, introduces NO unannounced firing alert (a new
+// alert must post — an edit pings nobody), and every involved fingerprint
+// points at the same single message. Grouped alerts thus keep ONE live
+// message: partial resolutions flip individual lines, the final resolution
+// flips the whole message, and repeats re-edit idempotently. Anything
+// else — unknown fingerprints, mappings split across messages, image
+// originals — returns "" and posts normally.
+func (d *Dispatcher) editTarget(ctx context.Context, e *store.OutboxEntry) string {
+	resolved := splitFingerprints(e.ResolveFingerprints)
+	if len(resolved) == 0 {
+		return ""
+	}
+	firing := splitFingerprints(e.Fingerprints)
+	m, err := d.st.MapAlertMessages(ctx, e.RoomID, append(firing, resolved...))
+	if err != nil {
+		d.log.Error("looking up alert messages", "channel", e.Channel, "error", err)
+		return ""
+	}
+	target := ""
+	for _, fp := range firing {
+		eventID, ok := m[fp]
+		if !ok {
+			return "" // unannounced firing alert: it must post, not edit
+		}
+		if target == "" {
+			target = eventID
+		} else if target != eventID {
+			return ""
+		}
+	}
+	resolvedKnown := false
+	for _, fp := range resolved {
+		eventID, ok := m[fp]
+		if !ok {
+			continue
+		}
+		resolvedKnown = true
+		if target == "" {
+			target = eventID
+		} else if target != eventID {
+			return ""
+		}
+	}
+	if !resolvedKnown {
+		return ""
+	}
+	return target
+}
+
+func splitFingerprints(joined string) []string {
+	if joined == "" {
+		return nil
+	}
+	return strings.Split(joined, ",")
 }
 
 func (d *Dispatcher) prune(ctx context.Context) {
-	n, err := d.st.PruneOutbox(ctx, time.Now().Add(-d.retention))
+	cutoff := time.Now().Add(-d.retention)
+	n, err := d.st.PruneOutbox(ctx, cutoff)
 	if err != nil {
 		d.log.Error("pruning outbox", "error", err)
 		return
 	}
 	if n > 0 {
 		d.log.Info("pruned delivery history", "entries", n)
+	}
+	if n, err := d.st.PruneAlertMessages(ctx, cutoff); err != nil {
+		d.log.Error("pruning alert message mappings", "error", err)
+	} else if n > 0 {
+		d.log.Info("pruned alert message mappings", "entries", n)
 	}
 }
 

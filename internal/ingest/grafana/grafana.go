@@ -22,6 +22,7 @@ type Alert struct {
 	GeneratorURL string            `json:"generatorURL"`
 	DashboardURL string            `json:"dashboardURL"`
 	PanelURL     string            `json:"panelURL"`
+	Fingerprint  string            `json:"fingerprint"`
 }
 
 type Payload struct {
@@ -32,19 +33,45 @@ type Payload struct {
 }
 
 func Parse(r *http.Request) (notify.Notification, error) {
-	var p Payload
-	if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
-		return notify.Notification{}, fmt.Errorf("invalid grafana payload: %w", err)
+	p, err := ParsePayload(r)
+	if err != nil {
+		return notify.Notification{}, err
 	}
-	if len(p.Alerts) == 0 {
-		return notify.Notification{}, fmt.Errorf("payload contains no alerts")
-	}
-	return format(&p), nil
+	return Format(p), nil
 }
 
-// format renders one line per alert, in the same spirit as the alertmanager
+// ParsePayload decodes the raw webhook payload, for callers that also need
+// the alert fingerprints for resolve-by-edit correlation.
+func ParsePayload(r *http.Request) (*Payload, error) {
+	var p Payload
+	if err := json.NewDecoder(r.Body).Decode(&p); err != nil {
+		return nil, fmt.Errorf("invalid grafana payload: %w", err)
+	}
+	if len(p.Alerts) == 0 {
+		return nil, fmt.Errorf("payload contains no alerts")
+	}
+	return &p, nil
+}
+
+// Fingerprints splits the payload's alert fingerprints by status, for
+// resolve-by-edit correlation. Alerts without a fingerprint are skipped.
+func Fingerprints(p *Payload) (firing, resolved []string) {
+	for _, a := range p.Alerts {
+		if a.Fingerprint == "" {
+			continue
+		}
+		if a.Status == "resolved" {
+			resolved = append(resolved, a.Fingerprint)
+		} else {
+			firing = append(firing, a.Fingerprint)
+		}
+	}
+	return firing, resolved
+}
+
+// Format renders one line per alert, in the same spirit as the alertmanager
 // receiver so mixed rooms read uniformly.
-func format(p *Payload) notify.Notification {
+func Format(p *Payload) notify.Notification {
 	var firing, resolved int
 	for _, a := range p.Alerts {
 		if a.Status == "resolved" {

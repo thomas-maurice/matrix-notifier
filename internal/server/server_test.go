@@ -108,7 +108,7 @@ func TestGotifyEndpointRoutesToChannelRoom(t *testing.T) {
 func TestAlertmanagerEndpoint(t *testing.T) {
 	q, _, h, _, anyToken := newTestServer(t)
 	payload := `{"version":"4","status":"firing","groupLabels":{"alertname":"Down"},
-		"alerts":[{"status":"firing","labels":{"alertname":"Down","severity":"critical"},"annotations":{"summary":"it broke"}}]}`
+		"alerts":[{"status":"firing","labels":{"alertname":"Down","severity":"critical"},"annotations":{"summary":"it broke"},"fingerprint":"abc123"}]}`
 	req := httptest.NewRequest("POST", "/alertmanager", strings.NewReader(payload))
 	req.Header.Set("Authorization", "Bearer "+anyToken)
 	w := httptest.NewRecorder()
@@ -119,6 +119,20 @@ func TestAlertmanagerEndpoint(t *testing.T) {
 	assert.Equal(t, "!room:example.org", q.entries[0].RoomID)
 	assert.Contains(t, q.entries[0].Title, "FIRING:1")
 	assert.Contains(t, q.entries[0].Body, "it broke")
+	assert.Equal(t, "abc123", q.entries[0].Fingerprints, "firing fingerprints ride on the entry")
+	assert.Empty(t, q.entries[0].ResolveFingerprints)
+
+	// An all-resolved payload must be marked for resolve-by-edit.
+	resolved := `{"version":"4","status":"resolved",
+		"alerts":[{"status":"resolved","labels":{"alertname":"Down"},"fingerprint":"abc123"}]}`
+	req = httptest.NewRequest("POST", "/alertmanager", strings.NewReader(resolved))
+	req.Header.Set("Authorization", "Bearer "+anyToken)
+	w = httptest.NewRecorder()
+	h.ServeHTTP(w, req)
+	require.Equal(t, http.StatusOK, w.Code)
+	require.Len(t, q.entries, 2)
+	assert.Empty(t, q.entries[1].Fingerprints)
+	assert.Equal(t, "abc123", q.entries[1].ResolveFingerprints)
 }
 
 // Slack-webhook senders can't set headers, so ?token= must carry auth, and
@@ -145,7 +159,7 @@ func TestGrafanaEndpoint(t *testing.T) {
 	q, _, h, _, anyToken := newTestServer(t)
 	payload := `{"receiver":"matrix","status":"firing","groupLabels":{"alertname":"SensorOffline"},
 		"alerts":[{"status":"firing","labels":{"alertname":"SensorOffline","severity":"critical"},
-		           "annotations":{"summary":"no data"},"panelURL":"http://g/d/iot?viewPanel=2"}]}`
+		           "annotations":{"summary":"no data"},"panelURL":"http://g/d/iot?viewPanel=2","fingerprint":"gf1"}]}`
 	req := httptest.NewRequest("POST", "/grafana?token="+anyToken, strings.NewReader(payload))
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
@@ -156,6 +170,7 @@ func TestGrafanaEndpoint(t *testing.T) {
 	assert.Equal(t, "grafana", q.entries[0].Kind)
 	assert.Contains(t, q.entries[0].Title, "FIRING:1")
 	assert.Equal(t, 8, q.entries[0].Priority)
+	assert.Equal(t, "gf1", q.entries[0].Fingerprints)
 }
 
 func TestHealthIsUnauthenticated(t *testing.T) {
