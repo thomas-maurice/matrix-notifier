@@ -21,7 +21,7 @@ jobs:
     env:
       IMAGE: ghcr.io/${{ github.repository }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # CGO (sqlite) means the arm64 half compiles under qemu emulation —
       # slow but hands-off; the Dockerfile is already multi-arch aware.
