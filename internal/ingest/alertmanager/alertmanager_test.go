@@ -53,8 +53,8 @@ func TestParseAndFormat(t *testing.T) {
 	assert.Contains(t, n.Body, "node1:9100")
 	// The generator URL becomes a clickable link, anchored to the firing
 	// window (see TestGraphURLAnchoredToFiringWindow for the details).
-	assert.Contains(t, n.Body, "](http://prometheus/graph?g0.end_input=")
-	assert.Contains(t, n.Body, "g0.expr=cpu")
+	assert.Contains(t, n.Body, "](http://prometheus/graph?g0.expr=cpu&")
+	assert.Contains(t, n.Body, "g0.end_input=")
 }
 
 func TestPriorityMapping(t *testing.T) {
@@ -112,6 +112,8 @@ func TestGraphURLAnchoredToFiringWindow(t *testing.T) {
 	assert.Equal(t, "0", q.Get("g0.tab"), "must open the graph tab, not the table")
 	assert.Equal(t, "1h", q.Get("g0.range_input"))
 	assert.Equal(t, "2026-07-18 10:15:00", q.Get("g0.end_input"), "window must end shortly after the onset")
+	assert.True(t, strings.HasPrefix(u.RawQuery, "g0.expr="),
+		"g0.expr must be the first query param: the Prometheus/Thanos UI drops g0.* params that precede it")
 
 	// A generator URL that is not a Prometheus graph link stays untouched.
 	custom := Alert{StartsAt: starts, GeneratorURL: "https://thanos.example/alert/42"}

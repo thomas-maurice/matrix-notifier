@@ -36,7 +36,12 @@ func graphURL(a Alert) string {
 	q.Set("g0.tab", "0")
 	q.Set("g0.range_input", "1h")
 	q.Set("g0.end_input", a.StartsAt.UTC().Add(15*time.Minute).Format("2006-01-02 15:04:05"))
-	u.RawQuery = q.Encode()
+	// The UI drops any g0.* param that precedes g0.expr in the query string,
+	// and Encode() sorts keys (end_input < expr), so expr must be emitted
+	// first by hand.
+	expr := q.Get("g0.expr")
+	q.Del("g0.expr")
+	u.RawQuery = "g0.expr=" + url.QueryEscape(expr) + "&" + q.Encode()
 	return u.String()
 }
 
